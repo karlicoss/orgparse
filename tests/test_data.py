@@ -21,6 +21,17 @@ def value_from_data_key(node, key):
     """
     if key == 'tags_inher':
         return node.get_tags(inher=True)
+    elif key == 'children_heading':
+        return [c.get_heading() for c in node.get_children()]
+    elif key in ('parent_heading',
+                 'previous_heading',
+                 'next_heading',
+                 ):
+        othernode = getattr(node, 'get_{0}'.format(key.split('_', 1)[0]))()
+        if othernode and not othernode.is_root():
+            return othernode.get_heading()
+        else:
+            return
     else:
         return getattr(node, "get_{0}".format(key))()
 

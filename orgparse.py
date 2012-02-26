@@ -504,6 +504,9 @@ class OrgBaseNode(object):
 
     # misc
 
+    def is_root(self):
+        return False
+
     def __unicode__(self):
         return u"\n".join(self._lines)
 
@@ -520,6 +523,11 @@ class OrgRootNode(OrgBaseNode):
 
     def get_tags(self, inher=False):
         return set()
+
+    # misc
+
+    def is_root(self):
+        return True
 
 
 class OrgNode(OrgBaseNode):
@@ -724,8 +732,16 @@ def loadi(lines):
         elif level_n1 < level_n2:
             n2.set_parent(n1)
         else:
-            # FIXME: add more tests for this path
-            np = n1.get_parent(max_level=n2.get_level())
-            n2.set_parent(np.get_parent())
-            n2.set_previous(np)
+            np = n1.get_parent(max_level=level_n2)
+            if np.get_level() == level_n2:
+                # * np    level=1
+                # ** n1   level=2
+                # * n2    level=1
+                n2.set_parent(np.get_parent())
+                n2.set_previous(np)
+            else:  # np.get_level() < level_n2
+                # * np    level=1
+                # *** n1  level=3
+                # ** n2   level=2
+                n2.set_parent(np)
     return nodelist[0]  # root
