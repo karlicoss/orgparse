@@ -55,8 +55,8 @@ Traverse org tree
 * Heading 1
 
 
-Accessing to attributes of the org node
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Accessing to node attributes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 >>> root = loads('''
 ... * DONE Heading          :TAG:
