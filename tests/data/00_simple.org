@@ -1,0 +1,17 @@
+#+STARTUP: hidestars
+#+SEQ_TODO: TODO1 TODO2 TODO3 TODO4
+
+* TODO1 Heading 0 						       :TAG1:
+** TODO2 Heading 1 						       :TAG2:
+*** TODO3 Heading 2 						       :TAG3:
+**** TODO4 Heading 3 						       :TAG4:
+     CLOSED: [2010-08-06 Fri 21:45]
+** Heading 4
+** Heading 5
+* Heading 6 							       :TAG2:
+** Heading 7 							       :TAG2:
+*** Heading 8
+***** Heading 9 						  :TAG3:TAG4:
+**** Heading 10 						       :TAG1:
+** Heading 11
+* Heading 12
