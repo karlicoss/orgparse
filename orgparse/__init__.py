@@ -497,14 +497,6 @@ class OrgNode(OrgBaseNode):
     def get_deadline(self):
         return self._deadline.get_start()
 
-    def get_datelist(self):
-        return [ts.get_start()
-                for ts in self._timestamps if not ts.has_end()]
-
-    def get_rangelist(self):
-        return [(ts.get_start(), ts.get_end())
-                for ts in self._timestamps if ts.has_end()]
-
     def get_closed(self):
         return self._closed.get_start()
 
@@ -512,6 +504,14 @@ class OrgNode(OrgBaseNode):
         return [(ts.get_start(), ts.get_end(),
                  int(ts.get_duration().total_seconds() / 60.0))
                 for ts in self._clocklist]
+
+    def get_datelist(self):
+        return [ts.get_start()
+                for ts in self._timestamps if not ts.has_end()]
+
+    def get_rangelist(self):
+        return [(ts.get_start(), ts.get_end())
+                for ts in self._timestamps if ts.has_end()]
 
     def has_date(self):
         return (self.get_scheduled() or
