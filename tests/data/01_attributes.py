@@ -1,4 +1,4 @@
-from orgparse.orgdate import (
+from orgparse.date import (
     OrgDate, OrgDateScheduled, OrgDateDeadline, OrgDateClosed,
     OrgDateClock,
 )

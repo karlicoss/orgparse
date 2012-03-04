@@ -95,7 +95,7 @@ set(['TAG'])
 
 import re
 
-from orgparse.orgdate import OrgDate, OrgDateClock, parse_sdc
+from orgparse.date import OrgDate, OrgDateClock, parse_sdc
 
 
 __all__ = ["load", "loads", "loadi"]
