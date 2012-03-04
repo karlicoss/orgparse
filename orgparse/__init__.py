@@ -97,6 +97,9 @@ set(['TAG'])
 import re
 import datetime
 
+from orgparse.orgdate import OrgDate, OrgDateClock
+
+
 __all__ = ["load", "loads", "loadi"]
 
 
@@ -539,12 +542,11 @@ class OrgNode(OrgBaseNode):
         self._tags = None
         self._todo = None
         self._properties = {}
-        self._scheduled = None
-        self._deadline = None
-        self._datelist = None
-        self._rangelist = None
-        self._closed = None
-        self._clocklist = None
+        self._scheduled = OrgDate(None)
+        self._deadline = OrgDate(None)
+        self._closed = OrgDate(None)
+        self._timestamps = []
+        self._clocklist = []
         self._body_lines = []
 
     # parser
@@ -577,9 +579,9 @@ class OrgNode(OrgBaseNode):
 
         """
         line = next(ilines)
-        self._scheduled = parse_scheduled(line)
-        self._deadline = parse_deadline(line)
-        self._closed = parse_closed(line)
+        self._scheduled = OrgDate(parse_scheduled(line))
+        self._deadline = OrgDate(parse_deadline(line))
+        self._closed = OrgDate(parse_closed(line))
 
         if not (self._scheduled or
                 self._deadline or
@@ -594,18 +596,15 @@ class OrgNode(OrgBaseNode):
         for line in ilines:
             cl = parse_clock(line)
             if cl:
-                clocklist.append(cl)
+                clocklist.append(OrgDateClock(*cl))
             else:
                 yield line
 
     def _iparse_timestamps(self, ilines):
-        self._datelist = datelist = []
-        self._rangelist = rangelist = []
-        for line in ilines:
-            (d, r) = parse_daterangelist(line)
-            datelist.extend(d)
-            rangelist.extend(r)
-            yield line
+        self._timestamps = timestamps = []
+        for l in ilines:
+            timestamps.extend(OrgDate.list_from_str(l))
+            yield l
 
     def _iparse_properties(self, ilines):
         self._properties = properties = {}
@@ -658,22 +657,26 @@ class OrgNode(OrgBaseNode):
         return self._properties
 
     def get_scheduled(self):
-        return self._scheduled
+        return self._scheduled.get_start()
 
     def get_deadline(self):
-        return self._deadline
+        return self._deadline.get_start()
 
     def get_datelist(self):
-        return self._datelist
+        return [ts.get_start()
+                for ts in self._timestamps if not ts.has_end()]
 
     def get_rangelist(self):
-        return self._rangelist
+        return [(ts.get_start(), ts.get_end())
+                for ts in self._timestamps if ts.has_end()]
 
     def get_closed(self):
-        return self._closed
+        return self._closed.get_start()
 
     def get_clock(self):
-        return self._clocklist
+        return [(ts.get_start(), ts.get_end(),
+                 int(ts.get_duration().total_seconds() / 60.0))
+                for ts in self._clocklist]
 
     def has_date(self):
         return (self.get_scheduled() or
