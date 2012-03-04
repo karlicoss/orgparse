@@ -163,8 +163,8 @@ class OrgDate(object):
         else:
             return '{0}({1!r}, {2!r}, {3!r})'.format(*args)
 
-    def __bool__(self):
-        return self._start
+    def __nonzero__(self):
+        return bool(self._start)
 
     def get_start(self):
         """
