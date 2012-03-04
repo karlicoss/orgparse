@@ -66,14 +66,13 @@ Accessing to node attributes
 >>> node.get_heading()
 'Heading'
 >>> node.get_scheduled()
-datetime.date(2012, 2, 26)
+OrgDateScheduled((2012, 2, 26))
 >>> node.get_closed()
-datetime.datetime(2012, 2, 26, 21, 15)
->>> node.get_clock()                       #doctest: +NORMALIZE_WHITESPACE
-[(datetime.datetime(2012, 2, 26, 21, 10),
-  datetime.datetime(2012, 2, 26, 21, 15),
-  5)]
->>> node.get_deadline()   # returns None because not specified
+OrgDateClosed((2012, 2, 26, 21, 15, 0))
+>>> node.get_clock()
+[OrgDateClock((2012, 2, 26, 21, 10, 0), (2012, 2, 26, 21, 15, 0))]
+>>> bool(node.get_deadline())   # it is not specified
+False
 >>> node.get_tags()
 set(['TAG'])
 >>> node.get_property('Effort')

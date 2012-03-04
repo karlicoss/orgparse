@@ -102,7 +102,9 @@ TIMESTAMP_RE = re.compile(
 
 class OrgDate(object):
 
-    def __init__(self, start, end=None, active=True):
+    _active_default = True
+
+    def __init__(self, start, end=None, active=None):
         """
         Create OrgDate object
 
@@ -124,7 +126,7 @@ class OrgDate(object):
         """
         self._start = self._to_date(start)
         self._end = self._to_date(end)
-        self._active = active
+        self._active = self._active_default if active is None else active
 
     @staticmethod
     def _to_date(date):
@@ -154,7 +156,7 @@ class OrgDate(object):
             self.__class__.__name__,
             self._date_to_tuple(self.get_start()),
             self._date_to_tuple(self.get_end()) if self.has_end() else None,
-            None if self.is_active() else False,
+            None if self._active is self._active_default else self._active,
         ]
         if args[2] is None and args[3] is None:
             return '{0}({1!r})'.format(*args)
@@ -165,6 +167,16 @@ class OrgDate(object):
 
     def __nonzero__(self):
         return bool(self._start)
+
+    def __eq__(self, other):
+        if (isinstance(other, OrgDate) and
+            self._start is None and
+            other._start is None):
+            return True
+        return (isinstance(other, self.__class__) and
+                self._start == other._start and
+                self._end == other._end and
+                self._active == other._active)
 
     def get_start(self):
         """
@@ -313,7 +325,6 @@ def compile_sdc_re(sdctype):
 class OrgDateSDCBase(OrgDate):
 
     _re = None  # override this!
-    _active = None  # override this!
 
     @classmethod
     def from_str(cls, string):
@@ -321,24 +332,24 @@ class OrgDateSDCBase(OrgDate):
         if match:
             mdict = match.groupdict()
             return cls(cls._datetuple_from_groupdict(mdict),
-                       active=cls._active)
+                       active=cls._active_default)
         else:
             return cls(None)
 
 
 class OrgDateScheduled(OrgDateSDCBase):
     _re = compile_sdc_re('SCHEDULED')
-    _active = True
+    _active_default = True
 
 
 class OrgDateDeadline(OrgDateSDCBase):
     _re = compile_sdc_re('DEADLINE')
-    _active = True
+    _active_default = True
 
 
 class OrgDateClosed(OrgDateSDCBase):
     _re = compile_sdc_re('CLOSED')
-    _active = False
+    _active_default = False
 
 
 def parse_sdc(string):
@@ -348,8 +359,9 @@ def parse_sdc(string):
 
 
 class OrgDateClock(OrgDate):
+    _active_default = False
 
-    def __init__(self, start, end, duration=None, active=False):
+    def __init__(self, start, end, duration=None, active=None):
         """
         Create OrgDateClock object
         """
@@ -393,8 +405,9 @@ class OrgDateClock(OrgDate):
 
 
 class OrgDateRpeatedTask(OrgDate):
+    _active_default = False
 
-    def __init__(self, start, end, before, after, active=False):
+    def __init__(self, start, end, before, after, active=None):
         """
         Create OrgDateRpeatedTask object
         """

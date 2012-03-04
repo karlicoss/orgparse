@@ -1,19 +1,22 @@
-from datetime import date, datetime
+from orgparse.orgdate import (
+    OrgDate, OrgDateScheduled, OrgDateDeadline, OrgDateClosed,
+    OrgDateClock,
+)
 
 node1 = dict(
     heading="A node with a lot of attributes",
-    scheduled=date(2010, 8, 6),
-    deadline=date(2010, 8, 10),
-    closed=datetime(2010, 8, 8, 18, 0),
+    scheduled=OrgDateScheduled((2010, 8, 6)),
+    deadline=OrgDateDeadline((2010, 8, 10)),
+    closed=OrgDateClosed((2010, 8, 8, 18, 0)),
     clock=[
-        (datetime(2010, 8, 8, 17, 40), datetime(2010, 8, 8, 17, 50), 10),
-        (datetime(2010, 8, 8, 17, 00), datetime(2010, 8, 8, 17, 30), 30),
+        OrgDateClock((2010, 8, 8, 17, 40), (2010, 8, 8, 17, 50), 10),
+        OrgDateClock((2010, 8, 8, 17, 00), (2010, 8, 8, 17, 30), 30),
         ],
     properties=dict(Effort=70),
-    datelist=[date(2010, 8, 16)],
+    datelist=[OrgDate((2010, 8, 16))],
     rangelist=[
-        (date(2010, 8, 7), date(2010, 8, 8)),
-        (datetime(2010, 8, 9, 0, 30), datetime(2010, 8, 10, 13, 20)),
+        OrgDate((2010, 8, 7), (2010, 8, 8)),
+        OrgDate((2010, 8, 9, 0, 30), (2010, 8, 10, 13, 20)),
         ],
     body="""\
   - <2010-08-16 Mon> DateList
@@ -23,9 +26,9 @@ node1 = dict(
 
 node2 = dict(
     heading="A node without any attributed",
-    scheduled=None,
-    deadline=None,
-    closed=None,
+    scheduled=OrgDate(None),
+    deadline=OrgDate(None),
+    closed=OrgDate(None),
     clock=[],
     properties={},
     datelist=[],

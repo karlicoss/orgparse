@@ -72,14 +72,13 @@ Accessing to node attributes
 >>> node.get_heading()
 'Heading'
 >>> node.get_scheduled()
-datetime.date(2012, 2, 26)
+OrgDateScheduled((2012, 2, 26))
 >>> node.get_closed()
-datetime.datetime(2012, 2, 26, 21, 15)
->>> node.get_clock()                       #doctest: +NORMALIZE_WHITESPACE
-[(datetime.datetime(2012, 2, 26, 21, 10),
-  datetime.datetime(2012, 2, 26, 21, 15),
-  5)]
->>> node.get_deadline()   # returns None because not specified
+OrgDateClosed((2012, 2, 26, 21, 15, 0))
+>>> node.get_clock()
+[OrgDateClock((2012, 2, 26, 21, 10, 0), (2012, 2, 26, 21, 15, 0))]
+>>> bool(node.get_deadline())   # it is not specified
+False
 >>> node.get_tags()
 set(['TAG'])
 >>> node.get_property('Effort')
@@ -492,25 +491,23 @@ class OrgNode(OrgBaseNode):
         return self._properties
 
     def get_scheduled(self):
-        return self._scheduled.get_start()
+        return self._scheduled
 
     def get_deadline(self):
-        return self._deadline.get_start()
+        return self._deadline
 
     def get_closed(self):
-        return self._closed.get_start()
+        return self._closed
 
     def get_clock(self):
-        return [(ts.get_start(), ts.get_end(),
-                 int(ts.get_duration().total_seconds() / 60.0))
-                for ts in self._clocklist]
+        return self._clocklist
 
     def get_datelist(self):
-        return [ts.get_start()
+        return [ts
                 for ts in self._timestamps if not ts.has_end()]
 
     def get_rangelist(self):
-        return [(ts.get_start(), ts.get_end())
+        return [ts
                 for ts in self._timestamps if ts.has_end()]
 
     def has_date(self):
