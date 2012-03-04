@@ -97,7 +97,7 @@ set(['TAG'])
 import re
 import datetime
 
-from orgparse.orgdate import OrgDate, OrgDateClock
+from orgparse.orgdate import OrgDate, OrgDateClock, parse_sdc
 
 
 __all__ = ["load", "loads", "loadi"]
@@ -198,84 +198,6 @@ def parse_property(line):
     return (prop_key, prop_val)
 
 RE_PROP = re.compile('^\s*:(.*?):\s*(.*?)\s*$')
-
-
-def parse_scheduled(line):
-    """
-    Get SCHEDULED from given string.
-
-    Return datetime object if found else None.
-    """
-    sdre = RE_SCHEDULED.search(line)
-    if sdre:
-        if sdre.group(4) == None:
-            sched_date = datetime.date(int(sdre.group(1)),
-                                       int(sdre.group(2)),
-                                       int(sdre.group(3)))
-        else:
-            sched_date = datetime.datetime(int(sdre.group(1)),
-                                           int(sdre.group(2)),
-                                           int(sdre.group(3)),
-                                           int(sdre.group(5)),
-                                           int(sdre.group(6)))
-    else:
-        sched_date = None
-    return sched_date
-
-RE_SCHEDULED = re.compile(
-    'SCHEDULED:\s+<(\d+)\-(\d+)\-(\d+)[^>\d]*((\d+)\:(\d+))?>')
-
-
-def parse_deadline(line):
-    """
-    Get DEADLINE from given string.
-
-    Return datetime object if found else None.
-    """
-    ddre = RE_DEADLINE.search(line)
-    if ddre:
-        if ddre.group(4) == None:
-            deadline_date = datetime.date(int(ddre.group(1)),
-                                          int(ddre.group(2)),
-                                          int(ddre.group(3)))
-        else:
-            deadline_date = datetime.datetime(int(ddre.group(1)),
-                                              int(ddre.group(2)),
-                                              int(ddre.group(3)),
-                                              int(ddre.group(5)),
-                                              int(ddre.group(6)))
-    else:
-        deadline_date = None
-    return deadline_date
-
-RE_DEADLINE = re.compile(
-    'DEADLINE:\s+<(\d+)\-(\d+)\-(\d+)[^>\d]*((\d+)\:(\d+))?>')
-
-
-def parse_closed(line):
-    """
-    Get CLOSED from given string.
-
-    Return datetime object if found else None.
-    """
-    match = RE_CLOSED.search(line)
-    if match:
-        if match.group(4) == None:
-            closed_date = datetime.date(int(match.group(1)),
-                                        int(match.group(2)),
-                                        int(match.group(3)))
-        else:
-            closed_date = datetime.datetime(int(match.group(1)),
-                                            int(match.group(2)),
-                                            int(match.group(3)),
-                                            int(match.group(5)),
-                                            int(match.group(6)))
-    else:
-        closed_date = None
-    return closed_date
-
-RE_CLOSED = re.compile(
-    r'CLOSED:\s+\[(\d+)\-(\d+)\-(\d+)[^\]\d]*((\d+)\:(\d+))?\]')
 
 
 def parse_clock(line):
@@ -523,9 +445,7 @@ class OrgNode(OrgBaseNode):
 
         """
         line = next(ilines)
-        self._scheduled = OrgDate(parse_scheduled(line))
-        self._deadline = OrgDate(parse_deadline(line))
-        self._closed = OrgDate(parse_closed(line))
+        (self._scheduled, self._deadline, self._closed) = parse_sdc(line)
 
         if not (self._scheduled or
                 self._deadline or

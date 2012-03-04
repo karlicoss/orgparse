@@ -2,13 +2,23 @@ import datetime
 import re
 
 
-def gene_timestamp_regex(brtype, prefix=None):
+def gene_timestamp_regex(brtype, prefix=None, nocookie=False):
     """
     Generate timetamp regex for active/inactive/nobrace brace type
 
     brtype : {'active', 'inactive', 'nobrace'}
         It specifies a type of brace.
         active: <>-type; inactive: []-type; nobrace: no braces.
+
+    prefix : str or None
+        It will be appended to the head of keys of the "groupdict".
+        For example, if prefix is 'active_' the groupdict has
+        keys such as 'active_year', 'active_month', and so on.
+        If it is None it will be set to `brtype` + '_'.
+
+    nocookie : bool
+        Cookie part (e.g., '-3d' or '+6m') is not included if
+        it is `True`.  Default value is `False`.
 
     >>> timestamp_re = re.compile(
     ...     gene_timestamp_regex('active', prefix=''),
@@ -74,7 +84,7 @@ def gene_timestamp_regex(brtype, prefix=None):
     regex = ''.join([
         bo,
         regex_date_time,
-        regex_cookie if brtype != 'nobrace' else '',
+        regex_cookie if nocookie or brtype != 'nobrace' else '',
         '({ignore}*?)',
         bc])
     return regex.format(prefix=prefix, ignore=ignore)
@@ -238,7 +248,7 @@ class OrgDate(object):
         return date
 
     @staticmethod
-    def _datetuple_from_groupdict(dct, prefix):
+    def _datetuple_from_groupdict(dct, prefix=''):
         # FIXME: cleanup
         return map(int, filter(
             None, (dct["".join((prefix, key))] for key in
@@ -289,6 +299,52 @@ class OrgDate(object):
             return [odate] + cls.list_from_str(rest)
         else:
             return []
+
+
+def compile_sdc_re(sdctype):
+    brtype = 'inactive' if sdctype == 'CLOSED' else 'active'
+    return re.compile(
+        r'{0}:\s+{1}'.format(
+            sdctype,
+            gene_timestamp_regex(brtype, prefix='', nocookie=True)),
+        re.VERBOSE)
+
+
+class OrgDateSDCBase(OrgDate):
+
+    _re = None  # override this!
+    _active = None  # override this!
+
+    @classmethod
+    def from_str(cls, string):
+        match = cls._re.search(string)
+        if match:
+            mdict = match.groupdict()
+            return cls(cls._datetuple_from_groupdict(mdict),
+                       active=cls._active)
+        else:
+            return cls(None)
+
+
+class OrgDateScheduled(OrgDateSDCBase):
+    _re = compile_sdc_re('SCHEDULED')
+    _active = True
+
+
+class OrgDateDeadline(OrgDateSDCBase):
+    _re = compile_sdc_re('DEADLINE')
+    _active = True
+
+
+class OrgDateClosed(OrgDateSDCBase):
+    _re = compile_sdc_re('CLOSED')
+    _active = False
+
+
+def parse_sdc(string):
+    return (OrgDateScheduled.from_str(string),
+            OrgDateDeadline.from_str(string),
+            OrgDateClosed.from_str(string))
 
 
 class OrgDateClock(OrgDate):
