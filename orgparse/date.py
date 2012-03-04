@@ -6,19 +6,22 @@ def gene_timestamp_regex(brtype, prefix=None, nocookie=False):
     """
     Generate timetamp regex for active/inactive/nobrace brace type
 
-    brtype : {'active', 'inactive', 'nobrace'}
+    :type brtype: {'active', 'inactive', 'nobrace'}
+    :arg  brtype:
         It specifies a type of brace.
         active: <>-type; inactive: []-type; nobrace: no braces.
 
-    prefix : str or None
+    :type prefix: str or None
+    :arg  prefix:
         It will be appended to the head of keys of the "groupdict".
-        For example, if prefix is 'active_' the groupdict has
-        keys such as 'active_year', 'active_month', and so on.
-        If it is None it will be set to `brtype` + '_'.
+        For example, if prefix is ``'active_'`` the groupdict has
+        keys such as ``'active_year'``, ``'active_month'``, and so on.
+        If it is None it will be set to ``brtype`` + ``'_'``.
 
-    nocookie : bool
-        Cookie part (e.g., '-3d' or '+6m') is not included if
-        it is `True`.  Default value is `False`.
+    :type nocookie: bool
+    :arg  nocookie:
+        Cookie part (e.g., ``'-3d'`` or ``'+6m'``) is not included if
+        it is ``True``.  Default value is ``False``.
 
     >>> timestamp_re = re.compile(
     ...     gene_timestamp_regex('active', prefix=''),
