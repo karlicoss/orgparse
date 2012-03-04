@@ -1,7 +1,7 @@
 # Import README.rst using cog
 # [[[cog
 # from cog import out
-# out('"""\n{0}\n"""'.format(file('README.rst').read()))
+# out('"""\n{0}\n"""'.format(file('../README.rst').read()))
 # ]]]
 """
 ===========================================================
