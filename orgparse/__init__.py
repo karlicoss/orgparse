@@ -95,7 +95,6 @@ set(['TAG'])
 
 
 import re
-import datetime
 
 from orgparse.orgdate import OrgDate, OrgDateClock, parse_sdc
 
@@ -198,34 +197,6 @@ def parse_property(line):
     return (prop_key, prop_val)
 
 RE_PROP = re.compile('^\s*:(.*?):\s*(.*?)\s*$')
-
-
-def parse_clock(line):
-    """
-    Get CLOCK from given string.
-
-    Return three tuple (start, stop, length) which is datetime object
-    of start time, datetime object of stop time and length in minute.
-
-    """
-    match = RE_CLOCK.search(line)
-    if match is None:
-        return None
-    groups = [int(d) for d in match.groups()]
-    ymdhm1 = groups[:5]
-    ymdhm2 = groups[5:10]
-    hm3 = groups[10:]
-    return (
-        datetime.datetime(*ymdhm1),
-        datetime.datetime(*ymdhm2),
-        hm3[0] * 60 + hm3[1],
-    )
-
-RE_CLOCK = re.compile(
-    r'CLOCK:\s+'
-    r'\[(\d+)\-(\d+)\-(\d+)[^\]\d]*(\d+)\:(\d+)\]--'
-    r'\[(\d+)\-(\d+)\-(\d+)[^\]\d]*(\d+)\:(\d+)\]\s+=>\s+(\d+)\:(\d+)'
-    )
 
 
 def parse_comment(line):
@@ -458,9 +429,9 @@ class OrgNode(OrgBaseNode):
     def _iparse_clock(self, ilines):
         self._clocklist = clocklist = []
         for line in ilines:
-            cl = parse_clock(line)
+            cl = OrgDateClock.from_str(line)
             if cl:
-                clocklist.append(OrgDateClock(*cl))
+                clocklist.append(cl)
             else:
                 yield line
 

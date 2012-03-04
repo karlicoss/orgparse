@@ -363,6 +363,34 @@ class OrgDateClock(OrgDate):
         return (self._duration is None or
                 self._duration == self.get_duration())
 
+    @classmethod
+    def from_str(cls, line):
+        """
+        Get CLOCK from given string.
+
+        Return three tuple (start, stop, length) which is datetime object
+        of start time, datetime object of stop time and length in minute.
+
+        """
+        match = cls._re.search(line)
+        if not match:
+            return cls(None, None)
+        groups = [int(d) for d in match.groups()]
+        ymdhm1 = groups[:5]
+        ymdhm2 = groups[5:10]
+        hm3 = groups[10:]
+        return cls(
+            datetime.datetime(*ymdhm1),
+            datetime.datetime(*ymdhm2),
+            hm3[0] * 60 + hm3[1],
+        )
+
+    _re = re.compile(
+        r'CLOCK:\s+'
+        r'\[(\d+)\-(\d+)\-(\d+)[^\]\d]*(\d+)\:(\d+)\]--'
+        r'\[(\d+)\-(\d+)\-(\d+)[^\]\d]*(\d+)\:(\d+)\]\s+=>\s+(\d+)\:(\d+)'
+        )
+
 
 class OrgDateRpeatedTask(OrgDate):
 
