@@ -200,62 +200,6 @@ def parse_property(line):
 RE_PROP = re.compile('^\s*:(.*?):\s*(.*?)\s*$')
 
 
-def get_datetime(year, month, day, hour=None, minute=None, second=None):
-    if "" in (year, month, day):
-        raise ValueError("First three arguments must not contain empty str")
-    if None in (year, month, day):
-        raise ValueError("First three arguments must not contain None")
-
-    ymdhms = []
-    for a in [year, month, day, hour, minute, second]:
-        if a != None and a != "":
-            ymdhms.append(int(a))
-
-    if len(ymdhms) > 3:
-        return datetime.datetime(*ymdhms)
-    else:
-        return datetime.date(*ymdhms)
-
-
-def re_compile_date():
-    """
-    >>> re_date = re_compile_date()
-    >>> re_date.match('')
-    >>> m = re_date.match('<2010-06-21 Mon>')
-    >>> m.group()
-    '<2010-06-21 Mon>'
-    >>> m.group(1)
-    >>> m.group(16)
-    '<2010-06-21 Mon>'
-    >>> m = re_date.match('<2010-06-21 Mon 12:00>--<2010-06-21 Mon 12:00>')
-    >>> m.group()
-    '<2010-06-21 Mon 12:00>--<2010-06-21 Mon 12:00>'
-    >>> m.group(1)
-    '<2010-06-21 Mon 12:00>--<2010-06-21 Mon 12:00>'
-    >>> m.group(16)
-    """
-    date_pattern = "<(\d+)\-(\d+)\-(\d+)([^>\d]*)((\d+)\:(\d+))?>"
-    re_date = re.compile('(%(dtp)s--%(dtp)s)|(%(dtp)s)'
-                         % dict(dtp=date_pattern))
-    return re_date
-
-
-def parse_daterangelist(string):
-    datelist = []
-    rangelist = []
-    for dm in RE_DATE.findall(string):
-        if dm[0]:
-            d1 = get_datetime(dm[1], dm[2], dm[3], dm[6], dm[7])
-            d2 = get_datetime(dm[8], dm[9], dm[10], dm[13], dm[14])
-            rangelist.append((d1, d2))
-        else:
-            dt = get_datetime(dm[16], dm[17], dm[18], dm[21], dm[22])
-            datelist.append(dt)
-    return (datelist, rangelist)
-
-RE_DATE = re_compile_date()
-
-
 def parse_scheduled(line):
     """
     Get SCHEDULED from given string.
