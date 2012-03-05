@@ -102,6 +102,9 @@ def load(path):
     """
     Load org-mode document from a file.
 
+    :type path: str or file-like
+    :arg  path: Path to org file or file-like object of a org document.
+
     :rtype: :class:`orgparse.node.OrgRootNode`
 
     """
