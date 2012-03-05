@@ -181,6 +181,8 @@ class OrgEnv(object):
         """
         return self._source_path
 
+    # parser
+
     def from_chunks(self, chunks):
         yield OrgRootNode.from_chunk(self, next(chunks))
         for chunk in chunks:
@@ -593,3 +595,35 @@ class OrgNode(OrgBaseNode):
 
         """
         raise NotImplementedError  # FIXME: implement!
+
+
+def parse_lines(lines, source_path):
+    env = OrgEnv(source_path=source_path)
+    # parse into node of list (environment will be parsed)
+    nodelist = list(env.from_chunks(lines_to_chunks(lines)))
+    # parse headings (level, TODO, TAGs, and heading)
+    for node in nodelist[1:]:   # nodes except root node
+        node._parse_pre()
+    # set the node tree structure
+    for (n1, n2) in zip(nodelist[:-1], nodelist[1:]):
+        level_n1 = n1.get_level()
+        level_n2 = n2.get_level()
+        if level_n1 == level_n2:
+            n2.set_parent(n1.get_parent())
+            n2.set_previous(n1)
+        elif level_n1 < level_n2:
+            n2.set_parent(n1)
+        else:
+            np = n1.get_parent(max_level=level_n2)
+            if np.get_level() == level_n2:
+                # * np    level=1
+                # ** n1   level=2
+                # * n2    level=1
+                n2.set_parent(np.get_parent())
+                n2.set_previous(np)
+            else:  # np.get_level() < level_n2
+                # * np    level=1
+                # *** n1  level=3
+                # ** n2   level=2
+                n2.set_parent(np)
+    return nodelist[0]  # root
