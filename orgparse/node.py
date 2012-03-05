@@ -153,6 +153,13 @@ class OrgEnv(object):
         self._dones.extend(dones)
 
     def get_todo_keys(self, todo=True, done=True):
+        """
+        Get TODO keywords defined for this document (file).
+
+        :arg bool todo: Include TODO-type keywords if true.
+        :arg bool done: Include DONE-type keywords if true.
+
+        """
         if todo and done:
             return self._todos + self._dones
         elif todo:
