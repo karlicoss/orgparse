@@ -539,13 +539,33 @@ class OrgNode(OrgBaseNode):
         """
         return self._clocklist
 
+    def get_timestamps(self, active=True, inactive=True,
+                       end=True, noend=True):
+        """
+        Return a list of timestamps in the body text.
+
+        :type   active: bool
+        :arg    active: Include active type timestamps.
+        :type inactive: bool
+        :arg  inactive: Include inactive type timestamps.
+        :type      end: bool
+        :arg       end: Include timestamps which has end date.
+        :type    noend: bool
+        :arg     noend: Include timestamps which has no end date.
+
+        """
+        return [
+            ts for ts in self._timestamps if
+            (((active and ts.is_active()) or
+              (inactive and not ts.is_active())) and
+             ((end and ts.has_end()) or
+              (noend and not ts.has_end())))]
+
     def get_datelist(self):
-        return [ts
-                for ts in self._timestamps if not ts.has_end()]
+        return self.get_timestamps(self, end=False)
 
     def get_rangelist(self):
-        return [ts
-                for ts in self._timestamps if ts.has_end()]
+        return self.get_timestamps(self, noend=False)
 
     def has_date(self):
         """
