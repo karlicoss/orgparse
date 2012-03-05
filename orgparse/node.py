@@ -57,14 +57,14 @@ def parse_heading_tags(heading):
 RE_HEADING_TAGS = re.compile(r'(.*?)\s*:([a-zA-Z0-9_:]+):\s*$')
 
 
-def parse_heaindg_todos(heading, todo_candidates):
+def parse_heading_todos(heading, todo_candidates):
     """
     Get TODO keyword and heading without TODO keyword.
 
     >>> todos = ['TODO', 'DONE']
-    >>> parse_heaindg_todos('Normal heading', todos)
+    >>> parse_heading_todos('Normal heading', todos)
     ('Normal heading', None)
-    >>> parse_heaindg_todos('TODO Heading', todos)
+    >>> parse_heading_todos('TODO Heading', todos)
     ('Heading', 'TODO')
 
     """
@@ -402,7 +402,7 @@ class OrgNode(OrgBaseNode):
         heading = self._lines[0]
         (heading, self._level) = parse_heading_level(heading)
         (heading, self._tags) = parse_heading_tags(heading)
-        (heading, self._todo) = parse_heaindg_todos(
+        (heading, self._todo) = parse_heading_todos(
             heading, self.env.get_todo_keys())
         self._heading = heading
 
