@@ -1,5 +1,5 @@
 #+STARTUP: hidestars
-* DONE A node with a lot of attributes
+* DONE [#A] A node with a lot of attributes
   SCHEDULED: <2010-08-06 Fri> DEADLINE: <2010-08-10 Tue> CLOSED: [2010-08-08 Sun 18:00]
   CLOCK: [2010-08-08 Sun 17:40]--[2010-08-08 Sun 17:50] =>  0:10
   CLOCK: [2010-08-08 Sun 17:00]--[2010-08-08 Sun 17:30] =>  0:30
@@ -10,7 +10,7 @@
   - <2010-08-07 Sat>--<2010-08-08 Sun>
   - <2010-08-09 Mon 00:30>--<2010-08-10 Tue 13:20> RangeList
 * A node without any attributed
-* DONE A node with a lot of attributes
+* DONE [#A] A node with a lot of attributes
   SCHEDULED: <2010-08-06 Fri> DEADLINE: <2010-08-10 Tue> CLOSED: [2010-08-08 Sun 18:00]
   CLOCK: [2010-08-08 Sun 17:40]--[2010-08-08 Sun 17:50] =>  0:10
   CLOCK: [2010-08-08 Sun 17:00]--[2010-08-08 Sun 17:30] =>  0:30

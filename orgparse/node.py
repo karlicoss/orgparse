@@ -75,6 +75,29 @@ def parse_heading_todos(heading, todo_candidates):
     return (heading, None)
 
 
+def parse_heading_priority(heading):
+    """
+    Get priority and heading without priority field..
+
+    >>> parse_heading_priority('HEADING')
+    ('HEADING', None)
+    >>> parse_heading_priority('[#A] HEADING')
+    ('HEADING', 'A')
+    >>> parse_heading_priority('[#0] HEADING')
+    ('HEADING', '0')
+    >>> parse_heading_priority('[#A]')
+    ('', 'A')
+
+    """
+    match = RE_HEADING_PRIORITY.search(heading)
+    if match:
+        return (match.group(2), match.group(1))
+    else:
+        return (heading, None)
+
+RE_HEADING_PRIORITY = re.compile(r'^\s*\[#([A-Z0-9])\] ?(.*)$')
+
+
 def parse_property(line):
     """
     Get property from given string.
@@ -376,6 +399,7 @@ class OrgNode(OrgBaseNode):
         self._level = None
         self._tags = None
         self._todo = None
+        self._priority = None
         self._properties = {}
         self._scheduled = OrgDate(None)
         self._deadline = OrgDate(None)
@@ -404,6 +428,7 @@ class OrgNode(OrgBaseNode):
         (heading, self._tags) = parse_heading_tags(heading)
         (heading, self._todo) = parse_heading_todos(
             heading, self.env.get_todo_keys())
+        (heading, self._priority) = parse_heading_priority(heading)
         self._heading = heading
 
     def _iparse_sdc(self, ilines):
@@ -472,7 +497,8 @@ class OrgNode(OrgBaseNode):
         return self._level
 
     def get_priority(self):
-        raise NotImplementedError  # FIXME: implement!
+        """Return a string to indicate the priority or None if undefined."""
+        return self._priority
 
     def get_tags(self, inher=False):
         tags = set(self._tags)

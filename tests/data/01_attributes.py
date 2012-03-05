@@ -5,6 +5,7 @@ from orgparse.date import (
 
 node1 = dict(
     heading="A node with a lot of attributes",
+    priority='A',
     scheduled=OrgDateScheduled((2010, 8, 6)),
     deadline=OrgDateDeadline((2010, 8, 10)),
     closed=OrgDateClosed((2010, 8, 8, 18, 0)),
@@ -26,6 +27,7 @@ node1 = dict(
 
 node2 = dict(
     heading="A node without any attributed",
+    priority=None,
     scheduled=OrgDate(None),
     deadline=OrgDate(None),
     closed=OrgDate(None),
