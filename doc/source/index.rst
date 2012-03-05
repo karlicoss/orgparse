@@ -7,13 +7,35 @@
    :members:
 
 
-Interfaces
-==========
+Tree structure interface
+========================
 
-.. toctree::
+.. py:module:: orgparse.node
 
-   node
-   date
+.. autoclass:: OrgBaseNode
+   :members:
+
+   .. automethod:: __init__
+
+.. autoclass:: OrgRootNode
+   :members:
+
+.. autoclass:: OrgNode
+   :members:
+
+.. autoclass:: OrgEnv
+   :members:
+
+
+Date interface
+==============
+
+.. py:module:: orgparse.date
+
+.. autoclass:: OrgDate
+   :members:
+
+   .. automethod:: __init__
 
 
 Further resources
