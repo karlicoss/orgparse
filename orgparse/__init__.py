@@ -107,29 +107,32 @@ def load(path):
     """
     if isinstance(path, basestring):
         orgfile = file(path)
+        source_path = path
     else:
         orgfile = path
-    return loadi(l.rstrip('\n') for l in orgfile.readlines())
+        source_path = path.name if hasattr(path, 'name') else '<file-like>'
+    return loadi((l.rstrip('\n') for l in orgfile.readlines()),
+                 source_path=source_path)
 
 
-def loads(string):
+def loads(string, source_path='<string>'):
     """
     Load org-mode document from a string.
 
     :rtype: :class:`orgparse.node.OrgRootNode`
 
     """
-    return loadi(string.splitlines())
+    return loadi(string.splitlines(), source_path=source_path)
 
 
-def loadi(lines):
+def loadi(lines, source_path='<lines>'):
     """
     Load org-mode document from an iterative object.
 
     :rtype: :class:`orgparse.node.OrgRootNode`
 
     """
-    env = OrgEnv()
+    env = OrgEnv(source_path=source_path)
     # parse into node of list (environment will be parsed)
     nodelist = list(env.from_chunks(lines_to_chunks(lines)))
     # parse headings (level, TODO, TAGs, and heading)

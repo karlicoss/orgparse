@@ -139,10 +139,12 @@ class OrgEnv(object):
     Information global to a file.
     """
 
-    def __init__(self, todos=['TODO'], dones=['DONE']):
+    def __init__(self, todos=['TODO'], dones=['DONE'],
+                 source_path='<undefined>'):
         self._todos = list(todos)
         self._dones = list(dones)
         self._todo_not_specified_in_comment = True
+        self._source_path = source_path
 
     def add_todo_keys(self, todos, dones):
         if self._todo_not_specified_in_comment:
@@ -166,6 +168,18 @@ class OrgEnv(object):
             return self._todos
         elif done:
             return self._dones
+
+    def get_source_path(self):
+        """
+        Return a path to the source file or similar information.
+
+        If the org objects are not loaded from a file, this value
+        will be a string of the form ``<SOME_TEXT>``.
+
+        :rtype: str
+
+        """
+        return self._source_path
 
     def from_chunks(self, chunks):
         yield OrgRootNode.from_chunk(self, next(chunks))

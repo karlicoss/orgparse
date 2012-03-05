@@ -55,6 +55,8 @@ def check_data(dataname):
                      'parsed = "{3}" != "{4}" = real.'
                      ).format(i, key, dataname, val, kwds[key]))
 
+    eq_(root.env.get_source_path(), oname)
+
 
 def test_data():
     """
