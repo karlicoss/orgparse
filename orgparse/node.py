@@ -485,12 +485,12 @@ class OrgNode(OrgBaseNode):
     # getter
 
     def get_body(self):
-        """Return a string of body text"""
+        """Return a string of body text."""
         if self._lines:
             return "\n".join(self._body_lines)
 
     def get_heading(self):
-        """Return a string of head text without tags and TODO keywords"""
+        """Return a string of head text without tags and TODO keywords."""
         return self._heading
 
     def get_level(self):
