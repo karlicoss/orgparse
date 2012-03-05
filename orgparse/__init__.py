@@ -99,7 +99,12 @@ __all__ = ["load", "loads", "loadi"]
 
 
 def load(path):
-    """Load org-mode document from a file."""
+    """
+    Load org-mode document from a file.
+
+    :rtype: :class:`orgparse.node.OrgRootNode`
+
+    """
     if isinstance(path, basestring):
         orgfile = file(path)
     else:
@@ -108,12 +113,22 @@ def load(path):
 
 
 def loads(string):
-    """Load org-mode document from a string"""
+    """
+    Load org-mode document from a string.
+
+    :rtype: :class:`orgparse.node.OrgRootNode`
+
+    """
     return loadi(string.splitlines())
 
 
 def loadi(lines):
-    """Load org-mode document from an iterative object"""
+    """
+    Load org-mode document from an iterative object.
+
+    :rtype: :class:`orgparse.node.OrgRootNode`
+
+    """
     env = OrgEnv()
     # parse into node of list (environment will be parsed)
     nodelist = list(env.from_chunks(lines_to_chunks(lines)))

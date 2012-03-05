@@ -135,6 +135,10 @@ def parse_seq_todo(line):
 
 class OrgEnv(object):
 
+    """
+    Information global to a file.
+    """
+
     def __init__(self, todos=['TODO'], dones=['DONE']):
         self._todos = list(todos)
         self._dones = list(dones)
@@ -164,7 +168,24 @@ class OrgEnv(object):
 
 class OrgBaseNode(object):
 
+    """
+    Base class for :class:`OrgRootNode` and :class:`OrgNode`
+
+    .. attribute:: env
+
+       An instance of :class:`OrgEnv`.
+       All nodes in a same file shares same instance.
+
+    """
+
     def __init__(self, env):
+        """
+        Create a :class:`OrgBaseNode` object.
+
+        :type env: :class:`OrgEnv`
+        :arg  env: This will be set to the :attr:`env` attribute.
+
+        """
         self.env = env
 
         # tree structure
@@ -177,6 +198,7 @@ class OrgBaseNode(object):
         self._lines = []
 
     def traverse(self, include_self=True):
+        """Generate an iterator to traverse all descendant nodes."""
         if include_self:
             yield self
         for child in self.get_children():
@@ -190,9 +212,11 @@ class OrgBaseNode(object):
         previous._next = self   # FIXME: find a better way to do this
 
     def get_previous(self):
+        """Return previous node if exists or None otherwise."""
         return self._previous
 
     def get_next(self):
+        """Return next node if exists or None otherwise."""
         return self._next
 
     def set_parent(self, parent):
@@ -203,6 +227,21 @@ class OrgBaseNode(object):
         self._children.append(child)
 
     def get_parent(self, max_level=None):
+        """
+        Return a parent node.
+
+        :arg int max_level:
+            In the normally structured org file, it is a level
+            of the ancestor node to return.  For example,
+            ``get_parent(max_level=0)`` returns a root node.
+
+            In general case, it specify a maximum level of the
+            desired ancestor node.  If there is no ancestor node
+            which level is equal to ``max_level``, this function
+            try to find an ancestor node which level is smaller
+            than ``max_level``.
+
+        """
         if max_level is None:
             max_level = self.get_level() - 1
         parent = self._parent
@@ -211,9 +250,11 @@ class OrgBaseNode(object):
         return parent
 
     def get_children(self):
+        """Return a list of child nodes."""
         return self._children
 
     def get_root(self):
+        """Return a root node."""
         root = self
         while True:
             parent = root.get_parent()
@@ -245,7 +286,29 @@ class OrgBaseNode(object):
 
     # misc
 
+    def get_level(self):
+        """
+        Return the level of this node
+
+        :rtype: int
+
+        """
+        raise NotImplemented
+
+    def get_tags(self, inher=False):
+        """
+        Return tags
+
+        :arg bool inher:
+            Mix with tags of all ancestor nodes if ``True``.
+
+        :rtype: set
+
+        """
+        return set()
+
     def is_root(self):
+        """Return ``True`` when it is a root node"""
         return False
 
     def __unicode__(self):
@@ -257,13 +320,17 @@ class OrgBaseNode(object):
 
 class OrgRootNode(OrgBaseNode):
 
+    """
+    Node to represent a file
+
+    See :class:`OrgBaseNode` for other available functions.
+
+    """
+
     # getter
 
     def get_level(self):
         return 0
-
-    def get_tags(self, inher=False):
-        return set()
 
     # misc
 
@@ -272,6 +339,13 @@ class OrgRootNode(OrgBaseNode):
 
 
 class OrgNode(OrgBaseNode):
+
+    """
+    Node to represent normal org node
+
+    See :class:`OrgBaseNode` for other available functions.
+
+    """
 
     def __init__(self, *args, **kwds):
         super(OrgNode, self).__init__(*args, **kwds)
@@ -363,10 +437,12 @@ class OrgNode(OrgBaseNode):
     # getter
 
     def get_body(self):
+        """Return a string of body text"""
         if self._lines:
             return "\n".join(self._body_lines)
 
     def get_heading(self):
+        """Return a string of head text without tags and TODO keywords"""
         return self._heading
 
     def get_level(self):
@@ -384,24 +460,62 @@ class OrgNode(OrgBaseNode):
         return tags
 
     def get_todo(self):
+        """Return a TODO keyword if exists or None otherwise."""
         return self._todo
 
     def get_property(self, key, val=None):
+        """
+        Return property named ``key`` if exists or ``val`` otherwise.
+
+        :arg str key:
+            Key of property.
+
+        :arg val:
+            Default value to return.
+
+        """
         return self._properties.get(key, val)
 
     def get_properties(self):
+        """
+        Return properties as a dictionary.
+        """
         return self._properties
 
     def get_scheduled(self):
+        """
+        Return scheduled timestamp
+
+        :rtype: a subclass of :class:`orgparse.date.OrgDate`
+
+        """
         return self._scheduled
 
     def get_deadline(self):
+        """
+        Return deadline timestamp.
+
+        :rtype: a subclass of :class:`orgparse.date.OrgDate`
+
+        """
         return self._deadline
 
     def get_closed(self):
+        """
+        Return timestamp of closed time.
+
+        :rtype: a subclass of :class:`orgparse.date.OrgDate`
+
+        """
         return self._closed
 
     def get_clock(self):
+        """
+        Return a list of clocked timestamps
+
+        :rtype: a list of a subclass of :class:`orgparse.date.OrgDate`
+
+        """
         return self._clocklist
 
     def get_datelist(self):
@@ -413,6 +527,9 @@ class OrgNode(OrgBaseNode):
                 for ts in self._timestamps if ts.has_end()]
 
     def has_date(self):
+        """
+        Return ``True`` if it has any kind of timestamp
+        """
         return (self.get_scheduled() or
                 self.get_deadline() or
                 self.get_datelist() or

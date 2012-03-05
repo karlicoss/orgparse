@@ -106,10 +106,27 @@ TIMESTAMP_RE = re.compile(
 class OrgDate(object):
 
     _active_default = True
+    """
+    The default active value.
+
+    When the `active` argument to ``__init__`` is ``None``,
+    This value will be used.
+
+    """
 
     def __init__(self, start, end=None, active=None):
         """
-        Create OrgDate object
+        Create :class:`OrgDate` object
+
+        :type start: datetime, date, tuple or None
+        :type   end: datetime, date, tuple or None
+        :arg  start: Starting date.
+        :arg    end: Ending date.
+
+        :type active: bool or None
+        :arg  active: Active/inactive flag.
+                      None means using its default value, which
+                      may be different for different subclasses.
 
         >>> OrgDate(datetime.date(2012, 2, 10))
         OrgDate((2012, 2, 10))
@@ -227,7 +244,7 @@ class OrgDate(object):
 
     def has_overlap(self, other):
         """
-        Test if it has overlap with other OrgDate instance
+        Test if it has overlap with other :class:`OrgDate` instance
 
         >>> od = OrgDate((2012, 2, 10), (2012, 2, 15))
         >>> od.has_overlap(OrgDate((2012, 2, 11)))
@@ -272,7 +289,7 @@ class OrgDate(object):
     @classmethod
     def list_from_str(cls, string):
         """
-        Parse string and return a list of OrgDate objects
+        Parse string and return a list of :class:`OrgDate` objects
 
         >>> OrgDate.list_from_str("... <2012-02-10 Fri> and <2012-02-12 Sun>")
         [OrgDate((2012, 2, 10)), OrgDate((2012, 2, 12))]
