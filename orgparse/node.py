@@ -469,6 +469,7 @@ class OrgNode(OrgBaseNode):
         self._timestamps = []
         self._clocklist = []
         self._body_lines = []
+        self._repeated_tasks = []
 
     # parser
 
@@ -481,6 +482,7 @@ class OrgNode(OrgBaseNode):
         ilines = self._iparse_sdc(ilines)
         ilines = self._iparse_clock(ilines)
         ilines = self._iparse_properties(ilines)
+        ilines = self._iparse_repeated_tasks(ilines)
         ilines = self._iparse_timestamps(ilines)
         self._body_lines = list(ilines)
 
@@ -549,6 +551,27 @@ class OrgNode(OrgBaseNode):
                 yield line
         for line in ilines:
             yield line
+
+    def _iparse_repeated_tasks(self, ilines):
+        self._repeated_tasks = repeated_tasks = []
+        for line in ilines:
+            match = self._repeated_tasks_re.search(line)
+            if match:
+                mdict = match.groupdict()
+                done_state = mdict['done']
+                todo_state = mdict['todo']
+                date = OrgDate.from_str(mdict['date'])
+                repeated_tasks.append((done_state, todo_state, date))
+            else:
+                yield line
+
+    _repeated_tasks_re = re.compile(
+        r'''
+        \s+ - \s+
+        State \s+ "(?P<done> [^"]+)" \s+
+        from  \s+ "(?P<todo> [^"]+)" \s+
+        \[ (?P<date> [^\]]+) \]''',
+        re.VERBOSE)
 
     # getter
 
@@ -688,7 +711,7 @@ class OrgNode(OrgBaseNode):
         See: http://orgmode.org/manual/Repeated-tasks.html
 
         """
-        raise NotImplementedError  # FIXME: implement!
+        return self._repeated_tasks
 
 
 def parse_lines(lines, source_path):
