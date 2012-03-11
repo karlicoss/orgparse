@@ -2,6 +2,7 @@ def nodedict(i, level, todo=None, tags=set([]), tags_inher=set([])):
     return dict(
         heading="Heading {0}".format(i),
         level=level,
+        todo=todo,
         tags=tags,
         tags_inher=tags_inher,
     )
