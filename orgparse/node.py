@@ -222,6 +222,42 @@ class OrgBaseNode(object):
        An instance of :class:`OrgEnv`.
        All nodes in a same file shares same instance.
 
+
+    Like build in `dict`, ``key in node``-checking, ``[key]``-access
+    and ``get(key)`` method can be used:
+
+    >>> node = OrgBaseNode(OrgEnv())
+    >>> 'tags' in node
+    True
+    >>> 'spam' in node
+    False
+    >>> node['tags']
+    set([])
+    >>> node['spam']
+    Traceback (most recent call last):
+        ...
+    KeyError: 'spam'
+    >>> node.get('spam')  # returns None
+    >>> node['source_path']  # attributes in node.env is accessible
+    '<undefined>'
+
+    If ``node.get_KEY`` or ``node.env.get_KEY`` method is defined
+    and can be called without argument, ``'KEY'`` can be used to
+    access data as described above.  For example, ``'property'``
+    is not valid key because :meth:`OrgNode.get_property`
+    cannot be called without an argument. Use ``'properties'``
+    instead.  Note that ``node.get('spam')`` does not raise
+    error even if ``node.get_spam`` method is not defined.  Using
+    the ``get`` method is good when having error is not preferred.
+
+    """
+
+    _getters_require_args = set()
+    """
+    A set of getter names ('get_*') which require more than one arguments.
+
+    See `_get_getter` how it is used.
+
     """
 
     def __init__(self, env):
@@ -362,6 +398,32 @@ class OrgBaseNode(object):
 
     def __str__(self):
         return unicode(self).encode('utf-8')
+
+    def __contains__(self, item):
+        return self._get_getter(item) is not None
+
+    def __getitem__(self, key):
+        getter = self._get_getter(key)
+        if getter is None:
+            raise KeyError("{0}".format(key))
+        else:
+            return getter()
+
+    def _get_getter(self, key):
+        funcname = 'get_{0}'.format(key)
+        if funcname in self._getters_require_args:
+            return None
+        elif hasattr(self, funcname):
+            return getattr(self, funcname)
+        elif hasattr(self.env, funcname):
+            return getattr(self.env, funcname)
+        return None
+
+    def get(self, key, value=None):
+        if key in self:
+            return self[key]
+        else:
+            return value
 
 
 class OrgRootNode(OrgBaseNode):
