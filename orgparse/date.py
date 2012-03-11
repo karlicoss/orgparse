@@ -52,7 +52,7 @@ def gene_timestamp_regex(brtype, prefix=None, nocookie=False):
         raise ValueError("brtype='{0!r}' is invalid".format(brtype))
 
     if brtype == 'nobrace':
-        ignore = r'\s'.format(bc=bc)
+        ignore = r'[\s\w]'
     else:
         ignore = '[^{bc}]'.format(bc=bc)
 
@@ -332,6 +332,27 @@ class OrgDate(object):
         else:
             return []
 
+    @classmethod
+    def from_str(cls, string):
+        """
+        Parse string and return an :class:`OrgDate` objects.
+
+        >>> OrgDate.from_str('2012-02-10 Fri')
+        OrgDate((2012, 2, 10))
+        >>> OrgDate.from_str('2012-02-10 Fri 12:05')
+        OrgDate((2012, 2, 10, 12, 5, 0))
+
+        """
+        match = cls._from_str_re.match(string)
+        if match:
+            mdict = match.groupdict()
+            return cls(cls._datetuple_from_groupdict(mdict),
+                       active=cls._active_default)
+        else:
+            return cls(None)
+
+    _from_str_re = TIMESTAMP_NOBRACE_RE
+
 
 def compile_sdc_re(sdctype):
     brtype = 'inactive' if sdctype == 'CLOSED' else 'active'
@@ -346,6 +367,7 @@ class OrgDateSDCBase(OrgDate):
 
     _re = None  # override this!
 
+    # FIXME: use OrgDate.from_str
     @classmethod
     def from_str(cls, string):
         match = cls._re.search(string)
