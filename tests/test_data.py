@@ -51,8 +51,8 @@ def check_data(dataname):
         for key in kwds:
             val = value_from_data_key(node, key)
             eq_(kwds[key], val,
-                msg=('check value of {0}-th node of key "{1}" from "{2}". '
-                     'parsed = "{3}" != "{4}" = real.'
+                msg=('check value of {0}-th node of key "{1}" from "{2}".'
+                     '\n\nParsed:\n{3}\n\nReal:\n{4}'
                      ).format(i, key, dataname, val, kwds[key]))
 
     eq_(root.env.get_source_path(), oname)
