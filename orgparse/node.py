@@ -493,6 +493,12 @@ class OrgNode(OrgBaseNode):
         (heading, self._priority) = parse_heading_priority(heading)
         self._heading = heading
 
+    # The following ``_iparse_*`` methods are simple generator based
+    # parser.  See ``_parse_pre`` for how it is used.  The principle
+    # is simple: these methods get an iterator and returns an iterator.
+    # If the item returned by the input iterator must be dedicated to
+    # the parser, do not yield the item or yield it as-is otherwise.
+
     def _iparse_sdc(self, ilines):
         """
         Parse SCHEDULED, DEADLINE and CLOSED time tamps.
