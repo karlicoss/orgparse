@@ -8,6 +8,7 @@ sys.path.insert(0, dirname(dirname(dirname(__file__))))
 extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.autodoc',
+    'sphinx.ext.intersphinx',
     'sphinx.ext.inheritance_diagram',
 ]
 templates_path = []  # ['_templates']
@@ -81,4 +82,10 @@ texinfo_documents = [
 
 
 # -- Options for extensions -----------------------------------------------
+
+# Example configuration for intersphinx: refer to the Python standard library.
+intersphinx_mapping = {'http://docs.python.org/': None}
+
+autodoc_member_order = 'bysource'
+
 inheritance_graph_attrs = dict(rankdir="TB")
