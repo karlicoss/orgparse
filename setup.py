@@ -5,7 +5,10 @@ import orgparse
 setup(
     name='orgparse',
     version=orgparse.__version__,
-    packages=['orgparse'],
+    packages=['orgparse', 'orgparse.tests', 'orgparse.tests.data'],
+    package_data={
+        'orgparse.tests.data': ['*.org'],
+    },
     author=orgparse.__author__,
     author_email='aka.tkf@gmail.com',
     url='https://github.com/tkf/orgparse',
