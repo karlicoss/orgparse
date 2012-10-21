@@ -299,9 +299,9 @@ class OrgDate(object):
     @staticmethod
     def _datetuple_from_groupdict(dct, prefix=''):
         # FIXME: cleanup
-        return map(int, filter(
+        return list(map(int, filter(
             None, (dct["".join((prefix, key))] for key in
-                   ['year', 'month', 'day', 'hour', 'min'])))
+                   ['year', 'month', 'day', 'hour', 'min']))))
 
     @classmethod
     def list_from_str(cls, string):
