@@ -95,6 +95,9 @@ set(['TAG'])
 
 from orgparse.node import parse_lines
 
+__version__ = '0.0.0'
+__author__ = 'Takafumi Arakaki'
+__license__ = 'BSD License'
 __all__ = ["load", "loads", "loadi"]
 
 
