@@ -232,8 +232,8 @@ class OrgBaseNode(object):
     True
     >>> 'spam' in node
     False
-    >>> node['tags']
-    set([])
+    >>> node['tags'] == set([])
+    True
     >>> node['spam']
     Traceback (most recent call last):
         ...
