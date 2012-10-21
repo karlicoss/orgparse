@@ -672,6 +672,8 @@ class OrgNode(OrgBaseNode):
         :type    noend: bool
         :arg     noend: Include timestamps which has no end date.
 
+        :rtype: list of :class:`orgparse.date.OrgDate` subclasses
+
         """
         return [
             ts for ts in self._timestamps if
@@ -681,10 +683,22 @@ class OrgNode(OrgBaseNode):
               (noend and not ts.has_end())))]
 
     def get_datelist(self):
-        return self.get_timestamps(self, end=False)
+        """
+        Alias of ``.get_timestamps(end=False)``.
+
+        :rtype: list of :class:`orgparse.date.OrgDate` subclasses
+
+        """
+        return self.get_timestamps(end=False)
 
     def get_rangelist(self):
-        return self.get_timestamps(self, noend=False)
+        """
+        Alias of ``.get_timestamps(noend=False)``.
+
+        :rtype: list of :class:`orgparse.date.OrgDate` subclasses
+
+        """
+        return self.get_timestamps(noend=False)
 
     def has_date(self):
         """
