@@ -420,6 +420,16 @@ def parse_sdc(string):
 
 
 class OrgDateClock(OrgDate):
+
+    """
+    Date object to represent CLOCK line.
+
+    >>> OrgDateClock.from_str(
+    ...   'CLOCK: [2010-08-08 Sun 17:00]--[2010-08-08 Sun 17:30] =>  0:30')
+    OrgDateClock((2010, 8, 8, 17, 0, 0), (2010, 8, 8, 17, 30, 0))
+
+    """
+
     _active_default = False
 
     def __init__(self, start, end, duration=None, active=None):
@@ -430,11 +440,36 @@ class OrgDateClock(OrgDate):
         self._duration = duration
 
     def get_duration(self):
+        """
+        Get duration of CLOCK.
+
+        >>> duration = OrgDateClock.from_str(
+        ...   'CLOCK: [2010-08-08 Sun 17:00]--[2010-08-08 Sun 17:30] => 0:30'
+        ... ).get_duration()
+        >>> duration
+        datetime.timedelta(0, 1800)
+        >>> duration.total_seconds() / 60
+        30.0
+
+        """
         return self.get_end() - self.get_start()
 
     def is_duration_consistent(self):
+        """
+        Check duration value of CLOCK line.
+
+        >>> OrgDateClock.from_str(
+        ...   'CLOCK: [2010-08-08 Sun 17:00]--[2010-08-08 Sun 17:30] => 0:30'
+        ... ).is_duration_consistent()
+        True
+        >>> OrgDateClock.from_str(
+        ...   'CLOCK: [2010-08-08 Sun 17:00]--[2010-08-08 Sun 17:30] => 0:15'
+        ... ).is_duration_consistent()
+        False
+
+        """
         return (self._duration is None or
-                self._duration == self.get_duration())
+                self._duration == self.get_duration().total_seconds() / 60)
 
     @classmethod
     def from_str(cls, line):
