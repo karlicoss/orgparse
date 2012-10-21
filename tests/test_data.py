@@ -1,5 +1,6 @@
 import os
 from glob import glob
+import pickle
 from nose.tools import eq_
 
 from orgparse import load
@@ -70,3 +71,14 @@ def test_data():
     """
     for dataname in get_datanames():
         yield (check_data, dataname)
+
+
+def check_picklable(dataname):
+    oname = data_path(dataname, "org")
+    root = load(oname)
+    pickle.dumps(root)
+
+
+def test_picklable():
+    for dataname in get_datanames():
+        yield (check_picklable, dataname)
