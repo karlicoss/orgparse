@@ -205,6 +205,8 @@ class OrgDate(object):
     def __nonzero__(self):
         return bool(self._start)
 
+    __bool__ = __nonzero__  # PY3
+
     def __eq__(self, other):
         if (isinstance(other, OrgDate) and
             self._start is None and
