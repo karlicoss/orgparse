@@ -30,22 +30,22 @@ Traverse org tree
 ... *** Heading 3
 ... ''')
 >>> for node in root.traverse(include_self=False):
-...     print node
+...     print(node)
 * Heading 1
 ** Heading 2
 *** Heading 3
 >>> h1 = root.get_children()[0]
 >>> h2 = h1.get_children()[0]
 >>> h3 = h2.get_children()[0]
->>> print h1
+>>> print(h1)
 * Heading 1
->>> print h2
+>>> print(h2)
 ** Heading 2
->>> print h3
+>>> print(h3)
 *** Heading 3
->>> print h2.get_parent()
+>>> print(h2.get_parent())
 * Heading 1
->>> print h3.get_parent(max_level=1)
+>>> print(h3.get_parent(max_level=1))
 * Heading 1
 
 
@@ -73,8 +73,8 @@ OrgDateClosed((2012, 2, 26, 21, 15, 0))
 [OrgDateClock((2012, 2, 26, 21, 10, 0), (2012, 2, 26, 21, 15, 0))]
 >>> bool(node.get_deadline())   # it is not specified
 False
->>> node.get_tags()
-set(['TAG'])
+>>> node.get_tags() == set(['TAG'])
+True
 >>> node.get_property('Effort')
 60
 >>> node.get_property('UndefinedProperty')  # returns None

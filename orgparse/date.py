@@ -40,6 +40,23 @@ def gene_timestamp_regex(brtype, prefix=None, nocookie=False):
     ...     'warnpre': '-', 'warnnum': '3', 'warndwmy': 'd'}
     True
 
+    When ``brtype = 'nobrace'``, cookie part cannot be retrieved.
+
+    >>> timestamp_re = re.compile(
+    ...     gene_timestamp_regex('nobrace', prefix=''),
+    ...     re.VERBOSE)
+    >>> timestamp_re.match('no match')  # returns None
+    >>> m = timestamp_re.match('2010-06-21 Mon')
+    >>> m.group()
+    '2010-06-21'
+    >>> '{year}-{month}-{day}'.format(**m.groupdict())
+    '2010-06-21'
+    >>> m = timestamp_re.match('2005-10-01 Sat 12:30 +7m -3d')
+    >>> m.groupdict() == {
+    ...     'year': '2005', 'month': '10', 'day': '01',
+    ...     'hour': '12', 'min': '30'}
+    True
+
     """
 
     if brtype == 'active':
@@ -188,6 +205,8 @@ class OrgDate(object):
     def __nonzero__(self):
         return bool(self._start)
 
+    __bool__ = __nonzero__  # PY3
+
     def __eq__(self, other):
         if (isinstance(other, OrgDate) and
             self._start is None and
@@ -282,9 +301,9 @@ class OrgDate(object):
     @staticmethod
     def _datetuple_from_groupdict(dct, prefix=''):
         # FIXME: cleanup
-        return map(int, filter(
+        return list(map(int, filter(
             None, (dct["".join((prefix, key))] for key in
-                   ['year', 'month', 'day', 'hour', 'min'])))
+                   ['year', 'month', 'day', 'hour', 'min']))))
 
     @classmethod
     def list_from_str(cls, string):
