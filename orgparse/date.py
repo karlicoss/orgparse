@@ -2,6 +2,17 @@ import datetime
 import re
 
 
+def total_seconds(td):
+    """Equivalent to `datetime.timedelta.total_seconds`."""
+    return float(td.microseconds +
+                 (td.seconds + td.days * 24 * 3600) * 10 ** 6) / 10 ** 6
+
+
+def total_minutes(td):
+    """Alias for ``total_seconds(td) / 60``."""
+    return total_seconds(td) / 60
+
+
 def gene_timestamp_regex(brtype, prefix=None, nocookie=False):
     """
     Generate timetamp regex for active/inactive/nobrace brace type
@@ -399,16 +410,19 @@ class OrgDateSDCBase(OrgDate):
 
 
 class OrgDateScheduled(OrgDateSDCBase):
+    """Date object to represent SCHEDULED attribute."""
     _re = compile_sdc_re('SCHEDULED')
     _active_default = True
 
 
 class OrgDateDeadline(OrgDateSDCBase):
+    """Date object to represent DEADLINE attribute."""
     _re = compile_sdc_re('DEADLINE')
     _active_default = True
 
 
 class OrgDateClosed(OrgDateSDCBase):
+    """Date object to represent CLOSED attribute."""
     _re = compile_sdc_re('CLOSED')
     _active_default = False
 
@@ -422,7 +436,7 @@ def parse_sdc(string):
 class OrgDateClock(OrgDate):
 
     """
-    Date object to represent CLOCK line.
+    Date object to represent CLOCK attributes.
 
     >>> OrgDateClock.from_str(
     ...   'CLOCK: [2010-08-08 Sun 17:00]--[2010-08-08 Sun 17:30] =>  0:30')
@@ -448,7 +462,7 @@ class OrgDateClock(OrgDate):
         ... ).get_duration()
         >>> duration
         datetime.timedelta(0, 1800)
-        >>> duration.total_seconds() / 60
+        >>> total_minutes(duration)
         30.0
 
         """
@@ -469,7 +483,7 @@ class OrgDateClock(OrgDate):
 
         """
         return (self._duration is None or
-                self._duration == self.get_duration().total_seconds() / 60)
+                self._duration == total_minutes(self.get_duration()))
 
     @classmethod
     def from_str(cls, line):
