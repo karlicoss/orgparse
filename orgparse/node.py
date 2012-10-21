@@ -160,7 +160,7 @@ def parse_seq_todo(line):
 class OrgEnv(object):
 
     """
-    Information global to a file.
+    Information global to the file (e.g, TODO keywords).
     """
 
     def __init__(self, todos=['TODO'], dones=['DONE'],
@@ -184,6 +184,16 @@ class OrgEnv(object):
 
         :arg bool todo: Include TODO-type keywords if true.
         :arg bool done: Include DONE-type keywords if true.
+
+        :rtype: list of str
+
+        >>> env = OrgEnv()
+        >>> env.get_todo_keys()  # outputs default TODO keywords
+        ['TODO', 'DONE']
+        >>> env.get_todo_keys(todo=True)
+        ['TODO']
+        >>> env.get_todo_keys(done=True)
+        ['DONE']
 
         """
         if todo and done:
