@@ -41,6 +41,11 @@ def data_path(dataname, ext):
     return os.path.join(DATADIR, '{0}.{1}'.format(dataname, ext))
 
 
+def get_datanames():
+    for oname in sorted(glob(os.path.join(DATADIR, '*.org'))):
+        yield os.path.splitext(os.path.basename(oname))[0]
+
+
 def check_data(dataname):
     """Helper function for test_data"""
     oname = data_path(dataname, "org")
@@ -63,6 +68,5 @@ def test_data():
     """
     Compare parsed data from 'data/*.org' and its correct answer 'data/*.py'
     """
-    for oname in sorted(glob(os.path.join(DATADIR, '*.org'))):
-        dataname = os.path.splitext(os.path.basename(oname))[0]
+    for dataname in get_datanames():
         yield (check_data, dataname)
