@@ -1,6 +1,7 @@
 import re
 
 from orgparse.date import OrgDate, OrgDateClock, parse_sdc
+from orgparse.py3compat import PY3, unicode
 
 
 def lines_to_chunks(lines):
@@ -394,10 +395,13 @@ class OrgBaseNode(object):
         return False
 
     def __unicode__(self):
-        return u"\n".join(self._lines)
+        return unicode("\n").join(self._lines)
 
-    def __str__(self):
-        return unicode(self).encode('utf-8')
+    if PY3:
+        __str__ = __unicode__
+    else:
+        def __str__(self):
+            return unicode(self).encode('utf-8')
 
     def __contains__(self, item):
         return self._get_getter(item) is not None

@@ -94,6 +94,7 @@ set(['TAG'])
 
 
 from orgparse.node import parse_lines
+from orgparse.py3compat import basestring
 
 __version__ = '0.0.0'
 __author__ = 'Takafumi Arakaki'
@@ -112,7 +113,7 @@ def load(path):
 
     """
     if isinstance(path, basestring):
-        orgfile = file(path)
+        orgfile = open(path)
         source_path = path
     else:
         orgfile = path
