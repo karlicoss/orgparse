@@ -4,7 +4,6 @@
    contain the root `toctree` directive.
 
 .. automodule:: orgparse
-   :members:
 
 
 Tree structure interface
@@ -19,18 +18,14 @@ Tree structure interface
    :parts: 1
 
 .. autoclass:: OrgBaseNode
-   :members:
 
    .. automethod:: __init__
 
 .. autoclass:: OrgRootNode
-   :members:
 
 .. autoclass:: OrgNode
-   :members:
 
 .. autoclass:: OrgEnv
-   :members:
 
 
 Date interface
@@ -49,7 +44,6 @@ Date interface
    :parts: 1
 
 .. autoclass:: OrgDate
-   :members:
 
    .. automethod:: __init__
 

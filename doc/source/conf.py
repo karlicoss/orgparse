@@ -87,5 +87,6 @@ texinfo_documents = [
 intersphinx_mapping = {'http://docs.python.org/': None}
 
 autodoc_member_order = 'bysource'
+autodoc_default_flags = ['members']
 
 inheritance_graph_attrs = dict(rankdir="TB")
