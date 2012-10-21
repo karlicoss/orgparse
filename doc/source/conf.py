@@ -8,6 +8,7 @@ sys.path.insert(0, dirname(dirname(dirname(__file__))))
 extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.autodoc',
+    'sphinx.ext.inheritance_diagram',
 ]
 templates_path = []  # ['_templates']
 source_suffix = '.rst'
@@ -77,3 +78,7 @@ texinfo_documents = [
    u'Takafumi Arakaki', 'orgparse', 'One line description of project.',
    'Miscellaneous'),
 ]
+
+
+# -- Options for extensions -----------------------------------------------
+inheritance_graph_attrs = dict(rankdir="TB")

@@ -12,6 +12,12 @@ Tree structure interface
 
 .. py:module:: orgparse.node
 
+.. inheritance-diagram::
+   orgparse.node.OrgBaseNode
+   orgparse.node.OrgRootNode
+   orgparse.node.OrgNode
+   :parts: 1
+
 .. autoclass:: OrgBaseNode
    :members:
 
@@ -31,6 +37,16 @@ Date interface
 ==============
 
 .. py:module:: orgparse.date
+
+.. inheritance-diagram::
+   orgparse.date.OrgDate
+   orgparse.date.OrgDateSDCBase
+   orgparse.date.OrgDateScheduled
+   orgparse.date.OrgDateDeadline
+   orgparse.date.OrgDateClosed
+   orgparse.date.OrgDateClock
+   orgparse.date.OrgDateRpeatedTask
+   :parts: 1
 
 .. autoclass:: OrgDate
    :members:
