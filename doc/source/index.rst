@@ -47,6 +47,11 @@ Date interface
 
    .. automethod:: __init__
 
+.. autoclass:: OrgDateScheduled
+.. autoclass:: OrgDateDeadline
+.. autoclass:: OrgDateClosed
+.. autoclass:: OrgDateClock
+
 
 Further resources
 =================
