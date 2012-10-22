@@ -164,11 +164,11 @@ class OrgEnv(object):
     """
 
     def __init__(self, todos=['TODO'], dones=['DONE'],
-                 source_path='<undefined>'):
+                 filename='<undefined>'):
         self._todos = list(todos)
         self._dones = list(dones)
         self._todo_not_specified_in_comment = True
-        self._source_path = source_path
+        self._filename = filename
 
     def add_todo_keys(self, todos, dones):
         if self._todo_not_specified_in_comment:
@@ -225,7 +225,7 @@ class OrgEnv(object):
         :rtype: str
 
         """
-        return self._source_path
+        return self._filename
 
     # parser
 
@@ -1007,8 +1007,8 @@ class OrgNode(OrgBaseNode):
         return self._repeated_tasks
 
 
-def parse_lines(lines, source_path):
-    env = OrgEnv(source_path=source_path)
+def parse_lines(lines, filename):
+    env = OrgEnv(filename=filename)
     # parse into node of list (environment will be parsed)
     nodelist = list(env.from_chunks(lines_to_chunks(lines)))
     # parse headings (level, TODO, TAGs, and heading)
