@@ -422,9 +422,9 @@ class OrgBaseNode(object):
 
         """
         if max_level is None:
-            max_level = self.get_level() - 1
+            max_level = self.level - 1
         parent = self._parent
-        while parent.get_level() > max_level:
+        while parent.level > max_level:
             parent = parent.get_parent()
         return parent
 
@@ -498,9 +498,10 @@ class OrgBaseNode(object):
 
     # misc
 
-    def get_level(self):
+    @property
+    def level(self):
         """
-        Return the level of this node
+        Level of this node.
 
         :rtype: int
 
@@ -555,7 +556,8 @@ class OrgRootNode(OrgBaseNode):
 
     # getter
 
-    def get_level(self):
+    @property
+    def level(self):
         return 0
 
     def get_parent(self, max_level=None):
@@ -705,7 +707,8 @@ class OrgNode(OrgBaseNode):
         """Return a string of head text without tags and TODO keywords."""
         return self._heading
 
-    def get_level(self):
+    @property
+    def level(self):
         return self._level
 
     def get_priority(self):
@@ -858,8 +861,8 @@ def parse_lines(lines, source_path):
         node._parse_pre()
     # set the node tree structure
     for (n1, n2) in zip(nodelist[:-1], nodelist[1:]):
-        level_n1 = n1.get_level()
-        level_n2 = n2.get_level()
+        level_n1 = n1.level
+        level_n2 = n2.level
         if level_n1 == level_n2:
             n2.set_parent(n1.get_parent())
             n2.set_previous(n1)
@@ -867,13 +870,13 @@ def parse_lines(lines, source_path):
             n2.set_parent(n1)
         else:
             np = n1.get_parent(max_level=level_n2)
-            if np.get_level() == level_n2:
+            if np.level == level_n2:
                 # * np    level=1
                 # ** n1   level=2
                 # * n2    level=1
                 n2.set_parent(np.get_parent())
                 n2.set_previous(np)
-            else:  # np.get_level() < level_n2
+            else:  # np.level < level_n2
                 # * np    level=1
                 # *** n1  level=3
                 # ** n2   level=2
