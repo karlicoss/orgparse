@@ -203,7 +203,8 @@ class OrgEnv(object):
         elif done:
             return self._dones
 
-    def get_source_path(self):
+    @property
+    def filename(self):
         """
         Return a path to the source file or similar information.
 

@@ -62,7 +62,7 @@ def check_data(dataname):
                      '\n\nParsed:\n{3}\n\nReal:\n{4}'
                      ).format(i, key, dataname, val, kwds[key]))
 
-    eq_(root.env.get_source_path(), oname)
+    eq_(root.env.filename, oname)
 
 
 def test_data():
