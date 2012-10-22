@@ -763,9 +763,21 @@ class OrgNode(OrgBaseNode):
         """
         return self._properties.get(key, val)
 
-    def get_properties(self):
+    @property
+    def properties(self):
         """
-        Return properties as a dictionary.
+        Node properties as a dictionary.
+
+        >>> from orgparse import loads
+        >>> root = loads('''
+        ... * Node
+        ...   :PROPERTIES:
+        ...   :SomeProperty: value
+        ...   :END:
+        ... ''')
+        >>> root.children[0].properties['SomeProperty']
+        'value'
+
         """
         return self._properties
 
