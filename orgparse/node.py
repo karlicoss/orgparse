@@ -927,7 +927,9 @@ class OrgNode(OrgBaseNode):
                 self.datelist or
                 self.rangelist)
 
-    def get_repeated_tasks(self):
+    @property
+    def repeated_tasks(self):
+        # FIXME: use OrgDateRpeatedTask
         """
         Get repeated tasks marked DONE in a entry having repeater
 
