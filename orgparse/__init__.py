@@ -71,7 +71,7 @@ Accessing to node attributes
 >>> node = root.children[0]
 >>> node.heading
 'Heading'
->>> node.get_scheduled()
+>>> node.scheduled
 OrgDateScheduled((2012, 2, 26))
 >>> node.get_closed()
 OrgDateClosed((2012, 2, 26, 21, 15, 0))

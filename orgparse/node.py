@@ -781,11 +781,20 @@ class OrgNode(OrgBaseNode):
         """
         return self._properties
 
-    def get_scheduled(self):
+    @property
+    def scheduled(self):
         """
         Return scheduled timestamp
 
         :rtype: a subclass of :class:`orgparse.date.OrgDate`
+
+        >>> from orgparse import loads
+        >>> root = loads('''
+        ... * Node
+        ...   SCHEDULED: <2012-02-26 Sun>
+        ... ''')
+        >>> root.children[0].scheduled
+        OrgDateScheduled((2012, 2, 26))
 
         """
         return self._scheduled
@@ -863,7 +872,7 @@ class OrgNode(OrgBaseNode):
         """
         Return ``True`` if it has any kind of timestamp
         """
-        return (self.get_scheduled() or
+        return (self.scheduled or
                 self.get_deadline() or
                 self.get_datelist() or
                 self.get_rangelist())
