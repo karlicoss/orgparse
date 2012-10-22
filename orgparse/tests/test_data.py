@@ -17,6 +17,14 @@ def load_data(path):
     return ns['data']
 
 
+def getter(obj, name):
+    # FIXME: Remove This method once I get rid of get_* methods.
+    if hasattr(obj, name):
+        return getattr(obj, name)
+    else:
+        return getattr(obj, "get_{0}".format(name))()
+
+
 def value_from_data_key(node, key):
     """
     Helper function for check_data. Get value from Orgnode by key.
@@ -24,18 +32,18 @@ def value_from_data_key(node, key):
     if key == 'tags_inher':
         return node.get_tags(inher=True)
     elif key == 'children_heading':
-        return [c.get_heading() for c in node.get_children()]
+        return [c.heading for c in node.children]
     elif key in ('parent_heading',
                  'previous_heading',
                  'next_heading',
                  ):
-        othernode = getattr(node, 'get_{0}'.format(key.split('_', 1)[0]))()
+        othernode = getter(node, key.split('_', 1)[0])
         if othernode and not othernode.is_root():
-            return othernode.get_heading()
+            return othernode.heading
         else:
             return
     else:
-        return getattr(node, "get_{0}".format(key))()
+        return getter(node, key)
 
 
 def data_path(dataname, ext):
@@ -62,7 +70,7 @@ def check_data(dataname):
                      '\n\nParsed:\n{3}\n\nReal:\n{4}'
                      ).format(i, key, dataname, val, kwds[key]))
 
-    eq_(root.env.get_source_path(), oname)
+    eq_(root.env.filename, oname)
 
 
 def test_data():

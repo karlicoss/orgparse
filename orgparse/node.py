@@ -178,32 +178,44 @@ class OrgEnv(object):
         self._todos.extend(todos)
         self._dones.extend(dones)
 
-    def get_todo_keys(self, todo=True, done=True):
+    @property
+    def todo_keys(self):
         """
-        Get TODO keywords defined for this document (file).
-
-        :arg bool todo: Include TODO-type keywords if true.
-        :arg bool done: Include DONE-type keywords if true.
-
-        :rtype: list of str
+        TODO keywords defined for this document (file).
 
         >>> env = OrgEnv()
-        >>> env.get_todo_keys()  # outputs default TODO keywords
-        ['TODO', 'DONE']
-        >>> env.get_todo_keys(done=False)
+        >>> env.todo_keys
         ['TODO']
-        >>> env.get_todo_keys(todo=False)
+
+        """
+        return self._todos
+
+    @property
+    def done_keys(self):
+        """
+        DONE keywords defined for this document (file).
+
+        >>> env = OrgEnv()
+        >>> env.done_keys
         ['DONE']
 
         """
-        if todo and done:
-            return self._todos + self._dones
-        elif todo:
-            return self._todos
-        elif done:
-            return self._dones
+        return self._dones
 
-    def get_source_path(self):
+    @property
+    def all_todo_keys(self):
+        """
+        All TODO keywords (including DONEs).
+
+        >>> env = OrgEnv()
+        >>> env.all_todo_keys
+        ['TODO', 'DONE']
+
+        """
+        return self._todos + self._dones
+
+    @property
+    def filename(self):
         """
         Return a path to the source file or similar information.
 
@@ -234,40 +246,7 @@ class OrgBaseNode(object):
        All nodes in a same file shares same instance.
 
 
-    Like build in `dict`, ``key in node``-checking, ``[key]``-access
-    and ``get(key)`` method can be used:
-
     >>> node = OrgBaseNode(OrgEnv())
-    >>> 'tags' in node
-    True
-    >>> 'spam' in node
-    False
-    >>> node['tags'] == set([])
-    True
-    >>> node['spam']
-    Traceback (most recent call last):
-        ...
-    KeyError: 'spam'
-    >>> node.get('spam')  # returns None
-    >>> node['source_path']  # attributes in node.env is accessible
-    '<undefined>'
-
-    If ``node.get_KEY`` or ``node.env.get_KEY`` method is defined
-    and can be called without argument, ``'KEY'`` can be used to
-    access data as described above.  For example, ``'property'``
-    is not valid key because :meth:`OrgNode.get_property`
-    cannot be called without an argument. Use ``'properties'``
-    instead.  Note that ``node.get('spam')`` does not raise
-    error even if ``node.get_spam`` method is not defined.  Using
-    the ``get`` method is good when having error is not preferred.
-
-    """
-
-    _getters_require_args = set()
-    """
-    A set of getter names ('get_*') which require more than one arguments.
-
-    See `_get_getter` how it is used.
 
     """
 
@@ -322,7 +301,7 @@ class OrgBaseNode(object):
         """
         if include_self:
             yield self
-        for child in self.get_children():
+        for child in self.children:
             for grandchild in child.traverse():
                 yield grandchild
 
@@ -332,7 +311,9 @@ class OrgBaseNode(object):
         self._previous = previous
         previous._next = self   # FIXME: find a better way to do this
 
-    def get_previous(self):
+    # FIXME: Rename this to previous_same_level
+    @property
+    def previous(self):
         """
         Return previous node if exists or None otherwise.
 
@@ -343,17 +324,19 @@ class OrgBaseNode(object):
         ... ** Node 3
         ... ''')
         >>> (n1, n2, n3) = list(root.traverse(include_self=False))
-        >>> n1.get_previous() is None
+        >>> n1.previous is None
         True
-        >>> n2.get_previous() is n1
+        >>> n2.previous is n1
         True
-        >>> n3.get_previous() is None  # n2 is not at the same level
+        >>> n3.previous is None  # n2 is not at the same level
         True
 
         """
         return self._previous
 
-    def get_next(self):
+    # FIXME: Rename this to next_same_level
+    @property
+    def next(self):
         """
         Return next node if exists or None otherwise.
 
@@ -364,11 +347,11 @@ class OrgBaseNode(object):
         ... ** Node 3
         ... ''')
         >>> (n1, n2, n3) = list(root.traverse(include_self=False))
-        >>> n1.get_next() is n2
+        >>> n1.next is n2
         True
-        >>> n2.get_next() is None  # n3 is not at the same level
+        >>> n2.next is None  # n3 is not at the same level
         True
-        >>> n3.get_next() is None
+        >>> n3.next is None
         True
 
         """
@@ -410,6 +393,14 @@ class OrgBaseNode(object):
         >>> n3.get_parent() is n1
         True
 
+        For simplicity, accessing :attr:`parent` is alias of calling
+        :meth:`get_parent` without argument.
+
+        >>> n1.get_parent() is n1.parent
+        True
+        >>> root.parent is None
+        True
+
         This is a little bit pathological situation -- but works.
 
         >>> root = loads('''
@@ -444,15 +435,23 @@ class OrgBaseNode(object):
 
         """
         if max_level is None:
-            max_level = self.get_level() - 1
+            max_level = self.level - 1
         parent = self._parent
-        while parent.get_level() > max_level:
+        while parent.level > max_level:
             parent = parent.get_parent()
         return parent
 
-    def get_children(self):
+    @property
+    def parent(self):
         """
-        Return a list of child nodes.
+        Alias of :meth:`get_parent()` (calling without argument).
+        """
+        return self.get_parent()
+
+    @property
+    def children(self):
+        """
+        A list of child nodes.
 
         >>> from orgparse import loads
         >>> root = loads('''
@@ -462,7 +461,7 @@ class OrgBaseNode(object):
         ... ** Node 4
         ... ''')
         >>> (n1, n2, n3, n4) = list(root.traverse(include_self=False))
-        >>> (c1, c2) = n1.get_children()
+        >>> (c1, c2) = n1.children
         >>> c1 is n2
         True
         >>> c2 is n4
@@ -471,14 +470,15 @@ class OrgBaseNode(object):
         """
         return self._children
 
-    def get_root(self):
+    @property
+    def root(self):
         """
-        Return the root node.
+        The root node.
 
         >>> from orgparse import loads
         >>> root = loads('* Node 1')
         >>> n1 = next(root.traverse(include_self=False))
-        >>> n1.get_root() is root
+        >>> n1.root is root
         True
 
         """
@@ -513,9 +513,10 @@ class OrgBaseNode(object):
 
     # misc
 
-    def get_level(self):
+    @property
+    def level(self):
         """
-        Return the level of this node
+        Level of this node.
 
         :rtype: int
 
@@ -533,6 +534,13 @@ class OrgBaseNode(object):
 
         """
         return set()
+
+    @property
+    def tags(self):
+        """
+        Alias of :meth:`get_tags()` (calling without argument).
+        """
+        return self.get_tags()
 
     def is_root(self):
         """
@@ -558,32 +566,6 @@ class OrgBaseNode(object):
         def __str__(self):
             return unicode(self).encode('utf-8')
 
-    def __contains__(self, item):
-        return self._get_getter(item) is not None
-
-    def __getitem__(self, key):
-        getter = self._get_getter(key)
-        if getter is None:
-            raise KeyError("{0}".format(key))
-        else:
-            return getter()
-
-    def _get_getter(self, key):
-        funcname = 'get_{0}'.format(key)
-        if funcname in self._getters_require_args:
-            return None
-        elif hasattr(self, funcname):
-            return getattr(self, funcname)
-        elif hasattr(self.env, funcname):
-            return getattr(self.env, funcname)
-        return None
-
-    def get(self, key, value=None):
-        if key in self:
-            return self[key]
-        else:
-            return value
-
 
 class OrgRootNode(OrgBaseNode):
 
@@ -596,7 +578,8 @@ class OrgRootNode(OrgBaseNode):
 
     # getter
 
-    def get_level(self):
+    @property
+    def level(self):
         return 0
 
     def get_parent(self, max_level=None):
@@ -653,7 +636,7 @@ class OrgNode(OrgBaseNode):
         (heading, self._level) = parse_heading_level(heading)
         (heading, self._tags) = parse_heading_tags(heading)
         (heading, self._todo) = parse_heading_todos(
-            heading, self.env.get_todo_keys())
+            heading, self.env.all_todo_keys)
         (heading, self._priority) = parse_heading_priority(heading)
         self._heading = heading
 
@@ -737,19 +720,23 @@ class OrgNode(OrgBaseNode):
 
     # getter
 
-    def get_body(self):
+    @property
+    def body(self):
         """Return a string of body text."""
         if self._lines:
             return "\n".join(self._body_lines)
 
-    def get_heading(self):
+    @property
+    def heading(self):
         """Return a string of head text without tags and TODO keywords."""
         return self._heading
 
-    def get_level(self):
+    @property
+    def level(self):
         return self._level
 
-    def get_priority(self):
+    @property
+    def priority(self):
         """Return a string to indicate the priority or None if undefined."""
         return self._priority
 
@@ -761,8 +748,17 @@ class OrgNode(OrgBaseNode):
                 return tags | parent.get_tags(inher=True)
         return tags
 
-    def get_todo(self):
-        """Return a TODO keyword if exists or None otherwise."""
+    @property
+    def todo(self):
+        """
+        A TODO keyword of this node if exists or None otherwise.
+
+        >>> from orgparse import loads
+        >>> root = loads('* TODO Node 1')
+        >>> root.children[0].todo
+        'TODO'
+
+        """
         return self._todo
 
     def get_property(self, key, val=None):
@@ -778,50 +774,98 @@ class OrgNode(OrgBaseNode):
         """
         return self._properties.get(key, val)
 
-    def get_properties(self):
+    @property
+    def properties(self):
         """
-        Return properties as a dictionary.
+        Node properties as a dictionary.
+
+        >>> from orgparse import loads
+        >>> root = loads('''
+        ... * Node
+        ...   :PROPERTIES:
+        ...   :SomeProperty: value
+        ...   :END:
+        ... ''')
+        >>> root.children[0].properties['SomeProperty']
+        'value'
+
         """
         return self._properties
 
-    def get_scheduled(self):
+    @property
+    def scheduled(self):
         """
         Return scheduled timestamp
 
         :rtype: a subclass of :class:`orgparse.date.OrgDate`
 
+        >>> from orgparse import loads
+        >>> root = loads('''
+        ... * Node
+        ...   SCHEDULED: <2012-02-26 Sun>
+        ... ''')
+        >>> root.children[0].scheduled
+        OrgDateScheduled((2012, 2, 26))
+
         """
         return self._scheduled
 
-    def get_deadline(self):
+    @property
+    def deadline(self):
         """
         Return deadline timestamp.
 
         :rtype: a subclass of :class:`orgparse.date.OrgDate`
 
+        >>> from orgparse import loads
+        >>> root = loads('''
+        ... * Node
+        ...   DEADLINE: <2012-02-26 Sun>
+        ... ''')
+        >>> root.children[0].deadline
+        OrgDateDeadline((2012, 2, 26))
+
         """
         return self._deadline
 
-    def get_closed(self):
+    @property
+    def closed(self):
         """
         Return timestamp of closed time.
 
         :rtype: a subclass of :class:`orgparse.date.OrgDate`
 
+        >>> from orgparse import loads
+        >>> root = loads('''
+        ... * Node
+        ...   CLOSED: [2012-02-26 Sun 21:15]
+        ... ''')
+        >>> root.children[0].closed
+        OrgDateClosed((2012, 2, 26, 21, 15, 0))
+
         """
         return self._closed
 
-    def get_clock(self):
+    @property
+    def clock(self):
         """
         Return a list of clocked timestamps
 
         :rtype: a list of a subclass of :class:`orgparse.date.OrgDate`
 
+        >>> from orgparse import loads
+        >>> root = loads('''
+        ... * Node
+        ...   CLOCK: [2012-02-26 Sun 21:10]--[2012-02-26 Sun 21:15] =>  0:05
+        ... ''')
+        >>> root.children[0].clock
+        [OrgDateClock((2012, 2, 26, 21, 10, 0), (2012, 2, 26, 21, 15, 0))]
+
         """
         return self._clocklist
 
-    def get_timestamps(self, active=True, inactive=True,
-                       end=True, noend=True):
+    def get_timestamps(self, active=False, inactive=False,
+                       range=False, point=False):
         """
         Return a list of timestamps in the body text.
 
@@ -829,49 +873,110 @@ class OrgNode(OrgBaseNode):
         :arg    active: Include active type timestamps.
         :type inactive: bool
         :arg  inactive: Include inactive type timestamps.
-        :type      end: bool
-        :arg       end: Include timestamps which has end date.
-        :type    noend: bool
-        :arg     noend: Include timestamps which has no end date.
+        :type    range: bool
+        :arg     range: Include timestamps which has end date.
+        :type    point: bool
+        :arg     point: Include timestamps which has no end date.
 
         :rtype: list of :class:`orgparse.date.OrgDate` subclasses
+
+
+        Consider the following org node:
+
+        >>> from orgparse import loads
+        >>> node = loads('''
+        ... * Node
+        ...   CLOSED: [2012-02-26 Sun 21:15] SCHEDULED: <2012-02-26 Sun>
+        ...   CLOCK: [2012-02-26 Sun 21:10]--[2012-02-26 Sun 21:15] =>  0:05
+        ...   Some inactive timestamp [2012-02-23 Thu] in body text.
+        ...   Some active timestamp <2012-02-24 Fri> in body text.
+        ...   Some inactive time range [2012-02-25 Sat]--[2012-02-27 Mon].
+        ...   Some active time range <2012-02-26 Sun>--<2012-02-28 Tue>.
+        ... ''').children[0]
+
+        The default flags are all off, so it does not return anything.
+
+        >>> node.get_timestamps()
+        []
+
+        You can fetch appropriate timestamps using keyword arguments.
+
+        >>> node.get_timestamps(inactive=True, point=True)
+        [OrgDate((2012, 2, 23), None, False)]
+        >>> node.get_timestamps(active=True, point=True)
+        [OrgDate((2012, 2, 24))]
+        >>> node.get_timestamps(inactive=True, range=True)
+        [OrgDate((2012, 2, 25), (2012, 2, 27), False)]
+        >>> node.get_timestamps(active=True, range=True)
+        [OrgDate((2012, 2, 26), (2012, 2, 28))]
+
+        This is more complex example.  Only active timestamps,
+        regardless of range/point type.
+
+        >>> node.get_timestamps(active=True, point=True, range=True)
+        [OrgDate((2012, 2, 24)), OrgDate((2012, 2, 26), (2012, 2, 28))]
 
         """
         return [
             ts for ts in self._timestamps if
             (((active and ts.is_active()) or
               (inactive and not ts.is_active())) and
-             ((end and ts.has_end()) or
-              (noend and not ts.has_end())))]
+             ((range and ts.has_end()) or
+              (point and not ts.has_end())))]
 
-    def get_datelist(self):
+    @property
+    def datelist(self):
         """
-        Alias of ``.get_timestamps(end=False)``.
+        Alias of ``.get_timestamps(active=True, inactive=True, point=True)``.
 
         :rtype: list of :class:`orgparse.date.OrgDate` subclasses
 
-        """
-        return self.get_timestamps(end=False)
+        >>> from orgparse import loads
+        >>> root = loads('''
+        ... * Node
+        ...   CLOSED: [2012-02-25 Sat 21:15]
+        ...   Some inactive timestamp [2012-02-26 Sun] in body text.
+        ...   Some active timestamp <2012-02-27 Mon> in body text.
+        ... ''')
+        >>> root.children[0].datelist
+        [OrgDate((2012, 2, 26), None, False), OrgDate((2012, 2, 27))]
 
-    def get_rangelist(self):
         """
-        Alias of ``.get_timestamps(noend=False)``.
+        return self.get_timestamps(active=True, inactive=True, point=True)
+
+    @property
+    def rangelist(self):
+        """
+        Alias of ``.get_timestamps(active=True, inactive=True, range=True)``.
 
         :rtype: list of :class:`orgparse.date.OrgDate` subclasses
 
+        >>> from orgparse import loads
+        >>> root = loads('''
+        ... * Node
+        ...   CLOCK: [2012-02-26 Sun 21:10]--[2012-02-26 Sun 21:15] => 0:05
+        ...   Some inactive time range [2012-02-25 Sat]--[2012-02-27 Mon].
+        ...   Some active time range <2012-02-26 Sun>--<2012-02-28 Tue>.
+        ... ''')
+        >>> root.children[0].rangelist     # doctest: +NORMALIZE_WHITESPACE
+        [OrgDate((2012, 2, 25), (2012, 2, 27), False),
+         OrgDate((2012, 2, 26), (2012, 2, 28))]
+
         """
-        return self.get_timestamps(noend=False)
+        return self.get_timestamps(active=True, inactive=True, range=True)
 
     def has_date(self):
         """
         Return ``True`` if it has any kind of timestamp
         """
-        return (self.get_scheduled() or
-                self.get_deadline() or
-                self.get_datelist() or
-                self.get_rangelist())
+        return (self.scheduled or
+                self.deadline or
+                self.datelist or
+                self.rangelist)
 
-    def get_repeated_tasks(self):
+    @property
+    def repeated_tasks(self):
+        # FIXME: use OrgDateRpeatedTask
         """
         Get repeated tasks marked DONE in a entry having repeater
 
@@ -899,8 +1004,8 @@ def parse_lines(lines, source_path):
         node._parse_pre()
     # set the node tree structure
     for (n1, n2) in zip(nodelist[:-1], nodelist[1:]):
-        level_n1 = n1.get_level()
-        level_n2 = n2.get_level()
+        level_n1 = n1.level
+        level_n2 = n2.level
         if level_n1 == level_n2:
             n2.set_parent(n1.get_parent())
             n2.set_previous(n1)
@@ -908,13 +1013,13 @@ def parse_lines(lines, source_path):
             n2.set_parent(n1)
         else:
             np = n1.get_parent(max_level=level_n2)
-            if np.get_level() == level_n2:
+            if np.level == level_n2:
                 # * np    level=1
                 # ** n1   level=2
                 # * n2    level=1
                 n2.set_parent(np.get_parent())
                 n2.set_previous(np)
-            else:  # np.get_level() < level_n2
+            else:  # np.level < level_n2
                 # * np    level=1
                 # *** n1  level=3
                 # ** n2   level=2

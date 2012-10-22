@@ -40,9 +40,9 @@ Traverse org tree
 * Heading 1
 ** Heading 2
 *** Heading 3
->>> h1 = root.get_children()[0]
->>> h2 = h1.get_children()[0]
->>> h3 = h2.get_children()[0]
+>>> h1 = root.children[0]
+>>> h2 = h1.children[0]
+>>> h3 = h2.children[0]
 >>> print(h1)
 * Heading 1
 >>> print(h2)
@@ -68,16 +68,16 @@ Accessing to node attributes
 ...   :END:
 ...   Body texts...
 ... ''')
->>> node = root.get_children()[0]
->>> node.get_heading()
+>>> node = root.children[0]
+>>> node.heading
 'Heading'
->>> node.get_scheduled()
+>>> node.scheduled
 OrgDateScheduled((2012, 2, 26))
->>> node.get_closed()
+>>> node.closed
 OrgDateClosed((2012, 2, 26, 21, 15, 0))
->>> node.get_clock()
+>>> node.clock
 [OrgDateClock((2012, 2, 26, 21, 10, 0), (2012, 2, 26, 21, 15, 0))]
->>> bool(node.get_deadline())   # it is not specified
+>>> bool(node.deadline)   # it is not specified
 False
 >>> node.get_tags() == set(['TAG'])
 True
@@ -86,7 +86,7 @@ True
 >>> node.get_property('UndefinedProperty')  # returns None
 >>> node.get_property('OtherProperty')
 'some text'
->>> node.get_body()
+>>> node.body
 '  Body texts...'
 
 """
