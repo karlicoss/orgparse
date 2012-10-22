@@ -455,14 +455,15 @@ class OrgBaseNode(object):
         """
         return self._children
 
-    def get_root(self):
+    @property
+    def root(self):
         """
-        Return the root node.
+        The root node.
 
         >>> from orgparse import loads
         >>> root = loads('* Node 1')
         >>> n1 = next(root.traverse(include_self=False))
-        >>> n1.get_root() is root
+        >>> n1.root is root
         True
 
         """
