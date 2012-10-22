@@ -300,7 +300,8 @@ class OrgBaseNode(object):
         self._previous = previous
         previous._next = self   # FIXME: find a better way to do this
 
-    def get_previous(self):
+    @property
+    def previous(self):
         """
         Return previous node if exists or None otherwise.
 
@@ -311,11 +312,11 @@ class OrgBaseNode(object):
         ... ** Node 3
         ... ''')
         >>> (n1, n2, n3) = list(root.traverse(include_self=False))
-        >>> n1.get_previous() is None
+        >>> n1.previous is None
         True
-        >>> n2.get_previous() is n1
+        >>> n2.previous is n1
         True
-        >>> n3.get_previous() is None  # n2 is not at the same level
+        >>> n3.previous is None  # n2 is not at the same level
         True
 
         """
