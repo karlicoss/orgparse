@@ -48,7 +48,9 @@ def get_datanames():
 
 
 def check_data(dataname):
-    """Helper function for test_data"""
+    """
+    Compare parsed data from 'data/*.org' and its correct answer 'data/*.py'
+    """
     oname = data_path(dataname, "org")
     data = load_data(data_path(dataname, "py"))
     root = load(oname)
@@ -66,9 +68,6 @@ def check_data(dataname):
 
 
 def test_data():
-    """
-    Compare parsed data from 'data/*.org' and its correct answer 'data/*.py'
-    """
     for dataname in get_datanames():
         yield (check_data, dataname)
 
