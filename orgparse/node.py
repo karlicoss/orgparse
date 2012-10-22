@@ -387,6 +387,8 @@ class OrgBaseNode(object):
 
         >>> n1.get_parent() is n1.parent
         True
+        >>> root.parent is None
+        True
 
         This is a little bit pathological situation -- but works.
 
@@ -428,10 +430,12 @@ class OrgBaseNode(object):
             parent = parent.get_parent()
         return parent
 
-    parent = property(get_parent)
-    """
-    Alias of :meth:`get_parent()` (calling without argument).
-    """
+    @property
+    def parent(self):
+        """
+        Alias of :meth:`get_parent()` (calling without argument).
+        """
+        return self.get_parent()
 
     @property
     def children(self):
