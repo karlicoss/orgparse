@@ -835,11 +835,20 @@ class OrgNode(OrgBaseNode):
         """
         return self._closed
 
-    def get_clock(self):
+    @property
+    def clock(self):
         """
         Return a list of clocked timestamps
 
         :rtype: a list of a subclass of :class:`orgparse.date.OrgDate`
+
+        >>> from orgparse import loads
+        >>> root = loads('''
+        ... * Node
+        ...   CLOCK: [2012-02-26 Sun 21:10]--[2012-02-26 Sun 21:15] =>  0:05
+        ... ''')
+        >>> root.children[0].clock
+        [OrgDateClock((2012, 2, 26, 21, 10, 0), (2012, 2, 26, 21, 15, 0))]
 
         """
         return self._clocklist

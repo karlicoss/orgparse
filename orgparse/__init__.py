@@ -75,7 +75,7 @@ Accessing to node attributes
 OrgDateScheduled((2012, 2, 26))
 >>> node.closed
 OrgDateClosed((2012, 2, 26, 21, 15, 0))
->>> node.get_clock()
+>>> node.clock
 [OrgDateClock((2012, 2, 26, 21, 10, 0), (2012, 2, 26, 21, 15, 0))]
 >>> bool(node.deadline)   # it is not specified
 False
