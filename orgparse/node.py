@@ -300,6 +300,7 @@ class OrgBaseNode(object):
         self._previous = previous
         previous._next = self   # FIXME: find a better way to do this
 
+    # FIXME: Rename this to previous_same_level
     @property
     def previous(self):
         """
@@ -322,7 +323,9 @@ class OrgBaseNode(object):
         """
         return self._previous
 
-    def get_next(self):
+    # FIXME: Rename this to next_same_level
+    @property
+    def next(self):
         """
         Return next node if exists or None otherwise.
 
@@ -333,11 +336,11 @@ class OrgBaseNode(object):
         ... ** Node 3
         ... ''')
         >>> (n1, n2, n3) = list(root.traverse(include_self=False))
-        >>> n1.get_next() is n2
+        >>> n1.next is n2
         True
-        >>> n2.get_next() is None  # n3 is not at the same level
+        >>> n2.next is None  # n3 is not at the same level
         True
-        >>> n3.get_next() is None
+        >>> n3.next is None
         True
 
         """
