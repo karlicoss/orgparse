@@ -190,9 +190,9 @@ class OrgEnv(object):
         >>> env = OrgEnv()
         >>> env.get_todo_keys()  # outputs default TODO keywords
         ['TODO', 'DONE']
-        >>> env.get_todo_keys(todo=True)
+        >>> env.get_todo_keys(done=False)
         ['TODO']
-        >>> env.get_todo_keys(done=True)
+        >>> env.get_todo_keys(todo=False)
         ['DONE']
 
         """
