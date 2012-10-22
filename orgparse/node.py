@@ -260,12 +260,6 @@ class OrgBaseNode(object):
         """
         self.env = env
 
-        # tree structure
-        self._next = None
-        self._previous = None
-        self._parent = None
-        self._children = []
-
         # content
         self._lines = []
 
@@ -301,15 +295,19 @@ class OrgBaseNode(object):
         """
         if include_self:
             yield self
-        for child in self.children:
-            for grandchild in child.traverse():
-                yield grandchild
+        level = self.level
+        for node in self.env._nodes[self._index + 1:]:
+            if node.level > level:
+                yield node
 
     # tree structure
 
-    def set_previous(self, previous):
-        self._previous = previous
-        previous._next = self   # FIXME: find a better way to do this
+    def _find_same_level(self, iterable):
+        for node in iterable:
+            if node.level < self.level:
+                return
+            if node.level == self.level:
+                return node
 
     # FIXME: Rename this to previous_same_level
     @property
@@ -332,7 +330,7 @@ class OrgBaseNode(object):
         True
 
         """
-        return self._previous
+        return self._find_same_level(reversed(self.env._nodes[:self._index]))
 
     # FIXME: Rename this to next_same_level
     @property
@@ -355,14 +353,13 @@ class OrgBaseNode(object):
         True
 
         """
-        return self._next
+        return self._find_same_level(self.env._nodes[self._index + 1:])
 
-    def set_parent(self, parent):
-        self._parent = parent
-        parent.add_children(self)
-
-    def add_children(self, child):
-        self._children.append(child)
+    # FIXME: cache parent node
+    def _find_parent(self):
+        for node in reversed(self.env._nodes[:self._index]):
+            if node.level < self.level:
+                return node
 
     def get_parent(self, max_level=None):
         """
@@ -436,7 +433,7 @@ class OrgBaseNode(object):
         """
         if max_level is None:
             max_level = self.level - 1
-        parent = self._parent
+        parent = self._find_parent()
         while parent.level > max_level:
             parent = parent.get_parent()
         return parent
@@ -447,6 +444,21 @@ class OrgBaseNode(object):
         Alias of :meth:`get_parent()` (calling without argument).
         """
         return self.get_parent()
+
+    # FIXME: cache children nodes
+    def _find_children(self):
+        nodeiter = iter(self.env._nodes[self._index + 1:])
+        node = next(nodeiter)
+        if node.level <= self.level:
+            return
+        yield node
+        last_child_level = node.level
+        for node in nodeiter:
+            if node.level <= self.level:
+                return
+            if node.level <= last_child_level:
+                yield node
+                last_child_level = node.level
 
     @property
     def children(self):
@@ -468,7 +480,7 @@ class OrgBaseNode(object):
         True
 
         """
-        return self._children
+        return list(self._find_children())
 
     @property
     def root(self):
@@ -1000,28 +1012,9 @@ def parse_lines(lines, source_path):
     # parse into node of list (environment will be parsed)
     nodelist = list(env.from_chunks(lines_to_chunks(lines)))
     # parse headings (level, TODO, TAGs, and heading)
-    for node in nodelist[1:]:   # nodes except root node
+    nodelist[0]._index = 0
+    for (i, node) in enumerate(nodelist[1:], 1):   # nodes except root node
+        node._index = i
         node._parse_pre()
-    # set the node tree structure
-    for (n1, n2) in zip(nodelist[:-1], nodelist[1:]):
-        level_n1 = n1.level
-        level_n2 = n2.level
-        if level_n1 == level_n2:
-            n2.set_parent(n1.get_parent())
-            n2.set_previous(n1)
-        elif level_n1 < level_n2:
-            n2.set_parent(n1)
-        else:
-            np = n1.get_parent(max_level=level_n2)
-            if np.level == level_n2:
-                # * np    level=1
-                # ** n1   level=2
-                # * n2    level=1
-                n2.set_parent(np.get_parent())
-                n2.set_previous(np)
-            else:  # np.level < level_n2
-                # * np    level=1
-                # *** n1  level=3
-                # ** n2   level=2
-                n2.set_parent(np)
+    env._nodes = nodelist
     return nodelist[0]  # root
