@@ -520,6 +520,13 @@ class OrgBaseNode(object):
         """
         return set()
 
+    @property
+    def tags(self):
+        """
+        Alias of :meth:`get_tags()` (calling without argument).
+        """
+        return self.get_tags()
+
     def is_root(self):
         """
         Return ``True`` when it is a root node.
