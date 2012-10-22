@@ -178,30 +178,41 @@ class OrgEnv(object):
         self._todos.extend(todos)
         self._dones.extend(dones)
 
-    def get_todo_keys(self, todo=True, done=True):
+    @property
+    def todo_keys(self):
         """
-        Get TODO keywords defined for this document (file).
-
-        :arg bool todo: Include TODO-type keywords if true.
-        :arg bool done: Include DONE-type keywords if true.
-
-        :rtype: list of str
+        TODO keywords defined for this document (file).
 
         >>> env = OrgEnv()
-        >>> env.get_todo_keys()  # outputs default TODO keywords
-        ['TODO', 'DONE']
-        >>> env.get_todo_keys(done=False)
+        >>> env.todo_keys
         ['TODO']
-        >>> env.get_todo_keys(todo=False)
+
+        """
+        return self._todos
+
+    @property
+    def done_keys(self):
+        """
+        DONE keywords defined for this document (file).
+
+        >>> env = OrgEnv()
+        >>> env.done_keys
         ['DONE']
 
         """
-        if todo and done:
-            return self._todos + self._dones
-        elif todo:
-            return self._todos
-        elif done:
-            return self._dones
+        return self._dones
+
+    @property
+    def all_todo_keys(self):
+        """
+        All TODO keywords (including DONEs).
+
+        >>> env = OrgEnv()
+        >>> env.all_todo_keys
+        ['TODO', 'DONE']
+
+        """
+        return self._todos + self._dones
 
     @property
     def filename(self):
@@ -625,7 +636,7 @@ class OrgNode(OrgBaseNode):
         (heading, self._level) = parse_heading_level(heading)
         (heading, self._tags) = parse_heading_tags(heading)
         (heading, self._todo) = parse_heading_todos(
-            heading, self.env.get_todo_keys())
+            heading, self.env.all_todo_keys)
         (heading, self._priority) = parse_heading_priority(heading)
         self._heading = heading
 
