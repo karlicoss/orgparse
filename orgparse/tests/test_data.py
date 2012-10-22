@@ -17,14 +17,6 @@ def load_data(path):
     return ns['data']
 
 
-def getter(obj, name):
-    # FIXME: Remove This method once I get rid of get_* methods.
-    if hasattr(obj, name):
-        return getattr(obj, name)
-    else:
-        return getattr(obj, "get_{0}".format(name))()
-
-
 def value_from_data_key(node, key):
     """
     Helper function for check_data. Get value from Orgnode by key.
@@ -37,13 +29,13 @@ def value_from_data_key(node, key):
                  'previous_heading',
                  'next_heading',
                  ):
-        othernode = getter(node, key.split('_', 1)[0])
+        othernode = getattr(node, key.split('_', 1)[0])
         if othernode and not othernode.is_root():
             return othernode.heading
         else:
             return
     else:
-        return getter(node, key)
+        return getattr(node, key)
 
 
 def data_path(dataname, ext):
