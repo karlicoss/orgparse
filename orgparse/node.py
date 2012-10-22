@@ -864,8 +864,8 @@ class OrgNode(OrgBaseNode):
         """
         return self._clocklist
 
-    def get_timestamps(self, active=True, inactive=True,
-                       end=True, noend=True):
+    def get_timestamps(self, active=False, inactive=False,
+                       end=False, noend=False):
         """
         Return a list of timestamps in the body text.
 
@@ -906,7 +906,7 @@ class OrgNode(OrgBaseNode):
         [OrgDate((2012, 2, 26), None, False), OrgDate((2012, 2, 27))]
 
         """
-        return self.get_timestamps(end=False)
+        return self.get_timestamps(active=True, inactive=True, noend=True)
 
     @property
     def rangelist(self):
@@ -927,7 +927,7 @@ class OrgNode(OrgBaseNode):
          OrgDate((2012, 2, 26), (2012, 2, 28))]
 
         """
-        return self.get_timestamps(noend=False)
+        return self.get_timestamps(active=True, inactive=True, end=True)
 
     def has_date(self):
         """
