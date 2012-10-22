@@ -865,7 +865,7 @@ class OrgNode(OrgBaseNode):
         return self._clocklist
 
     def get_timestamps(self, active=False, inactive=False,
-                       end=False, noend=False):
+                       range=False, point=False):
         """
         Return a list of timestamps in the body text.
 
@@ -873,10 +873,10 @@ class OrgNode(OrgBaseNode):
         :arg    active: Include active type timestamps.
         :type inactive: bool
         :arg  inactive: Include inactive type timestamps.
-        :type      end: bool
-        :arg       end: Include timestamps which has end date.
-        :type    noend: bool
-        :arg     noend: Include timestamps which has no end date.
+        :type    range: bool
+        :arg     range: Include timestamps which has end date.
+        :type    point: bool
+        :arg     point: Include timestamps which has no end date.
 
         :rtype: list of :class:`orgparse.date.OrgDate` subclasses
 
@@ -885,13 +885,13 @@ class OrgNode(OrgBaseNode):
             ts for ts in self._timestamps if
             (((active and ts.is_active()) or
               (inactive and not ts.is_active())) and
-             ((end and ts.has_end()) or
-              (noend and not ts.has_end())))]
+             ((range and ts.has_end()) or
+              (point and not ts.has_end())))]
 
     @property
     def datelist(self):
         """
-        Alias of ``.get_timestamps(end=False)``.
+        Alias of ``.get_timestamps(active=True, inactive=True, point=True)``.
 
         :rtype: list of :class:`orgparse.date.OrgDate` subclasses
 
@@ -906,12 +906,12 @@ class OrgNode(OrgBaseNode):
         [OrgDate((2012, 2, 26), None, False), OrgDate((2012, 2, 27))]
 
         """
-        return self.get_timestamps(active=True, inactive=True, noend=True)
+        return self.get_timestamps(active=True, inactive=True, point=True)
 
     @property
     def rangelist(self):
         """
-        Alias of ``.get_timestamps(noend=False)``.
+        Alias of ``.get_timestamps(active=True, inactive=True, range=True)``.
 
         :rtype: list of :class:`orgparse.date.OrgDate` subclasses
 
@@ -927,7 +927,7 @@ class OrgNode(OrgBaseNode):
          OrgDate((2012, 2, 26), (2012, 2, 28))]
 
         """
-        return self.get_timestamps(active=True, inactive=True, end=True)
+        return self.get_timestamps(active=True, inactive=True, range=True)
 
     def has_date(self):
         """
