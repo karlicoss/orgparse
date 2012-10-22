@@ -535,7 +535,18 @@ class OrgBaseNode(object):
         return set()
 
     def is_root(self):
-        """Return ``True`` when it is a root node"""
+        """
+        Return ``True`` when it is a root node.
+
+        >>> from orgparse import loads
+        >>> root = loads('* Node 1')
+        >>> root.is_root()
+        True
+        >>> n1 = next(root.traverse(include_self=False))
+        >>> n1.is_root()
+        False
+
+        """
         return False
 
     def __unicode__(self):
