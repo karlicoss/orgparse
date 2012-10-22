@@ -291,7 +291,35 @@ class OrgBaseNode(object):
         self._lines = []
 
     def traverse(self, include_self=True):
-        """Generate an iterator to traverse all descendant nodes."""
+        """
+        Return an iterator to traverse all descendant nodes.
+
+        >>> from orgparse import loads
+        >>> root = loads('''
+        ... * Heading 1
+        ... ** Heading 2
+        ... *** Heading 3
+        ... ''')
+        >>> for node in root.traverse(include_self=False):
+        ...     print(node)
+        * Heading 1
+        ** Heading 2
+        *** Heading 3
+
+        Remebre: what :meth:`traverse` returns is an iterator, not a
+        list.
+
+        >>> isinstance(root.traverse(), list)
+        False
+
+        By default, :meth:`traverse` always returns the object itself
+        as the first element, unless ``include_self=False`` is
+        specified.
+
+        >>> next(root.traverse()) is root
+        True
+
+        """
         if include_self:
             yield self
         for child in self.get_children():
@@ -305,11 +333,45 @@ class OrgBaseNode(object):
         previous._next = self   # FIXME: find a better way to do this
 
     def get_previous(self):
-        """Return previous node if exists or None otherwise."""
+        """
+        Return previous node if exists or None otherwise.
+
+        >>> from orgparse import loads
+        >>> root = loads('''
+        ... * Node 1
+        ... * Node 2
+        ... ** Node 3
+        ... ''')
+        >>> (n1, n2, n3) = list(root.traverse(include_self=False))
+        >>> n1.get_previous() is None
+        True
+        >>> n2.get_previous() is n1
+        True
+        >>> n3.get_previous() is None  # n2 is not at the same level
+        True
+
+        """
         return self._previous
 
     def get_next(self):
-        """Return next node if exists or None otherwise."""
+        """
+        Return next node if exists or None otherwise.
+
+        >>> from orgparse import loads
+        >>> root = loads('''
+        ... * Node 1
+        ... * Node 2
+        ... ** Node 3
+        ... ''')
+        >>> (n1, n2, n3) = list(root.traverse(include_self=False))
+        >>> n1.get_next() is n2
+        True
+        >>> n2.get_next() is None  # n3 is not at the same level
+        True
+        >>> n3.get_next() is None
+        True
+
+        """
         return self._next
 
     def set_parent(self, parent):
@@ -334,6 +396,52 @@ class OrgBaseNode(object):
             try to find an ancestor node which level is smaller
             than ``max_level``.
 
+        >>> from orgparse import loads
+        >>> root = loads('''
+        ... * Node 1
+        ... ** Node 2
+        ... ** Node 3
+        ... ''')
+        >>> (n1, n2, n3) = list(root.traverse(include_self=False))
+        >>> n1.get_parent() is root
+        True
+        >>> n2.get_parent() is n1
+        True
+        >>> n3.get_parent() is n1
+        True
+
+        This is a little bit pathological situation -- but works.
+
+        >>> root = loads('''
+        ... * Node 1
+        ... *** Node 2
+        ... ** Node 3
+        ... ''')
+        >>> (n1, n2, n3) = list(root.traverse(include_self=False))
+        >>> n1.get_parent() is root
+        True
+        >>> n2.get_parent() is n1
+        True
+        >>> n3.get_parent() is n1
+        True
+
+        Now let's play with `max_level`.
+
+        >>> root = loads('''
+        ... * Node 1 (level 1)
+        ... ** Node 2 (level 2)
+        ... *** Node 3 (level 3)
+        ... ''')
+        >>> (n1, n2, n3) = list(root.traverse(include_self=False))
+        >>> n3.get_parent() is n2
+        True
+        >>> n3.get_parent(max_level=2) is n2  # same as default
+        True
+        >>> n3.get_parent(max_level=1) is n1
+        True
+        >>> n3.get_parent(max_level=0) is root
+        True
+
         """
         if max_level is None:
             max_level = self.get_level() - 1
@@ -343,7 +451,24 @@ class OrgBaseNode(object):
         return parent
 
     def get_children(self):
-        """Return a list of child nodes."""
+        """
+        Return a list of child nodes.
+
+        >>> from orgparse import loads
+        >>> root = loads('''
+        ... * Node 1
+        ... ** Node 2
+        ... *** Node 3
+        ... ** Node 4
+        ... ''')
+        >>> (n1, n2, n3, n4) = list(root.traverse(include_self=False))
+        >>> (c1, c2) = n1.get_children()
+        >>> c1 is n2
+        True
+        >>> c2 is n4
+        True
+
+        """
         return self._children
 
     def get_root(self):
