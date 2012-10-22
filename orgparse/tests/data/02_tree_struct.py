@@ -1,8 +1,8 @@
 def nodedict(parent, children=[], previous=None, next=None):
     return dict(parent_heading=parent,
                 children_heading=children,
-                previous_heading=previous,
-                next_heading=next)
+                previous_same_level_heading=previous,
+                next_same_level_heading=next)
 
 
 data = [nodedict(*args) for args in [

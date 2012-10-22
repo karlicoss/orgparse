@@ -309,9 +309,8 @@ class OrgBaseNode(object):
             if node.level == self.level:
                 return node
 
-    # FIXME: Rename this to previous_same_level
     @property
-    def previous(self):
+    def previous_same_level(self):
         """
         Return previous node if exists or None otherwise.
 
@@ -322,19 +321,18 @@ class OrgBaseNode(object):
         ... ** Node 3
         ... ''')
         >>> (n1, n2, n3) = list(root.traverse(include_self=False))
-        >>> n1.previous is None
+        >>> n1.previous_same_level is None
         True
-        >>> n2.previous is n1
+        >>> n2.previous_same_level is n1
         True
-        >>> n3.previous is None  # n2 is not at the same level
+        >>> n3.previous_same_level is None  # n2 is not at the same level
         True
 
         """
         return self._find_same_level(reversed(self.env._nodes[:self._index]))
 
-    # FIXME: Rename this to next_same_level
     @property
-    def next(self):
+    def next_same_level(self):
         """
         Return next node if exists or None otherwise.
 
@@ -345,11 +343,11 @@ class OrgBaseNode(object):
         ... ** Node 3
         ... ''')
         >>> (n1, n2, n3) = list(root.traverse(include_self=False))
-        >>> n1.next is n2
+        >>> n1.next_same_level is n2
         True
-        >>> n2.next is None  # n3 is not at the same level
+        >>> n2.next_same_level is None  # n3 is not at the same level
         True
-        >>> n3.next is None
+        >>> n3.next_same_level is None
         True
 
         """

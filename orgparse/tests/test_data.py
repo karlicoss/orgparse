@@ -26,10 +26,10 @@ def value_from_data_key(node, key):
     elif key == 'children_heading':
         return [c.heading for c in node.children]
     elif key in ('parent_heading',
-                 'previous_heading',
-                 'next_heading',
+                 'previous_same_level_heading',
+                 'next_same_level_heading',
                  ):
-        othernode = getattr(node, key.split('_', 1)[0])
+        othernode = getattr(node, key.rsplit('_', 1)[0])
         if othernode and not othernode.is_root():
             return othernode.heading
         else:
