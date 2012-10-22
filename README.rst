@@ -34,9 +34,9 @@ Traverse org tree
 * Heading 1
 ** Heading 2
 *** Heading 3
->>> h1 = root.get_children()[0]
->>> h2 = h1.get_children()[0]
->>> h3 = h2.get_children()[0]
+>>> h1 = root.children[0]
+>>> h2 = h1.children[0]
+>>> h3 = h2.children[0]
 >>> print(h1)
 * Heading 1
 >>> print(h2)
@@ -62,7 +62,7 @@ Accessing to node attributes
 ...   :END:
 ...   Body texts...
 ... ''')
->>> node = root.get_children()[0]
+>>> node = root.children[0]
 >>> node.get_heading()
 'Heading'
 >>> node.get_scheduled()

@@ -32,7 +32,7 @@ def value_from_data_key(node, key):
     if key == 'tags_inher':
         return node.get_tags(inher=True)
     elif key == 'children_heading':
-        return [c.get_heading() for c in node.get_children()]
+        return [c.get_heading() for c in node.children]
     elif key in ('parent_heading',
                  'previous_heading',
                  'next_heading',

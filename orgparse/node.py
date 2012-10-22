@@ -290,7 +290,7 @@ class OrgBaseNode(object):
         """
         if include_self:
             yield self
-        for child in self.get_children():
+        for child in self.children:
             for grandchild in child.traverse():
                 yield grandchild
 
@@ -433,9 +433,10 @@ class OrgBaseNode(object):
     Alias of :meth:`get_parent()` (calling without argument).
     """
 
-    def get_children(self):
+    @property
+    def children(self):
         """
-        Return a list of child nodes.
+        A list of child nodes.
 
         >>> from orgparse import loads
         >>> root = loads('''
@@ -445,7 +446,7 @@ class OrgBaseNode(object):
         ... ** Node 4
         ... ''')
         >>> (n1, n2, n3, n4) = list(root.traverse(include_self=False))
-        >>> (c1, c2) = n1.get_children()
+        >>> (c1, c2) = n1.children
         >>> c1 is n2
         True
         >>> c2 is n4
