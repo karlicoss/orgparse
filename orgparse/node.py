@@ -737,8 +737,17 @@ class OrgNode(OrgBaseNode):
                 return tags | parent.get_tags(inher=True)
         return tags
 
-    def get_todo(self):
-        """Return a TODO keyword if exists or None otherwise."""
+    @property
+    def todo(self):
+        """
+        A TODO keyword of this node if exists or None otherwise.
+
+        >>> from orgparse import loads
+        >>> root = loads('* TODO Node 1')
+        >>> root.children[0].todo
+        'TODO'
+
+        """
         return self._todo
 
     def get_property(self, key, val=None):
