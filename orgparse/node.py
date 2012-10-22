@@ -724,7 +724,8 @@ class OrgNode(OrgBaseNode):
     def level(self):
         return self._level
 
-    def get_priority(self):
+    @property
+    def priority(self):
         """Return a string to indicate the priority or None if undefined."""
         return self._priority
 
