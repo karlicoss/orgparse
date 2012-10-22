@@ -86,7 +86,7 @@ True
 >>> node.get_property('UndefinedProperty')  # returns None
 >>> node.get_property('OtherProperty')
 'some text'
->>> node.get_body()
+>>> node.body
 '  Body texts...'
 
 """

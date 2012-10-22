@@ -709,7 +709,8 @@ class OrgNode(OrgBaseNode):
 
     # getter
 
-    def get_body(self):
+    @property
+    def body(self):
         """Return a string of body text."""
         if self._lines:
             return "\n".join(self._body_lines)
