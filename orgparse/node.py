@@ -880,6 +880,42 @@ class OrgNode(OrgBaseNode):
 
         :rtype: list of :class:`orgparse.date.OrgDate` subclasses
 
+
+        Consider the following org node:
+
+        >>> from orgparse import loads
+        >>> node = loads('''
+        ... * Node
+        ...   CLOSED: [2012-02-26 Sun 21:15] SCHEDULED: <2012-02-26 Sun>
+        ...   CLOCK: [2012-02-26 Sun 21:10]--[2012-02-26 Sun 21:15] =>  0:05
+        ...   Some inactive timestamp [2012-02-23 Thu] in body text.
+        ...   Some active timestamp <2012-02-24 Fri> in body text.
+        ...   Some inactive time range [2012-02-25 Sat]--[2012-02-27 Mon].
+        ...   Some active time range <2012-02-26 Sun>--<2012-02-28 Tue>.
+        ... ''').children[0]
+
+        The default flags are all off, so it does not return anything.
+
+        >>> node.get_timestamps()
+        []
+
+        You can fetch appropriate timestamps using keyword arguments.
+
+        >>> node.get_timestamps(inactive=True, point=True)
+        [OrgDate((2012, 2, 23), None, False)]
+        >>> node.get_timestamps(active=True, point=True)
+        [OrgDate((2012, 2, 24))]
+        >>> node.get_timestamps(inactive=True, range=True)
+        [OrgDate((2012, 2, 25), (2012, 2, 27), False)]
+        >>> node.get_timestamps(active=True, range=True)
+        [OrgDate((2012, 2, 26), (2012, 2, 28))]
+
+        This is more complex example.  Only active timestamps,
+        regardless of range/point type.
+
+        >>> node.get_timestamps(active=True, point=True, range=True)
+        [OrgDate((2012, 2, 24)), OrgDate((2012, 2, 26), (2012, 2, 28))]
+
         """
         return [
             ts for ts in self._timestamps if
