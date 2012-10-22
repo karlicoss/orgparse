@@ -715,7 +715,8 @@ class OrgNode(OrgBaseNode):
         if self._lines:
             return "\n".join(self._body_lines)
 
-    def get_heading(self):
+    @property
+    def heading(self):
         """Return a string of head text without tags and TODO keywords."""
         return self._heading
 

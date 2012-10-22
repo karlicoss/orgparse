@@ -63,7 +63,7 @@ Accessing to node attributes
 ...   Body texts...
 ... ''')
 >>> node = root.children[0]
->>> node.get_heading()
+>>> node.heading
 'Heading'
 >>> node.get_scheduled()
 OrgDateScheduled((2012, 2, 26))
