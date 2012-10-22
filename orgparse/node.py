@@ -817,11 +817,20 @@ class OrgNode(OrgBaseNode):
         """
         return self._deadline
 
-    def get_closed(self):
+    @property
+    def closed(self):
         """
         Return timestamp of closed time.
 
         :rtype: a subclass of :class:`orgparse.date.OrgDate`
+
+        >>> from orgparse import loads
+        >>> root = loads('''
+        ... * Node
+        ...   CLOSED: [2012-02-26 Sun 21:15]
+        ... ''')
+        >>> root.children[0].closed
+        OrgDateClosed((2012, 2, 26, 21, 15, 0))
 
         """
         return self._closed

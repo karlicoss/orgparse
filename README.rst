@@ -67,7 +67,7 @@ Accessing to node attributes
 'Heading'
 >>> node.scheduled
 OrgDateScheduled((2012, 2, 26))
->>> node.get_closed()
+>>> node.closed
 OrgDateClosed((2012, 2, 26, 21, 15, 0))
 >>> node.get_clock()
 [OrgDateClock((2012, 2, 26, 21, 10, 0), (2012, 2, 26, 21, 15, 0))]
