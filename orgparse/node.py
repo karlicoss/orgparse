@@ -472,7 +472,16 @@ class OrgBaseNode(object):
         return self._children
 
     def get_root(self):
-        """Return a root node."""
+        """
+        Return the root node.
+
+        >>> from orgparse import loads
+        >>> root = loads('* Node 1')
+        >>> n1 = next(root.traverse(include_self=False))
+        >>> n1.get_root() is root
+        True
+
+        """
         root = self
         while True:
             parent = root.get_parent()
@@ -578,6 +587,9 @@ class OrgRootNode(OrgBaseNode):
 
     def get_level(self):
         return 0
+
+    def get_parent(self, max_level=None):
+        return None
 
     # misc
 
