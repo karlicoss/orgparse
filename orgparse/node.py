@@ -877,11 +877,22 @@ class OrgNode(OrgBaseNode):
              ((end and ts.has_end()) or
               (noend and not ts.has_end())))]
 
-    def get_datelist(self):
+    @property
+    def datelist(self):
         """
         Alias of ``.get_timestamps(end=False)``.
 
         :rtype: list of :class:`orgparse.date.OrgDate` subclasses
+
+        >>> from orgparse import loads
+        >>> root = loads('''
+        ... * Node
+        ...   CLOSED: [2012-02-25 Sat 21:15]
+        ...   Some inactive timestamp [2012-02-26 Sun] in body text.
+        ...   Some active timestamp <2012-02-27 Mon> in body text.
+        ... ''')
+        >>> root.children[0].datelist
+        [OrgDate((2012, 2, 26), None, False), OrgDate((2012, 2, 27))]
 
         """
         return self.get_timestamps(end=False)
@@ -901,7 +912,7 @@ class OrgNode(OrgBaseNode):
         """
         return (self.scheduled or
                 self.deadline or
-                self.get_datelist() or
+                self.datelist or
                 self.get_rangelist())
 
     def get_repeated_tasks(self):
