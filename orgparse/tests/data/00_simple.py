@@ -1,10 +1,10 @@
-def nodedict(i, level, todo=None, tags=set([]), tags_inher=set([])):
+def nodedict(i, level, todo=None, shallow_tags=set([]), tags=set([])):
     return dict(
         heading="Heading {0}".format(i),
         level=level,
         todo=todo,
+        shallow_tags=shallow_tags,
         tags=tags,
-        tags_inher=tags_inher,
     )
 
 

@@ -22,7 +22,7 @@ def value_from_data_key(node, key):
     Helper function for check_data. Get value from Orgnode by key.
     """
     if key == 'tags_inher':
-        return node.get_tags(inher=True)
+        return node.tags
     elif key == 'children_heading':
         return [c.heading for c in node.children]
     elif key in ('parent_heading',

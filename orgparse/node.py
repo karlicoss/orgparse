@@ -604,7 +604,7 @@ class OrgBaseNode(Sequence):
         """
         raise NotImplemented
 
-    def get_tags(self, inher=False):
+    def _get_tags(self, inher=False):
         """
         Return tags
 
@@ -619,9 +619,16 @@ class OrgBaseNode(Sequence):
     @property
     def tags(self):
         """
-        Alias of :meth:`get_tags()` (calling without argument).
+        Tag of this and parents node.
         """
-        return self.get_tags()
+        return self._get_tags(inher=True)
+
+    @property
+    def shallow_tags(self):
+        """
+        Tags defined for this node (don't look-up parent nodes).
+        """
+        return self._get_tags(inher=False)
 
     def is_root(self):
         """
@@ -821,12 +828,12 @@ class OrgNode(OrgBaseNode):
         """Return a string to indicate the priority or None if undefined."""
         return self._priority
 
-    def get_tags(self, inher=False):
+    def _get_tags(self, inher=False):
         tags = set(self._tags)
         if inher:
             parent = self.get_parent()
             if parent:
-                return tags | parent.get_tags(inher=True)
+                return tags | parent._get_tags(inher=True)
         return tags
 
     @property

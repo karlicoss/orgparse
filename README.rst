@@ -73,7 +73,7 @@ OrgDateClosed((2012, 2, 26, 21, 15, 0))
 [OrgDateClock((2012, 2, 26, 21, 10, 0), (2012, 2, 26, 21, 15, 0))]
 >>> bool(node.deadline)   # it is not specified
 False
->>> node.get_tags() == set(['TAG'])
+>>> node.tags == set(['TAG'])
 True
 >>> node.get_property('Effort')
 60
