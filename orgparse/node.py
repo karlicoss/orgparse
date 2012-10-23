@@ -174,6 +174,29 @@ class OrgEnv(object):
         self._dones = list(dones)
         self._todo_not_specified_in_comment = True
         self._filename = filename
+        self._nodes = []
+
+    @property
+    def nodes(self):
+        """
+        A list of org nodes.
+
+        >>> OrgEnv().nodes   # default is empty (of course)
+        []
+
+        >>> from orgparse import loads
+        >>> loads('''
+        ... * Heading 1
+        ... ** Heading 2
+        ... *** Heading 3
+        ... ''').env.nodes      # doctest: +ELLIPSIS  +NORMALIZE_WHITESPACE
+        [<orgparse.node.OrgRootNode object at 0x...>,
+         <orgparse.node.OrgNode object at 0x...>,
+         <orgparse.node.OrgNode object at 0x...>,
+         <orgparse.node.OrgNode object at 0x...>]
+
+        """
+        return self._nodes
 
     def add_todo_keys(self, todos, dones):
         if self._todo_not_specified_in_comment:
