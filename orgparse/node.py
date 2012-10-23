@@ -300,7 +300,7 @@ class OrgBaseNode(Sequence):
 
     It also support sequence protocol.
 
-    >>> print root[1]
+    >>> print(root[1])
     * Heading 1
     >>> root[0] is root  # index 0 means itself
     True
