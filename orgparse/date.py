@@ -203,7 +203,7 @@ class OrgDate(object):
         args = [
             self.__class__.__name__,
             self._date_to_tuple(self.start),
-            self._date_to_tuple(self.get_end()) if self.has_end() else None,
+            self._date_to_tuple(self.end) if self.has_end() else None,
             None if self._active is self._active_default else self._active,
         ]
         if args[2] is None and args[3] is None:
@@ -241,13 +241,14 @@ class OrgDate(object):
         """
         return self._start
 
-    def get_end(self):
+    @property
+    def end(self):
         """
         Get date or datetime object
 
-        >>> OrgDate((2012, 2, 10), (2012, 2, 15)).get_end()
+        >>> OrgDate((2012, 2, 10), (2012, 2, 15)).end
         datetime.date(2012, 2, 15)
-        >>> OrgDate((2012, 2, 10, 12, 10), (2012, 2, 15, 12, 10)).get_end()
+        >>> OrgDate((2012, 2, 10, 12, 10), (2012, 2, 15, 12, 10)).end
         datetime.datetime(2012, 2, 15, 12, 10)
 
         """
@@ -288,7 +289,7 @@ class OrgDate(object):
         """
         if self.has_end():
             return (self._datetime_in_range(other.start) or
-                    self._datetime_in_range(other.get_end()))
+                    self._datetime_in_range(other.end))
         elif other.has_end():
             return other._datetime_in_range(self.start)
         elif self.start == other.get_start:
@@ -300,7 +301,7 @@ class OrgDate(object):
         if not isinstance(date, (datetime.datetime, datetime.date)):
             return False
         asdt = self._as_datetime
-        if asdt(self.start) <= asdt(date) <= asdt(self.get_end()):
+        if asdt(self.start) <= asdt(date) <= asdt(self.end):
             return True
         return False
 
@@ -467,7 +468,7 @@ class OrgDateClock(OrgDate):
         30.0
 
         """
-        return self.get_end() - self.start
+        return self.end - self.start
 
     def is_duration_consistent(self):
         """
