@@ -202,7 +202,7 @@ class OrgDate(object):
     def __repr__(self):
         args = [
             self.__class__.__name__,
-            self._date_to_tuple(self.get_start()),
+            self._date_to_tuple(self.start),
             self._date_to_tuple(self.get_end()) if self.has_end() else None,
             None if self._active is self._active_default else self._active,
         ]
@@ -228,13 +228,14 @@ class OrgDate(object):
                 self._end == other._end and
                 self._active == other._active)
 
-    def get_start(self):
+    @property
+    def start(self):
         """
         Get date or datetime object
 
-        >>> OrgDate((2012, 2, 10)).get_start()
+        >>> OrgDate((2012, 2, 10)).start
         datetime.date(2012, 2, 10)
-        >>> OrgDate((2012, 2, 10, 12, 10)).get_start()
+        >>> OrgDate((2012, 2, 10, 12, 10)).start
         datetime.datetime(2012, 2, 10, 12, 10)
 
         """
@@ -286,11 +287,11 @@ class OrgDate(object):
 
         """
         if self.has_end():
-            return (self._datetime_in_range(other.get_start()) or
+            return (self._datetime_in_range(other.start) or
                     self._datetime_in_range(other.get_end()))
         elif other.has_end():
-            return other._datetime_in_range(self.get_start())
-        elif self.get_start() == other.get_start():
+            return other._datetime_in_range(self.start)
+        elif self.start == other.get_start:
             return True
         else:
             return False
@@ -299,7 +300,7 @@ class OrgDate(object):
         if not isinstance(date, (datetime.datetime, datetime.date)):
             return False
         asdt = self._as_datetime
-        if asdt(self.get_start()) <= asdt(date) <= asdt(self.get_end()):
+        if asdt(self.start) <= asdt(date) <= asdt(self.get_end()):
             return True
         return False
 
@@ -466,7 +467,7 @@ class OrgDateClock(OrgDate):
         30.0
 
         """
-        return self.get_end() - self.get_start()
+        return self.get_end() - self.start
 
     def is_duration_consistent(self):
         """
