@@ -1,4 +1,9 @@
 import re
+import itertools
+try:
+    from collections import Sequence
+except ImportError:
+    from collections.abc import Sequence
 
 from orgparse.date import OrgDate, OrgDateClock, parse_sdc
 from orgparse.py3compat import PY3, unicode
@@ -169,6 +174,29 @@ class OrgEnv(object):
         self._dones = list(dones)
         self._todo_not_specified_in_comment = True
         self._filename = filename
+        self._nodes = []
+
+    @property
+    def nodes(self):
+        """
+        A list of org nodes.
+
+        >>> OrgEnv().nodes   # default is empty (of course)
+        []
+
+        >>> from orgparse import loads
+        >>> loads('''
+        ... * Heading 1
+        ... ** Heading 2
+        ... *** Heading 3
+        ... ''').env.nodes      # doctest: +ELLIPSIS  +NORMALIZE_WHITESPACE
+        [<orgparse.node.OrgRootNode object at 0x...>,
+         <orgparse.node.OrgNode object at 0x...>,
+         <orgparse.node.OrgNode object at 0x...>,
+         <orgparse.node.OrgNode object at 0x...>]
+
+        """
+        return self._nodes
 
     def add_todo_keys(self, todos, dones):
         if self._todo_not_specified_in_comment:
@@ -235,7 +263,7 @@ class OrgEnv(object):
             yield OrgNode.from_chunk(self, chunk)
 
 
-class OrgBaseNode(object):
+class OrgBaseNode(Sequence):
 
     """
     Base class for :class:`OrgRootNode` and :class:`OrgNode`
@@ -245,12 +273,52 @@ class OrgBaseNode(object):
        An instance of :class:`OrgEnv`.
        All nodes in a same file shares same instance.
 
+    :class:`OrgBaseNode` is an iterable object:
 
-    >>> node = OrgBaseNode(OrgEnv())
+    >>> from orgparse import loads
+    >>> root = loads('''
+    ... * Heading 1
+    ... ** Heading 2
+    ... *** Heading 3
+    ... ''')
+    >>> for node in root:
+    ...     print(node)
+    <BLANKLINE>
+    * Heading 1
+    ** Heading 2
+    *** Heading 3
+
+    Note that the first blank line is due to the root node, as
+    iteration contains the object itself.  To skip that, use
+    slice access ``[1:]``:
+
+    >>> for node in root[1:]:
+    ...     print(node)
+    * Heading 1
+    ** Heading 2
+    *** Heading 3
+
+    It also support sequence protocol.
+
+    >>> print(root[1])
+    * Heading 1
+    >>> root[0] is root  # index 0 means itself
+    True
+    >>> len(root)   # remember, sequence contains itself
+    4
+
+    As what ``root[N]`` returns is also an iterative, you can
+    use ``root[1]`` instead of ``root[1:]``.
+
+    >>> for node in root[1]:
+    ...     print(node)
+    * Heading 1
+    ** Heading 2
+    *** Heading 3
 
     """
 
-    def __init__(self, env):
+    def __init__(self, env, index=None):
         """
         Create a :class:`OrgBaseNode` object.
 
@@ -263,42 +331,45 @@ class OrgBaseNode(object):
         # content
         self._lines = []
 
-    def traverse(self, include_self=True):
-        """
-        Return an iterator to traverse all descendant nodes.
+        # FIXME: use `index` argument to set index.  (Currently it is
+        # done externally in `parse_lines`.)
+        if index is not None:
+            self._index = index
+            """
+            Index of `self` in `self.env.nodes`.
 
-        >>> from orgparse import loads
-        >>> root = loads('''
-        ... * Heading 1
-        ... ** Heading 2
-        ... *** Heading 3
-        ... ''')
-        >>> for node in root.traverse(include_self=False):
-        ...     print(node)
-        * Heading 1
-        ** Heading 2
-        *** Heading 3
+            It must satisfy an equality::
 
-        Remebre: what :meth:`traverse` returns is an iterator, not a
-        list.
+                self.env.nodes[self._index] is self
 
-        >>> isinstance(root.traverse(), list)
-        False
+            This value is used for quick access for iterator and
+            tree-like traversing.
 
-        By default, :meth:`traverse` always returns the object itself
-        as the first element, unless ``include_self=False`` is
-        specified.
+            """
 
-        >>> next(root.traverse()) is root
-        True
-
-        """
-        if include_self:
-            yield self
+    def __iter__(self):
+        yield self
         level = self.level
         for node in self.env._nodes[self._index + 1:]:
             if node.level > level:
                 yield node
+
+    def __len__(self):
+        return sum(1 for _ in self)
+
+    def __getitem__(self, key):
+        if isinstance(key, slice):
+            return itertools.islice(self, key.start, key.stop, key.step)
+        elif isinstance(key, int):
+            if key < 0:
+                key += len(self)
+            for (i, node) in enumerate(self):
+                if i == key:
+                    return node
+            raise IndexError("Out of range {0}".format(key))
+        else:
+            raise TypeError("Inappropriate type {0} for {1}"
+                            .format(type(key), type(self)))
 
     # tree structure
 
@@ -320,7 +391,7 @@ class OrgBaseNode(object):
         ... * Node 2
         ... ** Node 3
         ... ''')
-        >>> (n1, n2, n3) = list(root.traverse(include_self=False))
+        >>> (n1, n2, n3) = list(root[1:])
         >>> n1.previous_same_level is None
         True
         >>> n2.previous_same_level is n1
@@ -342,7 +413,7 @@ class OrgBaseNode(object):
         ... * Node 2
         ... ** Node 3
         ... ''')
-        >>> (n1, n2, n3) = list(root.traverse(include_self=False))
+        >>> (n1, n2, n3) = list(root[1:])
         >>> n1.next_same_level is n2
         True
         >>> n2.next_same_level is None  # n3 is not at the same level
@@ -380,7 +451,7 @@ class OrgBaseNode(object):
         ... ** Node 2
         ... ** Node 3
         ... ''')
-        >>> (n1, n2, n3) = list(root.traverse(include_self=False))
+        >>> (n1, n2, n3) = list(root[1:])
         >>> n1.get_parent() is root
         True
         >>> n2.get_parent() is n1
@@ -403,7 +474,7 @@ class OrgBaseNode(object):
         ... *** Node 2
         ... ** Node 3
         ... ''')
-        >>> (n1, n2, n3) = list(root.traverse(include_self=False))
+        >>> (n1, n2, n3) = list(root[1:])
         >>> n1.get_parent() is root
         True
         >>> n2.get_parent() is n1
@@ -418,7 +489,7 @@ class OrgBaseNode(object):
         ... ** Node 2 (level 2)
         ... *** Node 3 (level 3)
         ... ''')
-        >>> (n1, n2, n3) = list(root.traverse(include_self=False))
+        >>> (n1, n2, n3) = list(root[1:])
         >>> n3.get_parent() is n2
         True
         >>> n3.get_parent(max_level=2) is n2  # same as default
@@ -470,7 +541,7 @@ class OrgBaseNode(object):
         ... *** Node 3
         ... ** Node 4
         ... ''')
-        >>> (n1, n2, n3, n4) = list(root.traverse(include_self=False))
+        >>> (n1, n2, n3, n4) = list(root[1:])
         >>> (c1, c2) = n1.children
         >>> c1 is n2
         True
@@ -487,7 +558,7 @@ class OrgBaseNode(object):
 
         >>> from orgparse import loads
         >>> root = loads('* Node 1')
-        >>> n1 = next(root.traverse(include_self=False))
+        >>> n1 = root[1]
         >>> n1.root is root
         True
 
@@ -560,7 +631,7 @@ class OrgBaseNode(object):
         >>> root = loads('* Node 1')
         >>> root.is_root()
         True
-        >>> n1 = next(root.traverse(include_self=False))
+        >>> n1 = root[1]
         >>> n1.is_root()
         False
 

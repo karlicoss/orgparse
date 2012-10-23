@@ -31,6 +31,6 @@ def test_picklable():
     depth = 3
     nodes_per_level = 1
     root = loadi(generate_org_lines(num, depth, nodes_per_level))
-    eq_(sum(1 for _ in root.traverse()),
+    eq_(sum(1 for _ in root),
         num_generate_org_lines(num, depth, nodes_per_level) + 1)
     pickle.dumps(root)  # should not fail
