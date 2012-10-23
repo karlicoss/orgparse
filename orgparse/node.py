@@ -1,4 +1,8 @@
 import re
+try:
+    from collections import Iterable
+except ImportError:
+    from collections.abc import Iterable
 
 from orgparse.date import OrgDate, OrgDateClock, parse_sdc
 from orgparse.py3compat import PY3, unicode
@@ -235,7 +239,7 @@ class OrgEnv(object):
             yield OrgNode.from_chunk(self, chunk)
 
 
-class OrgBaseNode(object):
+class OrgBaseNode(Iterable):
 
     """
     Base class for :class:`OrgRootNode` and :class:`OrgNode`
@@ -247,6 +251,21 @@ class OrgBaseNode(object):
 
 
     >>> node = OrgBaseNode(OrgEnv())
+
+    :class`OrgBaseNode` is an iterable object:
+
+    >>> from orgparse import loads
+    >>> root = loads('''
+    ... * Heading 1
+    ... ** Heading 2
+    ... *** Heading 3
+    ... ''')
+    >>> for node in root:
+    ...     print(node)
+    <BLANKLINE>
+    * Heading 1
+    ** Heading 2
+    *** Heading 3
 
     """
 
@@ -293,8 +312,14 @@ class OrgBaseNode(object):
         True
 
         """
-        if include_self:
-            yield self
+        nodes = iter(self)
+        if not include_self:
+            next(nodes)
+        for node in nodes:
+            yield node
+
+    def __iter__(self):
+        yield self
         level = self.level
         for node in self.env._nodes[self._index + 1:]:
             if node.level > level:
