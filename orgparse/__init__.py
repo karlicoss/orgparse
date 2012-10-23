@@ -92,6 +92,7 @@ True
 """
 # [[[end]]]
 
+import codecs
 
 from orgparse.node import parse_lines
 from orgparse.py3compat import basestring
@@ -113,7 +114,7 @@ def load(path):
 
     """
     if isinstance(path, basestring):
-        orgfile = open(path)
+        orgfile = codecs.open(path, encoding='utf8')
         filename = path
     else:
         orgfile = path
