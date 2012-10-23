@@ -283,42 +283,6 @@ class OrgBaseNode(Sequence):
         # content
         self._lines = []
 
-    def traverse(self, include_self=True):
-        """
-        Return an iterator to traverse all descendant nodes.
-
-        >>> from orgparse import loads
-        >>> root = loads('''
-        ... * Heading 1
-        ... ** Heading 2
-        ... *** Heading 3
-        ... ''')
-        >>> for node in root.traverse(include_self=False):
-        ...     print(node)
-        * Heading 1
-        ** Heading 2
-        *** Heading 3
-
-        Remebre: what :meth:`traverse` returns is an iterator, not a
-        list.
-
-        >>> isinstance(root.traverse(), list)
-        False
-
-        By default, :meth:`traverse` always returns the object itself
-        as the first element, unless ``include_self=False`` is
-        specified.
-
-        >>> next(root.traverse()) is root
-        True
-
-        """
-        nodes = iter(self)
-        if not include_self:
-            next(nodes)
-        for node in nodes:
-            yield node
-
     def __iter__(self):
         yield self
         level = self.level
