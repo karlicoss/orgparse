@@ -529,8 +529,10 @@ class OrgDateRpeatedTask(OrgDate):
         self._before = before
         self._after = after
 
-    def get_before(self):
+    @property
+    def before(self):
         return self._before
 
-    def get_after(self):
+    @property
+    def after(self):
         return self._after
