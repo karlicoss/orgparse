@@ -1,4 +1,5 @@
 import re
+import itertools
 try:
     from collections import Sequence
 except ImportError:
@@ -329,10 +330,18 @@ class OrgBaseNode(Sequence):
         return sum(1 for _ in self)
 
     def __getitem__(self, key):
-        for (i, node) in enumerate(self):
-            if i == key:
-                return node
-        raise IndexError(key)
+        if isinstance(key, slice):
+            return itertools.islice(self, key.start, key.stop, key.step)
+        elif isinstance(key, int):
+            if key < 0:
+                key += len(self)
+            for (i, node) in enumerate(self):
+                if i == key:
+                    return node
+            raise IndexError("Out of range {0}".format(key))
+        else:
+            raise TypeError("Inappropriate type {0} for {1}"
+                            .format(type(key), type(self)))
 
     # tree structure
 
@@ -354,7 +363,7 @@ class OrgBaseNode(Sequence):
         ... * Node 2
         ... ** Node 3
         ... ''')
-        >>> (n1, n2, n3) = list(root.traverse(include_self=False))
+        >>> (n1, n2, n3) = list(root[1:])
         >>> n1.previous_same_level is None
         True
         >>> n2.previous_same_level is n1
@@ -376,7 +385,7 @@ class OrgBaseNode(Sequence):
         ... * Node 2
         ... ** Node 3
         ... ''')
-        >>> (n1, n2, n3) = list(root.traverse(include_self=False))
+        >>> (n1, n2, n3) = list(root[1:])
         >>> n1.next_same_level is n2
         True
         >>> n2.next_same_level is None  # n3 is not at the same level
@@ -414,7 +423,7 @@ class OrgBaseNode(Sequence):
         ... ** Node 2
         ... ** Node 3
         ... ''')
-        >>> (n1, n2, n3) = list(root.traverse(include_self=False))
+        >>> (n1, n2, n3) = list(root[1:])
         >>> n1.get_parent() is root
         True
         >>> n2.get_parent() is n1
@@ -437,7 +446,7 @@ class OrgBaseNode(Sequence):
         ... *** Node 2
         ... ** Node 3
         ... ''')
-        >>> (n1, n2, n3) = list(root.traverse(include_self=False))
+        >>> (n1, n2, n3) = list(root[1:])
         >>> n1.get_parent() is root
         True
         >>> n2.get_parent() is n1
@@ -452,7 +461,7 @@ class OrgBaseNode(Sequence):
         ... ** Node 2 (level 2)
         ... *** Node 3 (level 3)
         ... ''')
-        >>> (n1, n2, n3) = list(root.traverse(include_self=False))
+        >>> (n1, n2, n3) = list(root[1:])
         >>> n3.get_parent() is n2
         True
         >>> n3.get_parent(max_level=2) is n2  # same as default
@@ -504,7 +513,7 @@ class OrgBaseNode(Sequence):
         ... *** Node 3
         ... ** Node 4
         ... ''')
-        >>> (n1, n2, n3, n4) = list(root.traverse(include_self=False))
+        >>> (n1, n2, n3, n4) = list(root[1:])
         >>> (c1, c2) = n1.children
         >>> c1 is n2
         True
