@@ -455,13 +455,14 @@ class OrgDateClock(OrgDate):
         super(OrgDateClock, self).__init__(start, end, active=active)
         self._duration = duration
 
-    def get_duration(self):
+    @property
+    def duration(self):
         """
         Get duration of CLOCK.
 
         >>> duration = OrgDateClock.from_str(
         ...   'CLOCK: [2010-08-08 Sun 17:00]--[2010-08-08 Sun 17:30] => 0:30'
-        ... ).get_duration()
+        ... ).duration
         >>> duration
         datetime.timedelta(0, 1800)
         >>> total_minutes(duration)
@@ -485,7 +486,7 @@ class OrgDateClock(OrgDate):
 
         """
         return (self._duration is None or
-                self._duration == total_minutes(self.get_duration()))
+                self._duration == total_minutes(self.duration))
 
     @classmethod
     def from_str(cls, line):
