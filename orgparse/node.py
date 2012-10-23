@@ -318,7 +318,7 @@ class OrgBaseNode(Sequence):
 
     """
 
-    def __init__(self, env):
+    def __init__(self, env, index=None):
         """
         Create a :class:`OrgBaseNode` object.
 
@@ -330,6 +330,22 @@ class OrgBaseNode(Sequence):
 
         # content
         self._lines = []
+
+        # FIXME: use `index` argument to set index.  (Currently it is
+        # done externally in `parse_lines`.)
+        if index is not None:
+            self._index = index
+            """
+            Index of `self` in `self.env.nodes`.
+
+            It must satisfy an equality::
+
+                self.env.nodes[self._index] is self
+
+            This value is used for quick access for iterator and
+            tree-like traversing.
+
+            """
 
     def __iter__(self):
         yield self
