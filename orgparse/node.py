@@ -620,6 +620,15 @@ class OrgBaseNode(Sequence):
     def tags(self):
         """
         Tag of this and parents node.
+
+        >>> from orgparse import loads
+        >>> n2 = loads('''
+        ... * Node 1    :TAG1:
+        ... ** Node 2   :TAG2:
+        ... ''')[2]
+        >>> n2.tags == set(['TAG1', 'TAG2'])
+        True
+
         """
         return self._get_tags(inher=True)
 
@@ -627,6 +636,15 @@ class OrgBaseNode(Sequence):
     def shallow_tags(self):
         """
         Tags defined for this node (don't look-up parent nodes).
+
+        >>> from orgparse import loads
+        >>> n2 = loads('''
+        ... * Node 1    :TAG1:
+        ... ** Node 2   :TAG2:
+        ... ''')[2]
+        >>> n2.shallow_tags == set(['TAG2'])
+        True
+
         """
         return self._get_tags(inher=False)
 
