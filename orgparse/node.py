@@ -250,10 +250,7 @@ class OrgBaseNode(Sequence):
        An instance of :class:`OrgEnv`.
        All nodes in a same file shares same instance.
 
-
-    >>> node = OrgBaseNode(OrgEnv())
-
-    :class`OrgBaseNode` is an iterable object:
+    :class:`OrgBaseNode` is an iterable object:
 
     >>> from orgparse import loads
     >>> root = loads('''
@@ -264,6 +261,34 @@ class OrgBaseNode(Sequence):
     >>> for node in root:
     ...     print(node)
     <BLANKLINE>
+    * Heading 1
+    ** Heading 2
+    *** Heading 3
+
+    Note that the first blank line is due to the root node, as
+    iteration contains the object itself.  To skip that, use
+    slice access ``[1:]``:
+
+    >>> for node in root[1:]:
+    ...     print(node)
+    * Heading 1
+    ** Heading 2
+    *** Heading 3
+
+    It also support sequence protocol.
+
+    >>> print root[1]
+    * Heading 1
+    >>> root[0] is root  # index 0 means itself
+    True
+    >>> len(root)   # remember, sequence contains itself
+    4
+
+    As what ``root[N]`` returns is also an iterative, you can
+    use ``root[1]`` instead of ``root[1:]``.
+
+    >>> for node in root[1]:
+    ...     print(node)
     * Heading 1
     ** Heading 2
     *** Heading 3
