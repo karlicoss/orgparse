@@ -530,7 +530,7 @@ class OrgBaseNode(Sequence):
 
         >>> from orgparse import loads
         >>> root = loads('* Node 1')
-        >>> n1 = next(root.traverse(include_self=False))
+        >>> n1 = root[1]
         >>> n1.root is root
         True
 
@@ -603,7 +603,7 @@ class OrgBaseNode(Sequence):
         >>> root = loads('* Node 1')
         >>> root.is_root()
         True
-        >>> n1 = next(root.traverse(include_self=False))
+        >>> n1 = root[1]
         >>> n1.is_root()
         False
 

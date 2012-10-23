@@ -35,7 +35,7 @@ Traverse org tree
 ... ** Heading 2
 ... *** Heading 3
 ... ''')
->>> for node in root.traverse(include_self=False):
+>>> for node in root[1:]:  # [1:] for skipping root itself
 ...     print(node)
 * Heading 1
 ** Heading 2
