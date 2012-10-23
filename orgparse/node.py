@@ -1,8 +1,8 @@
 import re
 try:
-    from collections import Iterable
+    from collections import Sequence
 except ImportError:
-    from collections.abc import Iterable
+    from collections.abc import Sequence
 
 from orgparse.date import OrgDate, OrgDateClock, parse_sdc
 from orgparse.py3compat import PY3, unicode
@@ -239,7 +239,7 @@ class OrgEnv(object):
             yield OrgNode.from_chunk(self, chunk)
 
 
-class OrgBaseNode(Iterable):
+class OrgBaseNode(Sequence):
 
     """
     Base class for :class:`OrgRootNode` and :class:`OrgNode`
@@ -324,6 +324,15 @@ class OrgBaseNode(Iterable):
         for node in self.env._nodes[self._index + 1:]:
             if node.level > level:
                 yield node
+
+    def __len__(self):
+        return sum(1 for _ in self)
+
+    def __getitem__(self, key):
+        for (i, node) in enumerate(self):
+            if i == key:
+                return node
+        raise IndexError(key)
 
     # tree structure
 
