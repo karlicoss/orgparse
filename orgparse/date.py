@@ -146,8 +146,8 @@ class OrgDate(object):
         """
         Create :class:`OrgDate` object
 
-        :type start: datetime, date, tuple, int or None
-        :type   end: datetime, date, tuple, int or None
+        :type start: datetime, date, tuple, int, float or None
+        :type   end: datetime, date, tuple, int, float or None
         :arg  start: Starting date.
         :arg    end: Ending date.
 
@@ -194,7 +194,7 @@ class OrgDate(object):
                     "requires at least 3 elements in the tuple. "
                     "Only {0} elements are in the given tuple '{1}'."
                     .format(len(date), date))
-        elif isinstance(date, int):
+        elif isinstance(date, (int, float)):
             return datetime.datetime.fromtimestamp(date)
         else:
             return date
