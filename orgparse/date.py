@@ -278,6 +278,10 @@ class OrgDate(object):
         """
         Test if it has overlap with other :class:`OrgDate` instance
 
+        If the argument is not an instance of :class:`OrgDate`, it is
+        converted to :class:`OrgDate` instance by ``OrgDate(other)``
+        first.
+
         >>> od = OrgDate((2012, 2, 10), (2012, 2, 15))
         >>> od.has_overlap(OrgDate((2012, 2, 11)))
         True
@@ -285,8 +289,12 @@ class OrgDate(object):
         False
         >>> od.has_overlap(OrgDate((2012, 2, 11), (2012, 2, 20)))
         True
+        >>> od.has_overlap((2012, 2, 11))
+        True
 
         """
+        if not isinstance(other, OrgDate):
+            other = OrgDate(other)
         if self.has_end():
             return (self._datetime_in_range(other.start) or
                     self._datetime_in_range(other.end))
