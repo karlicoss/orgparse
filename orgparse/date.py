@@ -146,8 +146,8 @@ class OrgDate(object):
         """
         Create :class:`OrgDate` object
 
-        :type start: datetime, date, tuple or None
-        :type   end: datetime, date, tuple or None
+        :type start: datetime, date, tuple, int or None
+        :type   end: datetime, date, tuple, int or None
         :arg  start: Starting date.
         :arg    end: Ending date.
 
@@ -171,6 +171,11 @@ class OrgDate(object):
         >>> OrgDate((2012, 2, 10), (2012, 2, 15), active=False)
         OrgDate((2012, 2, 10), (2012, 2, 15), False)
 
+        OrgDate can be created using unix timestamp:
+
+        >>> OrgDate(datetime.datetime.fromtimestamp(0)) == OrgDate(0)
+        True
+
         """
         self._start = self._to_date(start)
         self._end = self._to_date(end)
@@ -189,6 +194,8 @@ class OrgDate(object):
                     "requires at least 3 elements in the tuple. "
                     "Only {0} elements are in the given tuple '{1}'."
                     .format(len(date), date))
+        elif isinstance(date, int):
+            return datetime.datetime.fromtimestamp(date)
         else:
             return date
 
