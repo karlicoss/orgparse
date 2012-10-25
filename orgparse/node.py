@@ -357,6 +357,13 @@ class OrgBaseNode(Sequence):
     def __len__(self):
         return sum(1 for _ in self)
 
+    def __nonzero__(self):
+        # As self.__len__ returns non-zero value always this is not
+        # needed.  This function is only for performance.
+        return True
+
+    __bool__ = __nonzero__  # PY3
+
     def __getitem__(self, key):
         if isinstance(key, slice):
             return itertools.islice(self, key.start, key.stop, key.step)
