@@ -169,8 +169,8 @@ def parse_seq_todo(line):
     else:
         (todos, dones) = (line, '')
     strip_fast_access_key = lambda x: x.split('(', 1)[0]
-    return (map(strip_fast_access_key, todos.split()),
-            map(strip_fast_access_key, dones.split()))
+    return (list(map(strip_fast_access_key, todos.split())),
+            list(map(strip_fast_access_key, dones.split())))
 
 
 class OrgEnv(object):
