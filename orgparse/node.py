@@ -150,7 +150,7 @@ def parse_seq_todo(line):
 
     >>> parse_seq_todo('TODO | DONE')
     (['TODO'], ['DONE'])
-    >>> parse_seq_todo('Fred Sara Lucy Mike | DONE')
+    >>> parse_seq_todo(' Fred  Sara   Lucy Mike  |  DONE  ')
     (['Fred', 'Sara', 'Lucy', 'Mike'], ['DONE'])
     >>> parse_seq_todo('| CANCELED')
     ([], ['CANCELED'])
