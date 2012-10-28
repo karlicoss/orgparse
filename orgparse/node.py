@@ -146,12 +146,21 @@ def parse_comment(line):
 
 def parse_seq_todo(line):
     """
-    Parse value part of SEQ_TODO comment
+    Parse value part of SEQ_TODO/TODO/TYP_TODO comment.
 
     >>> parse_seq_todo('TODO | DONE')
     (['TODO'], ['DONE'])
     >>> parse_seq_todo('Fred Sara Lucy Mike | DONE')
     (['Fred', 'Sara', 'Lucy', 'Mike'], ['DONE'])
+    >>> parse_seq_todo('| CANCELED')
+    ([], ['CANCELED'])
+    >>> parse_seq_todo('REPORT(r) BUG(b) KNOWNCAUSE(k) | FIXED(f)')
+    (['REPORT', 'BUG', 'KNOWNCAUSE'], ['FIXED'])
+
+    See also:
+
+    * (info "(org) Per-file keywords")
+    * (info "(org) Fast access to TODO states")
 
     """
     todo_done = line.split('|', 1)
@@ -159,7 +168,9 @@ def parse_seq_todo(line):
         (todos, dones) = todo_done
     else:
         (todos, dones) = (line, '')
-    return (todos.split(), dones.split())
+    strip_fast_access_key = lambda x: x.split('(', 1)[0]
+    return (map(strip_fast_access_key, todos.split()),
+            map(strip_fast_access_key, dones.split()))
 
 
 class OrgEnv(object):
