@@ -1,0 +1,7 @@
+* Node 0                                                                :tag:
+* Node 1                                                               :@tag:
+* Node 2                                                          :tag1:tag2:
+* Node 3                                                                  :_:
+* Node 4                                                                  :@:
+* Node 5                                                                 :@_:
+* Node 6                                                              :_tag_:
