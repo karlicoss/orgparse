@@ -2,6 +2,29 @@
   orgparse - Pyton module for reading Emacs org-mode file
 ===========================================================
 
+
+Links:
+
+* `Documentation (at Read the Docs) <http://orgparse.readthedocs.org/>`_
+* `Repository (at GitHub) <https://github.com/tkf/orgparse>`_
+* `Issue tracker (at GitHub) <https://github.com/tkf/orgparse/issues>`_
+* `PyPI <http://pypi.python.org/pypi/orgparse>`_
+* `Travis CI <https://travis-ci.org/#!/tkf/orgparse>`_ |build-status|
+
+.. |build-status|
+   image:: https://secure.travis-ci.org/tkf/orgparse.png?branch=master
+   :target: http://travis-ci.org/tkf/orgparse
+   :alt: Build Status
+
+
+Install
+-------
+
+You can install `orgparse` from PyPI_::
+
+  pip install orgparse
+
+
 Usage
 -----
 
