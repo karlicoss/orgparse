@@ -60,7 +60,7 @@ def parse_heading_tags(heading):
         tags = []
     return (heading, tags)
 
-RE_HEADING_TAGS = re.compile(r'(.*?)\s*:([a-zA-Z0-9_:]+):\s*$')
+RE_HEADING_TAGS = re.compile(r'(.*?)\s*:([a-zA-Z0-9@_:]+):\s*$')
 
 
 def parse_heading_todos(heading, todo_candidates):
