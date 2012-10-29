@@ -5,7 +5,7 @@ try:
 except ImportError:
     from collections.abc import Sequence
 
-from orgparse.date import OrgDate, OrgDateClock, parse_sdc
+from .date import OrgDate, OrgDateClock, parse_sdc
 from .utils.py3compat import PY3, unicode
 
 

@@ -117,7 +117,7 @@ True
 
 import codecs
 
-from orgparse.node import parse_lines
+from .node import parse_lines
 from .utils.py3compat import basestring
 
 __version__ = '0.0.1.dev2'

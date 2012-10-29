@@ -3,7 +3,7 @@ from glob import glob
 import pickle
 from nose.tools import eq_
 
-from orgparse import load
+from .. import load
 from ..utils.py3compat import execfile
 
 
