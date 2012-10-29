@@ -49,6 +49,16 @@ def parse_heading_tags(heading):
     ('HEADING', ['TAG1', 'TAG2'])
     >>> parse_heading_tags('HEADING: this is still heading :TAG1:TAG2:')
     ('HEADING: this is still heading', ['TAG1', 'TAG2'])
+    >>> parse_heading_tags('HEADING :@tag:_tag_:')
+    ('HEADING', ['@tag', '_tag_'])
+
+    Here is the spec of tags from Org Mode manual:
+
+      Tags are normal words containing letters, numbers, ``_``, and
+      ``@``.  Tags must be preceded and followed by a single colon,
+      e.g., ``:work:``.
+
+      -- (info "(org) Tags")
 
     """
     match = RE_HEADING_TAGS.search(heading)
@@ -60,7 +70,7 @@ def parse_heading_tags(heading):
         tags = []
     return (heading, tags)
 
-RE_HEADING_TAGS = re.compile(r'(.*?)\s*:([a-zA-Z0-9_:]+):\s*$')
+RE_HEADING_TAGS = re.compile(r'(.*?)\s*:([a-zA-Z0-9@_:]+):\s*$')
 
 
 def parse_heading_todos(heading, todo_candidates):
