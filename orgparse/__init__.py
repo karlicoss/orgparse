@@ -118,7 +118,7 @@ True
 import codecs
 
 from orgparse.node import parse_lines
-from orgparse.py3compat import basestring
+from .utils.py3compat import basestring
 
 __version__ = '0.0.1.dev2'
 __author__ = 'Takafumi Arakaki'

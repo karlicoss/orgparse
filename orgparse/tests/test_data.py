@@ -4,7 +4,7 @@ import pickle
 from nose.tools import eq_
 
 from orgparse import load
-from orgparse.py3compat import execfile
+from ..utils.py3compat import execfile
 
 
 DATADIR = os.path.join(os.path.dirname(__file__), 'data')

@@ -6,7 +6,7 @@ except ImportError:
     from collections.abc import Sequence
 
 from orgparse.date import OrgDate, OrgDateClock, parse_sdc
-from orgparse.py3compat import PY3, unicode
+from .utils.py3compat import PY3, unicode
 
 
 def lines_to_chunks(lines):

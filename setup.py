@@ -5,7 +5,12 @@ import orgparse
 setup(
     name='orgparse',
     version=orgparse.__version__,
-    packages=['orgparse', 'orgparse.tests', 'orgparse.tests.data'],
+    packages=[
+        'orgparse',
+        'orgparse.utils',
+        'orgparse.tests',
+        'orgparse.tests.data',
+    ],
     package_data={
         'orgparse.tests.data': ['*.org'],
     },
