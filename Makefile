@@ -11,7 +11,7 @@ doc: cog
 ## Update files using cog.py
 cog: orgparse/__init__.py
 orgparse/__init__.py: README.rst
-	cog.py -r $@
+	cd orgparse && cog.py -r __init__.py
 
 
 ## Upload to PyPI
