@@ -14,4 +14,6 @@ data = [
         [["@"]],
         [["@_"]],
         [["_tag_"]],
-    ])]
+    ])] + [
+        dict(heading='Heading: :with:colon:', tags=set(["tag"])),
+    ]

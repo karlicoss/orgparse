@@ -5,3 +5,4 @@
 * Node 4                                                                  :@:
 * Node 5                                                                 :@_:
 * Node 6                                                              :_tag_:
+* Heading: :with:colon:                                                 :tag:
