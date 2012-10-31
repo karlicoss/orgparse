@@ -6,6 +6,7 @@ except ImportError:
     from collections.abc import Sequence
 
 from .date import OrgDate, OrgDateClock, parse_sdc
+from .inline import to_plain_text
 from .utils.py3compat import PY3, unicode
 
 
@@ -854,16 +855,37 @@ class OrgNode(OrgBaseNode):
 
     # getter
 
-    @property
-    def body(self):
-        """Return a string of body text."""
-        if self._lines:
-            return "\n".join(self._body_lines)
+    @staticmethod
+    def _get_text(text, format='plain'):
+        if format == 'plain':
+            return to_plain_text(text)
+        elif format == 'raw':
+            return text
+        else:
+            raise ValueError('format={0} is not supported.'.format(format))
+
+    def get_heading(self, format='plain'):
+        """
+        Return a string of head text without tags and TODO keywords.
+        """
+        return self._get_text(self._heading, format)
+
+    def get_body(self, format='plain'):
+        """
+        Return a string of body text.
+        """
+        return self._get_text(
+            '\n'.join(self._body_lines), format) if self._lines else ''
 
     @property
     def heading(self):
-        """Return a string of head text without tags and TODO keywords."""
-        return self._heading
+        """Alias of ``.get_heading(format='plain')``."""
+        return self.get_heading()
+
+    @property
+    def body(self):
+        """Alias of ``.get_body(format='plain')``."""
+        return self.get_body()
 
     @property
     def level(self):
