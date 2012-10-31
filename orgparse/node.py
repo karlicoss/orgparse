@@ -867,12 +867,31 @@ class OrgNode(OrgBaseNode):
     def get_heading(self, format='plain'):
         """
         Return a string of head text without tags and TODO keywords.
+
+        >>> from orgparse import loads
+        >>> node = loads('* TODO Node 1').children[0]
+        >>> node.get_heading()
+        'Node 1'
+
+        It strips off inline markup by default (``format='plain'``).
+        You can get the original raw string by specifying
+        ``format='raw'``.
+
+        >>> node = loads('* [[link][Node 1]]').children[0]
+        >>> node.get_heading()
+        'Node 1'
+        >>> node.get_heading(format='raw')
+        '[[link][Node 1]]'
+
         """
         return self._get_text(self._heading, format)
 
     def get_body(self, format='plain'):
         """
         Return a string of body text.
+
+        See also: :meth:`get_heading`.
+
         """
         return self._get_text(
             '\n'.join(self._body_lines), format) if self._lines else ''
