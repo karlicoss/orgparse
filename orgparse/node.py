@@ -810,6 +810,7 @@ class OrgNode(OrgBaseNode):
 
     def _iparse_timestamps(self, ilines):
         self._timestamps = timestamps = []
+        timestamps.extend(OrgDate.list_from_str(self._heading))
         for l in ilines:
             timestamps.extend(OrgDate.list_from_str(l))
             yield l
@@ -1108,13 +1109,15 @@ class OrgNode(OrgBaseNode):
 
         >>> from orgparse import loads
         >>> root = loads('''
-        ... * Node
+        ... * Node with point dates <2012-02-25 Sat>
         ...   CLOSED: [2012-02-25 Sat 21:15]
         ...   Some inactive timestamp [2012-02-26 Sun] in body text.
         ...   Some active timestamp <2012-02-27 Mon> in body text.
         ... ''')
-        >>> root.children[0].datelist
-        [OrgDate((2012, 2, 26), None, False), OrgDate((2012, 2, 27))]
+        >>> root.children[0].datelist      # doctest: +NORMALIZE_WHITESPACE
+        [OrgDate((2012, 2, 25)),
+         OrgDate((2012, 2, 26), None, False),
+         OrgDate((2012, 2, 27))]
 
         """
         return self.get_timestamps(active=True, inactive=True, point=True)
@@ -1128,13 +1131,14 @@ class OrgNode(OrgBaseNode):
 
         >>> from orgparse import loads
         >>> root = loads('''
-        ... * Node
+        ... * Node with range dates <2012-02-25 Sat>--<2012-02-28 Tue>
         ...   CLOCK: [2012-02-26 Sun 21:10]--[2012-02-26 Sun 21:15] => 0:05
         ...   Some inactive time range [2012-02-25 Sat]--[2012-02-27 Mon].
         ...   Some active time range <2012-02-26 Sun>--<2012-02-28 Tue>.
         ... ''')
         >>> root.children[0].rangelist     # doctest: +NORMALIZE_WHITESPACE
-        [OrgDate((2012, 2, 25), (2012, 2, 27), False),
+        [OrgDate((2012, 2, 25), (2012, 2, 28)),
+         OrgDate((2012, 2, 25), (2012, 2, 27), False),
          OrgDate((2012, 2, 26), (2012, 2, 28))]
 
         """
