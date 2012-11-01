@@ -302,6 +302,7 @@ class OrgBaseNode(Sequence):
     ... * Heading 1
     ... ** Heading 2
     ... *** Heading 3
+    ... * Heading 4
     ... ''')
     >>> for node in root:
     ...     print(node)
@@ -309,6 +310,7 @@ class OrgBaseNode(Sequence):
     * Heading 1
     ** Heading 2
     *** Heading 3
+    * Heading 4
 
     Note that the first blank line is due to the root node, as
     iteration contains the object itself.  To skip that, use
@@ -319,6 +321,7 @@ class OrgBaseNode(Sequence):
     * Heading 1
     ** Heading 2
     *** Heading 3
+    * Heading 4
 
     It also support sequence protocol.
 
@@ -327,10 +330,9 @@ class OrgBaseNode(Sequence):
     >>> root[0] is root  # index 0 means itself
     True
     >>> len(root)   # remember, sequence contains itself
-    4
+    5
 
-    As what ``root[N]`` returns is also an iterative, you can
-    use ``root[1]`` instead of ``root[1:]``.
+    Note the difference between ``root[1:]`` and ``root[1]``:
 
     >>> for node in root[1]:
     ...     print(node)
@@ -575,6 +577,12 @@ class OrgBaseNode(Sequence):
         >>> c1 is n2
         True
         >>> c2 is n4
+        True
+
+        Note the difference to ``n1[1:]``, which returns the Node 3 also.:
+
+        >>> (m1, m2, m3) = list(n1[1:])
+        >>> m2 is n3
         True
 
         """
