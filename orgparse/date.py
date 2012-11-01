@@ -547,6 +547,12 @@ class OrgDateRepeatedTask(OrgDate):
         return '{0}({1})'.format(
             self.__class__.__name__, ', '.join(map(repr, args)))
 
+    def __eq__(self, other):
+        return super(OrgDateRepeatedTask, self).__eq__(other) and \
+            isinstance(other, self.__class__) and \
+            self._before == other._before and \
+            self._after == other._after
+
     @property
     def before(self):
         return self._before
