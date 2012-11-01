@@ -40,7 +40,7 @@ Date interface
    orgparse.date.OrgDateDeadline
    orgparse.date.OrgDateClosed
    orgparse.date.OrgDateClock
-   orgparse.date.OrgDateRpeatedTask
+   orgparse.date.OrgDateRepeatedTask
    :parts: 1
 
 .. autoclass:: OrgDate
@@ -51,6 +51,7 @@ Date interface
 .. autoclass:: OrgDateDeadline
 .. autoclass:: OrgDateClosed
 .. autoclass:: OrgDateClock
+.. autoclass:: OrgDateRepeatedTask
 
 
 Further resources

@@ -1160,6 +1160,8 @@ class OrgNode(OrgBaseNode):
         """
         Get repeated tasks marked DONE in a entry having repeater.
 
+        :rtype: list of :class:`orgparse.date.OrgDateRepeatedTask`
+
         >>> from orgparse import loads
         >>> node = loads('''
         ... * TODO Pay the rent

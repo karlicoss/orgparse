@@ -533,6 +533,11 @@ class OrgDateClock(OrgDate):
 
 
 class OrgDateRepeatedTask(OrgDate):
+
+    """
+    Date object to represent repeated tasks.
+    """
+
     _active_default = False
 
     def __init__(self, start, before, after, active=None):
@@ -555,8 +560,24 @@ class OrgDateRepeatedTask(OrgDate):
 
     @property
     def before(self):
+        """
+        The state of task before marked as done.
+
+        >>> od = OrgDateRepeatedTask((2005, 9, 1, 16, 10, 0), 'TODO', 'DONE')
+        >>> od.before
+        'TODO'
+
+        """
         return self._before
 
     @property
     def after(self):
+        """
+        The state of task after marked as done.
+
+        >>> od = OrgDateRepeatedTask((2005, 9, 1, 16, 10, 0), 'TODO', 'DONE')
+        >>> od.after
+        'DONE'
+
+        """
         return self._after
