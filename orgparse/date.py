@@ -532,15 +532,11 @@ class OrgDateClock(OrgDate):
         )
 
 
-class OrgDateRpeatedTask(OrgDate):
+class OrgDateRepeatedTask(OrgDate):
     _active_default = False
 
-    def __init__(self, start, end, before, after, active=None):
-        """
-        Create OrgDateRpeatedTask object
-        """
-        super(OrgDateClock, self).__init__(start, end, active=active)
-        # FIXME: better name instead of before/after?
+    def __init__(self, start, before, after, active=None):
+        super(OrgDateRepeatedTask, self).__init__(start, active=active)
         self._before = before
         self._after = after
 

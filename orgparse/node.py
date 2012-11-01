@@ -5,7 +5,7 @@ try:
 except ImportError:
     from collections.abc import Sequence
 
-from .date import OrgDate, OrgDateClock, parse_sdc
+from .date import OrgDate, OrgDateClock, OrgDateRepeatedTask, parse_sdc
 from .inline import to_plain_text
 from .utils.py3compat import PY3, unicode
 
@@ -838,11 +838,13 @@ class OrgNode(OrgBaseNode):
         for line in ilines:
             match = self._repeated_tasks_re.search(line)
             if match:
+                # FIXME: move this parsing to OrgDateRepeatedTask.from_str
                 mdict = match.groupdict()
                 done_state = mdict['done']
                 todo_state = mdict['todo']
                 date = OrgDate.from_str(mdict['date'])
-                repeated_tasks.append((done_state, todo_state, date))
+                repeated_tasks.append(
+                    OrgDateRepeatedTask(date.start, done_state, todo_state))
             else:
                 yield line
 
@@ -1155,7 +1157,6 @@ class OrgNode(OrgBaseNode):
 
     @property
     def repeated_tasks(self):
-        # FIXME: use OrgDateRpeatedTask
         """
         Get repeated tasks marked DONE in a entry having repeater
 
