@@ -844,7 +844,7 @@ class OrgNode(OrgBaseNode):
                 todo_state = mdict['todo']
                 date = OrgDate.from_str(mdict['date'])
                 repeated_tasks.append(
-                    OrgDateRepeatedTask(date.start, done_state, todo_state))
+                    OrgDateRepeatedTask(date.start, todo_state, done_state))
             else:
                 yield line
 
@@ -1169,9 +1169,13 @@ class OrgNode(OrgBaseNode):
         ...   - State "DONE"  from "TODO"  [2005-07-01 Fri 17:27]
         ... ''').children[0]
         >>> node.repeated_tasks            # doctest: +NORMALIZE_WHITESPACE
-        [OrgDateRepeatedTask((2005, 9, 1, 16, 10, 0), 'DONE', 'TODO'),
-         OrgDateRepeatedTask((2005, 8, 1, 19, 44, 0), 'DONE', 'TODO'),
-         OrgDateRepeatedTask((2005, 7, 1, 17, 27, 0), 'DONE', 'TODO')]
+        [OrgDateRepeatedTask((2005, 9, 1, 16, 10, 0), 'TODO', 'DONE'),
+         OrgDateRepeatedTask((2005, 8, 1, 19, 44, 0), 'TODO', 'DONE'),
+         OrgDateRepeatedTask((2005, 7, 1, 17, 27, 0), 'TODO', 'DONE')]
+        >>> node.repeated_tasks[0].before
+        'TODO'
+        >>> node.repeated_tasks[0].after
+        'DONE'
 
         See: `(info "(org) Repeated tasks")
         <http://orgmode.org/manual/Repeated-tasks.html>`_
