@@ -920,10 +920,40 @@ class OrgNode(OrgBaseNode):
     @property
     def level(self):
         return self._level
+        """
+        Level attribute of this node.  Top level node is level 1.
+
+        >>> from orgparse import loads
+        >>> root = loads('''
+        ... * Node 1
+        ... ** Node 2
+        ... ''')
+        >>> (n1, n2) = root.children
+        >>> root.level
+        0
+        >>> n1.level
+        1
+        >>> n2.level
+        2
+
+        """
 
     @property
     def priority(self):
-        """Return a string to indicate the priority or None if undefined."""
+        """
+        Priority attribute of this node.  It is None if undefined.
+
+        >>> from orgparse import loads
+        >>> (n1, n2) = loads('''
+        ... * [#A] Node 1
+        ... * Node 2
+        ... ''').children
+        >>> n1.priority
+        'A'
+        >>> n2.priority is None
+        True
+
+        """
         return self._priority
 
     def _get_tags(self, inher=False):
