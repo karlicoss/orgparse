@@ -328,10 +328,8 @@ class OrgDate(object):
 
     @staticmethod
     def _datetuple_from_groupdict(dct, prefix=''):
-        # FIXME: cleanup
-        return list(map(int, filter(
-            None, (dct["".join((prefix, key))] for key in
-                   ['year', 'month', 'day', 'hour', 'min']))))
+        keys = ['year', 'month', 'day', 'hour', 'min']
+        return list(map(int, filter(None, (dct[prefix + k] for k in keys))))
 
     @classmethod
     def list_from_str(cls, string):
