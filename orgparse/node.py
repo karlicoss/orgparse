@@ -1158,7 +1158,7 @@ class OrgNode(OrgBaseNode):
     @property
     def repeated_tasks(self):
         """
-        Get repeated tasks marked DONE in a entry having repeater
+        Get repeated tasks marked DONE in a entry having repeater.
 
         >>> from orgparse import loads
         >>> node = loads('''
@@ -1173,7 +1173,8 @@ class OrgNode(OrgBaseNode):
          OrgDateRepeatedTask((2005, 8, 1, 19, 44, 0), 'DONE', 'TODO'),
          OrgDateRepeatedTask((2005, 7, 1, 17, 27, 0), 'DONE', 'TODO')]
 
-        See: http://orgmode.org/manual/Repeated-tasks.html
+        See: `(info "(org) Repeated tasks")
+        <http://orgmode.org/manual/Repeated-tasks.html>`_
 
         """
         return self._repeated_tasks
