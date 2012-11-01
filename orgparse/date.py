@@ -540,6 +540,13 @@ class OrgDateRepeatedTask(OrgDate):
         self._before = before
         self._after = after
 
+    def __repr__(self):
+        args = [self._date_to_tuple(self.start), self.before, self.after]
+        if self._active is not self._active_default:
+            args.append(self._active)
+        return '{0}({1})'.format(
+            self.__class__.__name__, ', '.join(map(repr, args)))
+
     @property
     def before(self):
         return self._before

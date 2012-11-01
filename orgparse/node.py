@@ -1160,14 +1160,18 @@ class OrgNode(OrgBaseNode):
         """
         Get repeated tasks marked DONE in a entry having repeater
 
-        A repeater is something like ``+1m`` in a timestamp,
-        such as::
-
-            ** TODO Pay the rent
-               DEADLINE: <2005-10-01 Sat +1m>
-               - State "DONE"  from "TODO"  [2005-09-01 Thu 16:10]
-               - State "DONE"  from "TODO"  [2005-08-01 Mon 19:44]
-               - State "DONE"  from "TODO"  [2005-07-01 Fri 17:27]
+        >>> from orgparse import loads
+        >>> node = loads('''
+        ... * TODO Pay the rent
+        ...   DEADLINE: <2005-10-01 Sat +1m>
+        ...   - State "DONE"  from "TODO"  [2005-09-01 Thu 16:10]
+        ...   - State "DONE"  from "TODO"  [2005-08-01 Mon 19:44]
+        ...   - State "DONE"  from "TODO"  [2005-07-01 Fri 17:27]
+        ... ''').children[0]
+        >>> node.repeated_tasks            # doctest: +NORMALIZE_WHITESPACE
+        [OrgDateRepeatedTask((2005, 9, 1, 16, 10, 0), 'DONE', 'TODO'),
+         OrgDateRepeatedTask((2005, 8, 1, 19, 44, 0), 'DONE', 'TODO'),
+         OrgDateRepeatedTask((2005, 7, 1, 17, 27, 0), 'DONE', 'TODO')]
 
         See: http://orgmode.org/manual/Repeated-tasks.html
 
