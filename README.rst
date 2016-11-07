@@ -1,5 +1,5 @@
 ===========================================================
-  orgparse - Pyton module for reading Emacs org-mode file
+  orgparse - Python module for reading Emacs org-mode file
 ===========================================================
 
 
