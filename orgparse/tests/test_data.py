@@ -3,7 +3,7 @@ from glob import glob
 import pickle
 from nose.tools import eq_
 
-from .. import load
+from .. import load, loads
 from ..utils.py3compat import execfile
 
 
@@ -66,6 +66,7 @@ def check_data(dataname):
     eq_(root.env.filename, oname)
 
 
+# TODO use pytest.mark.parametrize instead
 def test_data():
     for dataname in get_datanames():
         yield (check_data, dataname)
@@ -80,3 +81,11 @@ def check_picklable(dataname):
 def test_picklable():
     for dataname in get_datanames():
         yield (check_picklable, dataname)
+
+
+def test_table():
+    root = loads("""
+| table | a |
+|-------+---|
+| xxx   | 1 |
+    """)
