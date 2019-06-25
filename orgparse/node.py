@@ -543,9 +543,14 @@ class OrgBaseNode(Sequence):
         return self.get_parent()
 
     # FIXME: cache children nodes
+    # TODO test this...
     def _find_children(self):
         nodeiter = iter(self.env._nodes[self._index + 1:])
-        node = next(nodeiter)
+        # omg. a bit horrible...
+        for node in nodeiter:
+            break
+        else:
+            return
         if node.level <= self.level:
             return
         yield node
