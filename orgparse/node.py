@@ -1,10 +1,7 @@
 import re
 import itertools
 from itertools import islice
-try:
-    from collections import Sequence
-except ImportError:
-    from collections.abc import Sequence
+from collections.abc import Sequence
 
 from .date import OrgDate, OrgDateClock, OrgDateRepeatedTask, parse_sdc
 from .inline import to_plain_text
