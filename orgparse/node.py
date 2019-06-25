@@ -1,5 +1,6 @@
 import re
 import itertools
+from itertools import islice
 try:
     from collections import Sequence
 except ImportError:
@@ -789,13 +790,14 @@ class OrgNode(OrgBaseNode):
         They are assumed be in the first line.
 
         """
-        line = next(ilines)
-        (self._scheduled, self._deadline, self._closed) = parse_sdc(line)
+        for line in ilines:
+            (self._scheduled, self._deadline, self._closed) = parse_sdc(line)
 
-        if not (self._scheduled or
-                self._deadline or
-                self._closed):
-            yield line  # when none of them were found
+            if not (self._scheduled or
+                    self._deadline or
+                    self._closed):
+                yield line  # when none of them were found
+            break
 
         for line in ilines:
             yield line
