@@ -118,7 +118,6 @@ True
 import codecs
 
 from .node import parse_lines
-from .utils.py3compat import basestring
 
 __version__ = '0.0.1.dev3'
 __author__ = 'Takafumi Arakaki'
@@ -136,7 +135,7 @@ def load(path):
     :rtype: :class:`orgparse.node.OrgRootNode`
 
     """
-    if isinstance(path, basestring):
+    if isinstance(path, str):
         orgfile = codecs.open(path, encoding='utf8')
         filename = path
     else:

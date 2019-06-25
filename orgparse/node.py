@@ -7,7 +7,6 @@ except ImportError:
 
 from .date import OrgDate, OrgDateClock, OrgDateRepeatedTask, parse_sdc
 from .inline import to_plain_text
-from .utils.py3compat import PY3, unicode
 
 
 def lines_to_chunks(lines):
@@ -639,7 +638,7 @@ class OrgBaseNode(Sequence):
         :rtype: int
 
         """
-        raise NotImplemented
+        raise NotImplementedError
 
     def _get_tags(self, inher=False):
         """
@@ -700,14 +699,8 @@ class OrgBaseNode(Sequence):
         """
         return False
 
-    def __unicode__(self):
-        return unicode("\n").join(self._lines)
-
-    if PY3:
-        __str__ = __unicode__
-    else:
-        def __str__(self):
-            return unicode(self).encode('utf-8')
+    def __str__(self):
+        return "\n".join(self._lines)
 
 
 class OrgRootNode(OrgBaseNode):
