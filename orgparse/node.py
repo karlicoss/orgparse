@@ -796,7 +796,10 @@ class OrgNode(OrgBaseNode):
         They are assumed be in the first line.
 
         """
-        line = next(ilines)
+        try:
+            line = next(ilines)
+        except StopIteration:
+            return
         (self._scheduled, self._deadline, self._closed) = parse_sdc(line)
 
         if not (self._scheduled or
