@@ -769,7 +769,10 @@ class OrgNode(OrgBaseNode):
         self._parse_heading()
         # FIXME: make the following parsers "lazy"
         ilines = iter(self._lines)
-        next(ilines)            # skip heading
+        try:
+            next(ilines)            # skip heading
+        except StopIteration:
+            return
         ilines = self._iparse_sdc(ilines)
         ilines = self._iparse_clock(ilines)
         ilines = self._iparse_properties(ilines)
