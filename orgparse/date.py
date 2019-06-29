@@ -476,8 +476,8 @@ class OrgDateClock(OrgDate):
         >>> duration = OrgDateClock.from_str(
         ...   'CLOCK: [2010-08-08 Sun 17:00]--[2010-08-08 Sun 17:30] => 0:30'
         ... ).duration
-        >>> duration
-        datetime.timedelta(0, 1800)
+        >>> duration.seconds
+        1800
         >>> total_minutes(duration)
         30.0
 
