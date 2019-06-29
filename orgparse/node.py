@@ -37,7 +37,7 @@ def parse_heading_level(heading):
     if match:
         return (match.group(2), len(match.group(1)))
 
-RE_HEADING_STARS = re.compile('^(\*+)\s*(.*?)\s*$')
+RE_HEADING_STARS = re.compile(r'^(\*+)\s*(.*?)\s*$')
 
 
 def parse_heading_tags(heading):
@@ -137,7 +137,7 @@ def parse_property(line):
                 prop_val = int(h) * 60 + int(m)
     return (prop_key, prop_val)
 
-RE_PROP = re.compile('^\s*:(.*?):\s*(.*?)\s*$')
+RE_PROP = re.compile(r'^\s*:(.*?):\s*(.*?)\s*$')
 
 
 def parse_comment(line):
