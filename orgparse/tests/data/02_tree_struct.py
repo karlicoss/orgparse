@@ -36,4 +36,6 @@ data = [nodedict(*args) for args in [
     ('G6-H2',),
     ('G6-H2',),
     ('G6-H1', [], 'G6-H2'),
+    # G7
+    (None, [], 'G6-H1'),
 ]]
