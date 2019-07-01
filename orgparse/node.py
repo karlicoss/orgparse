@@ -377,6 +377,8 @@ class OrgBaseNode(Sequence):
         for node in self.env._nodes[self._index + 1:]:
             if node.level > level:
                 yield node
+            else:
+                break
 
     def __len__(self):
         return sum(1 for _ in self)
