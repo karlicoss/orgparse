@@ -3,7 +3,7 @@ from glob import glob
 import pickle
 from nose.tools import eq_
 
-from .. import load
+from .. import load, loads
 from ..utils.py3compat import execfile
 
 
@@ -80,3 +80,18 @@ def check_picklable(dataname):
 def test_picklable():
     for dataname in get_datanames():
         yield (check_picklable, dataname)
+
+
+def test_iter_node():
+    root = loads("""
+* H1
+** H2
+*** H3
+* H4
+** H5
+""")
+    node = root[1]
+    assert node.heading == 'H1'
+
+    by_iter = [n.heading for n in node]
+    assert by_iter == ['H1', 'H2', 'H3']
