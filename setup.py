@@ -1,3 +1,4 @@
+import setuptools
 from distutils.core import setup
 
 import orgparse
@@ -22,7 +23,7 @@ setup(
     long_description=orgparse.__doc__,
     keywords='org-mode, Emacs, parser',
     classifiers=[
-        'Development Status :: 5 - Production/Stable'
+        'Development Status :: 5 - Production/Stable',
         'License :: OSI Approved :: BSD License',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',

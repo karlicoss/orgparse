@@ -13,7 +13,29 @@ cog: orgparse/__init__.py
 orgparse/__init__.py: README.rst
 	cd orgparse && cog.py -r __init__.py
 
+.PHONY: clean
+clean:
+	rm -r dist/*
+
+
+build: clean cog
+	python3 setup.py sdist bdist_wheel
+
+targets := $(wildcard dist/*)
+
+check: build $(targets)
+	twine check $(targets)
+
+
+
+## https://packaging.python.org/guides/using-testpypi
+.PHONY: test-upload
+test-upload: check $(targets)
+	twine upload --verbose --repository-url https://test.pypi.org/legacy/ $(targets)
+
 
 ## Upload to PyPI
-upload: cog
-	python setup.py register sdist upload
+.PHONY: upload
+upload: check $(target)
+	twine upload --verbose $(targets)
+

@@ -1,7 +1,7 @@
 # Import README.rst using cog
 # [[[cog
 # from cog import out
-# out('"""\n{0}\n"""'.format(file('../README.rst').read()))
+# out('"""\n{0}\n"""'.format(open('../README.rst').read()))
 # ]]]
 """
 ===========================================================
@@ -11,17 +11,15 @@
 
 Links:
 
-* `Documentation (at Read the Docs) <http://orgparse.readthedocs.org/>`_
-* `Repository (at GitHub) <https://github.com/tkf/orgparse>`_
-* `Issue tracker (at GitHub) <https://github.com/tkf/orgparse/issues>`_
-* `PyPI <http://pypi.python.org/pypi/orgparse>`_
-* `Travis CI <https://travis-ci.org/#!/tkf/orgparse>`_ |build-status|
+* `Documentation (at Read the Docs) <https://orgparse.readthedocs.org>`_
+* `Repository (at GitHub) <https://github.com/karlicoss/orgparse>`_
+* `Issue tracker (at GitHub) <https://github.com/karlicoss/orgparse/issues>`_
+* `PyPI <https://pypi.python.org/pypi/orgparse>`_
+* `Travis CI <https://travis-ci.org/karlicoss/orgparse>`_  |build-status|
 
 .. |build-status|
-   image:: https://secure.travis-ci.org/tkf/orgparse.png?branch=master
-   :target: http://travis-ci.org/tkf/orgparse
-   :alt: Build Status
-
+   image:: https://travis-ci.org/karlicoss/orgparse.svg?branch=master
+   :target: https://travis-ci.org/karlicoss/orgparse
 
 Install
 -------
