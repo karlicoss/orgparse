@@ -20,3 +20,6 @@
   - <2010-08-16 Mon> DateList
   - <2010-08-07 Sat>--<2010-08-08 Sun>
   - <2010-08-09 Mon 00:30>--<2010-08-10 Tue 13:20> RangeList
+* range in deadline
+DEADLINE: <2019-09-06 Fri 10:00--11:20>
+  body

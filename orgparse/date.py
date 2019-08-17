@@ -44,12 +44,13 @@ def gene_timestamp_regex(brtype, prefix=None, nocookie=False):
     >>> '{year}-{month}-{day}'.format(**m.groupdict())
     '2010-06-21'
     >>> m = timestamp_re.match('<2005-10-01 Sat 12:30 +7m -3d>')
-    >>> m.groupdict() == {
-    ...     'year': '2005', 'month': '10', 'day': '01',
-    ...     'hour': '12', 'min': '30',
-    ...     'repeatpre': '+', 'repeatnum': '7', 'repeatdwmy': 'm',
-    ...     'warnpre': '-', 'warnnum': '3', 'warndwmy': 'd'}
-    True
+    >>> m.groupdict()
+    ... # doctest: +NORMALIZE_WHITESPACE
+    {'year': '2005', 'month': '10', 'day': '01',
+     'hour': '12', 'min': '30',
+     'end_hour': None, 'end_min': None,
+     'repeatpre': '+', 'repeatnum': '7', 'repeatdwmy': 'm',
+     'warnpre': '-', 'warnnum': '3', 'warndwmy': 'd'}
 
     When ``brtype = 'nobrace'``, cookie part cannot be retrieved.
 
@@ -63,11 +64,11 @@ def gene_timestamp_regex(brtype, prefix=None, nocookie=False):
     >>> '{year}-{month}-{day}'.format(**m.groupdict())
     '2010-06-21'
     >>> m = timestamp_re.match('2005-10-01 Sat 12:30 +7m -3d')
-    >>> m.groupdict() == {
-    ...     'year': '2005', 'month': '10', 'day': '01',
-    ...     'hour': '12', 'min': '30'}
-    True
-
+    >>> m.groupdict()
+    ... # doctest: +NORMALIZE_WHITESPACE
+    {'year': '2005', 'month': '10', 'day': '01',
+     'hour': '12', 'min': '30',
+     'end_hour': None, 'end_min': None}
     """
 
     if brtype == 'active':
@@ -95,6 +96,11 @@ def gene_timestamp_regex(brtype, prefix=None, nocookie=False):
            ({ignore}+?)
            (?P<{prefix}hour>\d{{2}}) :
            (?P<{prefix}min>\d{{2}})
+           (  # optional end time range
+               --
+               (?P<{prefix}end_hour>\d{{2}}) :
+               (?P<{prefix}end_min>\d{{2}})
+           )?
         )?
         """
     regex_cookie = r"""
@@ -418,8 +424,16 @@ class OrgDateSDCBase(OrgDate):
         match = cls._re.search(string)
         if match:
             mdict = match.groupdict()
-            return cls(cls._datetuple_from_groupdict(mdict),
-                       active=cls._active_default)
+            start = cls._datetuple_from_groupdict(mdict)
+            end = None
+            end_hour = mdict['end_hour']
+            end_min  = mdict['end_min']
+            if end_hour is not None and end_min is not None:
+                end_dict = {}
+                end_dict.update(mdict)
+                end_dict.update({'hour': end_hour, 'min': end_min})
+                end = cls._datetuple_from_groupdict(end_dict)
+            return cls(start, end, active=cls._active_default)
         else:
             return cls(None)
 

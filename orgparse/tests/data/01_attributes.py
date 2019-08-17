@@ -38,4 +38,17 @@ node2 = dict(
     body="",
 )
 
-data = [node1, node2, node1]
+node3 = dict(
+    heading="range in deadline",
+    priority=None,
+    scheduled=OrgDate(None),
+    deadline=OrgDateDeadline((2019, 9, 6, 10, 0), (2019, 9, 6, 11, 20)),
+    closed=OrgDate(None),
+    clock=[],
+    properties={},
+    datelist=[],
+    rangelist=[],
+    body="  body",
+)
+
+data = [node1, node2, node1, node3]
