@@ -1186,11 +1186,13 @@ class OrgNode(OrgBaseNode):
         ...   CLOCK: [2012-02-26 Sun 21:10]--[2012-02-26 Sun 21:15] => 0:05
         ...   Some inactive time range [2012-02-25 Sat]--[2012-02-27 Mon].
         ...   Some active time range <2012-02-26 Sun>--<2012-02-28 Tue>.
+        ...   Some time interval <2012-02-27 Mon 11:23-12:10>.
         ... ''')
         >>> root.children[0].rangelist     # doctest: +NORMALIZE_WHITESPACE
         [OrgDate((2012, 2, 25), (2012, 2, 28)),
          OrgDate((2012, 2, 25), (2012, 2, 27), False),
-         OrgDate((2012, 2, 26), (2012, 2, 28))]
+         OrgDate((2012, 2, 26), (2012, 2, 28)),
+         OrgDate((2012, 2, 27, 11, 23, 0), (2012, 2, 27, 12, 10, 0))]
 
         """
         return self.get_timestamps(active=True, inactive=True, range=True)

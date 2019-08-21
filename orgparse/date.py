@@ -97,7 +97,7 @@ def gene_timestamp_regex(brtype, prefix=None, nocookie=False):
            (?P<{prefix}hour>\d{{2}}) :
            (?P<{prefix}min>\d{{2}})
            (  # optional end time range
-               --
+               --?
                (?P<{prefix}end_hour>\d{{2}}) :
                (?P<{prefix}end_min>\d{{2}})
            )?
@@ -333,9 +333,18 @@ class OrgDate(object):
         return date
 
     @staticmethod
-    def _datetuple_from_groupdict(dct, prefix=''):
-        keys = ['year', 'month', 'day', 'hour', 'min']
-        return list(map(int, filter(None, (dct[prefix + k] for k in keys))))
+    def _daterange_from_groupdict(dct, prefix=''):
+        start_keys = ['year', 'month', 'day', 'hour'    , 'min']
+        end_keys   = ['year', 'month', 'day', 'end_hour', 'end_min']
+        start_range = list(map(int, filter(None, (dct[prefix + k] for k in start_keys))))
+        end_range   = list(map(int, filter(None, (dct[prefix + k] for k in end_keys))))
+        if len(end_range) < len(end_keys):
+            end_range = None
+        return (start_range, end_range)
+
+    @classmethod
+    def _datetuple_from_groupdict(cls, dct, prefix=''):
+        return cls._daterange_from_groupdict(dct, prefix=prefix)[0]
 
     @classmethod
     def list_from_str(cls, string):
@@ -350,7 +359,8 @@ class OrgDate(object):
         [OrgDate((2012, 2, 10)), OrgDate((2012, 2, 12), None, False)]
         >>> OrgDate.list_from_str("this is not timestamp")
         []
-
+        >>> OrgDate.list_from_str("<2012-02-11 Sat 10:11--11:20>")
+        [OrgDate((2012, 2, 11, 10, 11, 0), (2012, 2, 11, 11, 20, 0))]
         """
         match = TIMESTAMP_RE.search(string)
         if match:
@@ -376,7 +386,7 @@ class OrgDate(object):
                     active=active)
             else:
                 odate = cls(
-                    cls._datetuple_from_groupdict(mdict, prefix),
+                    *cls._daterange_from_groupdict(mdict, prefix),
                     active=active)
             # FIXME: treat "repeater" and "warn"
             return [odate] + cls.list_from_str(rest)
