@@ -44,13 +44,15 @@ def gene_timestamp_regex(brtype, prefix=None, nocookie=False):
     >>> '{year}-{month}-{day}'.format(**m.groupdict())
     '2010-06-21'
     >>> m = timestamp_re.match('<2005-10-01 Sat 12:30 +7m -3d>')
-    >>> m.groupdict()
+    >>> from collections import OrderedDict
+    >>> sorted(m.groupdict().items())
     ... # doctest: +NORMALIZE_WHITESPACE
-    {'year': '2005', 'month': '10', 'day': '01',
-     'hour': '12', 'min': '30',
-     'end_hour': None, 'end_min': None,
-     'repeatpre': '+', 'repeatnum': '7', 'repeatdwmy': 'm',
-     'warnpre': '-', 'warnnum': '3', 'warndwmy': 'd'}
+    [('day', '01'),
+     ('end_hour', None), ('end_min', None),
+     ('hour', '12'), ('min', '30'),
+     ('month', '10'),
+     ('repeatdwmy', 'm'), ('repeatnum', '7'), ('repeatpre', '+'),
+     ('warndwmy', 'd'), ('warnnum', '3'), ('warnpre', '-'), ('year', '2005')]
 
     When ``brtype = 'nobrace'``, cookie part cannot be retrieved.
 
@@ -64,11 +66,12 @@ def gene_timestamp_regex(brtype, prefix=None, nocookie=False):
     >>> '{year}-{month}-{day}'.format(**m.groupdict())
     '2010-06-21'
     >>> m = timestamp_re.match('2005-10-01 Sat 12:30 +7m -3d')
-    >>> m.groupdict()
+    >>> sorted(m.groupdict().items())
     ... # doctest: +NORMALIZE_WHITESPACE
-    {'year': '2005', 'month': '10', 'day': '01',
-     'hour': '12', 'min': '30',
-     'end_hour': None, 'end_min': None}
+    [('day', '01'),
+     ('end_hour', None), ('end_min', None),
+     ('hour', '12'), ('min', '30'),
+     ('month', '10'), ('year', '2005')]
     """
 
     if brtype == 'active':
