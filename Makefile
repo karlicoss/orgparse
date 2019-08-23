@@ -15,7 +15,7 @@ orgparse/__init__.py: README.rst
 
 .PHONY: clean
 clean:
-	rm -r dist/*
+	rm -rf dist/*
 
 
 build: clean cog
