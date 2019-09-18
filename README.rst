@@ -1,13 +1,10 @@
 ===========================================================
-  orgparse - Python module for reading Emacs org-mode file
+  orgparse - Python module for reading Emacs org-mode files
 ===========================================================
 
 
-Links:
-
-* `Documentation (at Read the Docs) <https://orgparse.readthedocs.org>`_
+* `Documentation (Read the Docs) <https://orgparse.readthedocs.org>`_
 * `Repository (at GitHub) <https://github.com/karlicoss/orgparse>`_
-* `Issue tracker (at GitHub) <https://github.com/karlicoss/orgparse/issues>`_
 * `PyPI <https://pypi.python.org/pypi/orgparse>`_
 * `Travis CI <https://travis-ci.org/karlicoss/orgparse>`_  |build-status|
 
@@ -18,16 +15,17 @@ Links:
 Install
 -------
 
-You can install `orgparse` from PyPI_::
-
   pip install orgparse
 
 
 Usage
 -----
 
-Loading org object
-^^^^^^^^^^^^^^^^^^
+There are pretty extensive doctests if you're interested in some specific method. Otherwise here are some example snippets:
+
+
+Load org node
+^^^^^^^^^^^^^
 ::
 
     from orgparse import load, loads
@@ -70,8 +68,8 @@ Traverse org tree
 * Heading 1
 
 
-Accessing to node attributes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Accessing node attributes
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 >>> root = loads('''
 ... * DONE Heading          :TAG:

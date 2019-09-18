@@ -15,14 +15,17 @@ templates_path = []  # ['_templates']
 source_suffix = '.rst'
 master_doc = 'index'
 
+# TODO not sure I'm doing that right..
+import orgparse
+
 # General information about the project.
 project = u'orgparse'
 copyright = u'2012, Takafumi Arakaki'
 
 # The short X.Y version.
-version = '0.0.1'
+version = orgparse.__version__
 # The full version, including alpha/beta/rc tags.
-release = '0.0.1.dev3'
+release = orgparse.__version__
 
 exclude_patterns = []
 

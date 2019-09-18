@@ -15,13 +15,19 @@ setup(
     package_data={
         'orgparse.tests.data': ['*.org'],
     },
+
     author=orgparse.__author__,
     author_email='aka.tkf@gmail.com',
-    url='https://github.com/tkf/orgparse',
+    maintainer='Dima Gerasimov (@karlicoss)',
+    maintainer_email='karlicoss@gmail.com',
+
+    url='https://github.com/karlicoss/orgparse',
     license=orgparse.__license__,
+
     description='orgparse - Emacs org-mode parser in Python',
     long_description=orgparse.__doc__,
-    keywords='org-mode, Emacs, parser',
+
+    keywords='org org-mode emacs',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'License :: OSI Approved :: BSD License',
