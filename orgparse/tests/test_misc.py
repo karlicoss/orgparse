@@ -12,6 +12,10 @@ star but has no spaces afterward, just a newline:
 
 ** Subheading with text (A1)
 
+*this_is_just*
+
+ *some_bold_text*
+
 This subheading is a child of (A).
 
 The next heading has no text, but it does have a space after

@@ -30,6 +30,8 @@ def parse_heading_level(heading):
     ('Heading', 1)
     >>> parse_heading_level('******** Heading')
     ('Heading', 8)
+    >>> parse_heading_level('*') # None since no space after star
+    >>> parse_heading_level('*bold*') # None
     >>> parse_heading_level('not heading')  # None
 
     """
@@ -37,7 +39,7 @@ def parse_heading_level(heading):
     if match:
         return (match.group(2), len(match.group(1)))
 
-RE_HEADING_STARS = re.compile(r'^(\*+)\s*(.*?)\s*$')
+RE_HEADING_STARS = re.compile(r'^(\*+)\s+(.*?)\s*$')
 
 
 def parse_heading_tags(heading):
