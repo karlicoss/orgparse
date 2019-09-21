@@ -3,8 +3,6 @@ try:
 except ImportError:
     import pickle
 
-from nose.tools import eq_
-
 from .. import loadi
 
 
@@ -31,6 +29,5 @@ def test_picklable():
     depth = 3
     nodes_per_level = 1
     root = loadi(generate_org_lines(num, depth, nodes_per_level))
-    eq_(sum(1 for _ in root),
-        num_generate_org_lines(num, depth, nodes_per_level) + 1)
+    assert sum(1 for _ in root) == num_generate_org_lines(num, depth, nodes_per_level) + 1
     pickle.dumps(root)  # should not fail

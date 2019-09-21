@@ -1,11 +1,11 @@
 import os
 from glob import glob
 import pickle
-from nose.tools import eq_
 
 from .. import load, loads
 from ..utils.py3compat import execfile
 
+import pytest # type: ignore
 
 DATADIR = os.path.join(os.path.dirname(__file__), 'data')
 
@@ -47,7 +47,8 @@ def get_datanames():
         yield os.path.splitext(os.path.basename(oname))[0]
 
 
-def check_data(dataname):
+@pytest.mark.parametrize('dataname', get_datanames())
+def test_data(dataname):
     """
     Compare parsed data from 'data/*.org' and its correct answer 'data/*.py'
     """
@@ -58,28 +59,17 @@ def check_data(dataname):
     for (i, (node, kwds)) in enumerate(zip(root[1:], data)):
         for key in kwds:
             val = value_from_data_key(node, key)
-            eq_(kwds[key], val,
-                msg=('check value of {0}-th node of key "{1}" from "{2}".'
-                     '\n\nParsed:\n{3}\n\nReal:\n{4}'
-                     ).format(i, key, dataname, val, kwds[key]))
+            assert kwds[key] == val, 'check value of {0}-th node of key "{1}" from "{2}".\n\nParsed:\n{3}\n\nReal:\n{4}'.format(i, key, dataname, val, kwds[key])
 
-    eq_(root.env.filename, oname)
+    assert root.env.filename == oname
 
 
-def test_data():
-    for dataname in get_datanames():
-        yield (check_data, dataname)
-
-
-def check_picklable(dataname):
+@pytest.mark.parametrize('dataname', get_datanames())
+def test_picklable(dataname):
     oname = data_path(dataname, "org")
     root = load(oname)
     pickle.dumps(root)
 
-
-def test_picklable():
-    for dataname in get_datanames():
-        yield (check_picklable, dataname)
 
 
 def test_iter_node():
