@@ -71,7 +71,7 @@ def parse_heading_tags(heading):
         tags = []
     return (heading, tags)
 
-# Tags are normal words containing letters, numbers, ‘_’, and ‘@’. https://orgmode.org/manual/Tags.html
+# Tags are normal words containing letters, numbers, '_', and '@'. https://orgmode.org/manual/Tags.html
 RE_HEADING_TAGS = re.compile(r'(.*?)\s*:([\w@:]+):\s*$')
 
 

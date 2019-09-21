@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 def nodedict(i, tags):
     return dict(
         heading="Node {0}".format(i),
