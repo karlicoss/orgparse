@@ -71,7 +71,8 @@ def parse_heading_tags(heading):
         tags = []
     return (heading, tags)
 
-RE_HEADING_TAGS = re.compile(r'(.*?)\s*:([a-zA-Z0-9@_:]+):\s*$')
+# Tags are normal words containing letters, numbers, ‘_’, and ‘@’. https://orgmode.org/manual/Tags.html
+RE_HEADING_TAGS = re.compile(r'(.*?)\s*:([\w@:]+):\s*$')
 
 
 def parse_heading_todos(heading, todo_candidates):

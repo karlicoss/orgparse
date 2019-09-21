@@ -16,4 +16,6 @@ data = [
         [["_tag_"]],
     ])] + [
         dict(heading='Heading: :with:colon:', tags=set(["tag"])),
+    ] + [
+        dict(heading='unicode', tags=set(['ёж', 'tag', 'háček'])),
     ]
