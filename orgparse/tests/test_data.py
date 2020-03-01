@@ -139,3 +139,15 @@ def test_commented_scheduled_marker_is_ignored_by_node_scheduled():
     [node] = root.children[0]
     assert node.heading == "Heading"
     assert node.scheduled.start is None
+
+
+def test_commented_property_is_ignored_by_node_get_property():
+    root = loads("""\
+* Heading
+# :PROPERTIES:
+# :PROPER-TEA: backup
+# :END:
+""")
+    [node] = root.children[0]
+    assert node.heading == "Heading"
+    assert node.get_property("PROPER-TEA") is None
