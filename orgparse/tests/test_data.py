@@ -90,3 +90,42 @@ def test_iter_node():
 
     by_iter = [n.heading for n in node]
     assert by_iter == ['H1', 'H2', 'H3']
+
+
+def test_commented_headings_do_not_appear_as_children():
+    root = loads("""
+* H1
+#** H2
+** H3
+#* H4
+#** H5
+* H6
+""")
+    top_level = root.children
+    assert len(top_level) == 2
+
+    h1 = top_level[0]
+    assert h1.heading == "H1"
+    assert h1.get_body() == "#** H2"
+
+    [h3] = h1.children
+    assert h3.heading == "H3"
+    assert h3.get_body() == "#* H4\n#** H5"
+
+    h6 = top_level[1]
+    assert h6.heading == "H6"
+    assert len(h6.children) == 0
+
+
+def test_commented_clock_entries_are_ignored_by_node_clock():
+    root = loads("""
+* Heading
+# * Floss
+# SCHEDULED: <2019-06-22 Sat 08:30 .+1w>
+# :LOGBOOK:
+# CLOCK: [2019-06-04 Tue 16:00]--[2019-06-04 Tue 17:00] =>  1:00
+# :END:
+""")
+    [node] = root.children[0]
+    assert node.heading == "Heading"
+    assert node.clock == []
