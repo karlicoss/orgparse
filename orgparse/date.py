@@ -551,7 +551,7 @@ class OrgDateClock(OrgDate):
         )
 
     _re = re.compile(
-        r'CLOCK:\s+'
+        r'^(?!#).*CLOCK:\s+'
         r'\[(\d+)\-(\d+)\-(\d+)[^\]\d]*(\d+)\:(\d+)\]--'
         r'\[(\d+)\-(\d+)\-(\d+)[^\]\d]*(\d+)\:(\d+)\]\s+=>\s+(\d+)\:(\d+)'
         )
