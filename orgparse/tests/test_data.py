@@ -129,3 +129,13 @@ def test_commented_clock_entries_are_ignored_by_node_clock():
     [node] = root.children[0]
     assert node.heading == "Heading"
     assert node.clock == []
+
+
+def test_commented_scheduled_marker_is_ignored_by_node_scheduled():
+    root = loads("""
+* Heading
+# SCHEDULED: <2019-06-22 Sat 08:30 .+1w>
+""")
+    [node] = root.children[0]
+    assert node.heading == "Heading"
+    assert node.scheduled.start is None
