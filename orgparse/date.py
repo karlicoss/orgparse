@@ -421,7 +421,7 @@ class OrgDate(object):
 def compile_sdc_re(sdctype):
     brtype = 'inactive' if sdctype == 'CLOSED' else 'active'
     return re.compile(
-        r'{0}:\s+{1}'.format(
+        r'^(?!\#).*{0}:\s+{1}'.format(
             sdctype,
             gene_timestamp_regex(brtype, prefix='', nocookie=True)),
         re.VERBOSE)
