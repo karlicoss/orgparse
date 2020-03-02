@@ -116,7 +116,7 @@ import codecs
 from .node import parse_lines
 from .utils.py3compat import basestring
 
-__version__ = '0.1.3dev0'
+__version__ = '0.1.3'
 __author__ = 'Takafumi Arakaki, Dmitrii Gerasimov'
 __license__ = 'BSD License'
 __all__ = ["load", "loads", "loadi"]
