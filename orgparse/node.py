@@ -1259,7 +1259,7 @@ class OrgNode(OrgBaseNode):
 def parse_lines(lines, filename, env=None):
     if not env:
         env = OrgEnv(filename=filename)
-    elif env and env.filename != filename:
+    elif env.filename != filename:
         raise ValueError('If env is specified, filename must match')
 
     # parse into node of list (environment will be parsed)
