@@ -23,6 +23,7 @@ project = u'orgparse'
 copyright = u'2012, Takafumi Arakaki'
 
 # The short X.Y version.
+# TODO use setup.py for version
 version = orgparse.__version__
 # The full version, including alpha/beta/rc tags.
 release = orgparse.__version__

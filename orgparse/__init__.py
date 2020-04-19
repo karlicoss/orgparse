@@ -12,11 +12,6 @@
 * `Documentation (Read the Docs) <https://orgparse.readthedocs.org>`_
 * `Repository (at GitHub) <https://github.com/karlicoss/orgparse>`_
 * `PyPI <https://pypi.python.org/pypi/orgparse>`_
-* `Travis CI <https://travis-ci.org/karlicoss/orgparse>`_  |build-status|
-
-.. |build-status|
-   image:: https://travis-ci.org/karlicoss/orgparse.svg?branch=master
-   :target: https://travis-ci.org/karlicoss/orgparse
 
 Install
 -------
@@ -116,7 +111,6 @@ import codecs
 from .node import parse_lines
 from .utils.py3compat import basestring
 
-__version__ = '0.1.4dev0'
 __author__ = 'Takafumi Arakaki, Dmitrii Gerasimov'
 __license__ = 'BSD License'
 __all__ = ["load", "loads", "loadi"]
