@@ -1256,8 +1256,12 @@ class OrgNode(OrgBaseNode):
         return self._repeated_tasks
 
 
-def parse_lines(lines, filename):
-    env = OrgEnv(filename=filename)
+def parse_lines(lines, filename, env=None):
+    if not env:
+        env = OrgEnv(filename=filename)
+    elif env.filename != filename:
+        raise ValueError('If env is specified, filename must match')
+
     # parse into node of list (environment will be parsed)
     nodelist = list(env.from_chunks(lines_to_chunks(lines)))
     # parse headings (level, TODO, TAGs, and heading)

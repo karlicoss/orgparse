@@ -122,7 +122,7 @@ __license__ = 'BSD License'
 __all__ = ["load", "loads", "loadi"]
 
 
-def load(path):
+def load(path, env=None):
     """
     Load org-mode document from a file.
 
@@ -139,24 +139,24 @@ def load(path):
         orgfile = path
         filename = path.name if hasattr(path, 'name') else '<file-like>'
     return loadi((l.rstrip('\n') for l in orgfile.readlines()),
-                 filename=filename)
+                 filename=filename, env=env)
 
 
-def loads(string, filename='<string>'):
+def loads(string, filename='<string>', env=None):
     """
     Load org-mode document from a string.
 
     :rtype: :class:`orgparse.node.OrgRootNode`
 
     """
-    return loadi(string.splitlines(), filename=filename)
+    return loadi(string.splitlines(), filename=filename, env=env)
 
 
-def loadi(lines, filename='<lines>'):
+def loadi(lines, filename='<lines>', env=None):
     """
     Load org-mode document from an iterative object.
 
     :rtype: :class:`orgparse.node.OrgRootNode`
 
     """
-    return parse_lines(lines, filename=filename)
+    return parse_lines(lines, filename=filename, env=env)
