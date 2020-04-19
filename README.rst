@@ -6,11 +6,6 @@
 * `Documentation (Read the Docs) <https://orgparse.readthedocs.org>`_
 * `Repository (at GitHub) <https://github.com/karlicoss/orgparse>`_
 * `PyPI <https://pypi.python.org/pypi/orgparse>`_
-* `Travis CI <https://travis-ci.org/karlicoss/orgparse>`_  |build-status|
-
-.. |build-status|
-   image:: https://travis-ci.org/karlicoss/orgparse.svg?branch=master
-   :target: https://travis-ci.org/karlicoss/orgparse
 
 Install
 -------
