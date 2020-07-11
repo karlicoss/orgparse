@@ -97,7 +97,7 @@ def parse_heading_todos(heading, todo_candidates):
 
 def parse_heading_priority(heading):
     """
-    Get priority and heading without priority field..
+    Get priority and heading without priority field.
 
     >>> parse_heading_priority('HEADING')
     ('HEADING', None)
@@ -347,7 +347,7 @@ class OrgBaseNode(Sequence):
 
     def __init__(self, env, index=None):
         """
-        Create a :class:`OrgBaseNode` object.
+        Create an :class:`OrgBaseNode` object.
 
         :type env: :class:`OrgEnv`
         :arg  env: This will be set to the :attr:`env` attribute.
@@ -475,9 +475,9 @@ class OrgBaseNode(Sequence):
             of the ancestor node to return.  For example,
             ``get_parent(max_level=0)`` returns a root node.
 
-            In general case, it specify a maximum level of the
+            In the general case, it specify a maximum level of the
             desired ancestor node.  If there is no ancestor node
-            which level is equal to ``max_level``, this function
+            whose level is equal to ``max_level``, this function
             try to find an ancestor node which level is smaller
             than ``max_level``.
 
@@ -587,7 +587,7 @@ class OrgBaseNode(Sequence):
         >>> c2 is n4
         True
 
-        Note the difference to ``n1[1:]``, which returns the Node 3 also.:
+        Note the difference to ``n1[1:]``, which returns the Node 3 also:
 
         >>> (m1, m2, m3) = list(n1[1:])
         >>> m2 is n3
@@ -664,7 +664,7 @@ class OrgBaseNode(Sequence):
     @property
     def tags(self):
         """
-        Tag of this and parents node.
+        Tags of this and parent's node.
 
         >>> from orgparse import loads
         >>> n2 = loads('''
@@ -1212,7 +1212,7 @@ class OrgNode(OrgBaseNode):
     @property
     def repeated_tasks(self):
         """
-        Get repeated tasks marked DONE in a entry having repeater.
+        Get repeated tasks marked DONE in an entry having repeater.
 
         :rtype: list of :class:`orgparse.date.OrgDateRepeatedTask`
 
