@@ -15,7 +15,7 @@ def total_minutes(td):
 
 def gene_timestamp_regex(brtype, prefix=None, nocookie=False):
     """
-    Generate timetamp regex for active/inactive/nobrace brace type
+    Generate timestamp regex for active/inactive/nobrace brace type
 
     :type brtype: {'active', 'inactive', 'nobrace'}
     :arg  brtype:
