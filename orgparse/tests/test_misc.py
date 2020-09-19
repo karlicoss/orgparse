@@ -82,3 +82,38 @@ def test_add_custom_todo_keys():
     root = loads(content, filename, env)
     assert root.env.all_todo_keys == ['CUSTOM_TODO', 'COMMENT_TODO',
                                       'CUSTOM_DONE', 'COMMENT_DONE']
+
+def test_get_custom_property():
+     filename = '<string>'  # default for loads
+     content = """#+TITLE: Test title
+     * Node 1
+     test 1
+     * Node 2
+     test 2
+     """
+
+     env = OrgEnv(filename=filename)
+
+     # after parsing, all keys are set
+     root = loads(content, filename, env)
+     assert root.get_file_property('TITLE') == ['Test title']
+     assert root.get_only_file_property('TITLE') == 'Test title'
+
+def test_get_custom_property_multivalued():
+     filename = '<string>'  # default for loads
+     content = """#+TITLE: Test
+     #+OTHER: Test title
+     #+TITLE: alternate title
+
+     * Node 1
+     test 1
+     * Node 2
+     test 2
+     """
+
+     env = OrgEnv(filename=filename)
+
+     # after parsing, all keys are set
+     root = loads(content, filename, env)
+     assert root.get_file_property('TITLE') == ['Test', 'alternate title']
+     assert root.get_only_file_property('TITLE') == 'Test'

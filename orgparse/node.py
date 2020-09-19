@@ -152,8 +152,8 @@ def parse_comment(line):
     >>> parse_comment('# not a special comment')  # None
 
     """
-    if line.startswith('#+'):
-        comment = line.lstrip('#+').split(':', 1)
+    if re.match(r'\s*#\+', line):
+        comment = re.split(r':\s+', re.split(r'\s*#\+',line)[1])
         if len(comment) == 2:
             return (comment[0], comment[1].strip())
 
@@ -716,6 +716,27 @@ class OrgBaseNode(Sequence):
     else:
         def __str__(self):
             return unicode(self).encode('utf-8')
+
+    def get_file_property(self, property):
+        """
+        Return a list of the selected property
+        """
+        print(self._special_comments)
+        if property in self._special_comments:
+            return self._special_comments[property]
+        else:
+            return None
+
+    def get_only_file_property(self, property):
+        """
+        Return a single element of the selected property
+        """
+        elements = self.get_file_property(property)
+        if elements:
+            return elements[0]
+        else:
+            return None
+
 
 
 class OrgRootNode(OrgBaseNode):
