@@ -101,20 +101,24 @@ def test_commented_headings_do_not_appear_as_children():
 #** H5
 * H6
 """)
+    assert root.linenumber == 1
     top_level = root.children
     assert len(top_level) == 2
 
     h1 = top_level[0]
     assert h1.heading == "H1"
     assert h1.get_body() == "#** H2"
+    assert h1.linenumber == 1
 
     [h3] = h1.children
     assert h3.heading == "H3"
     assert h3.get_body() == "#* H4\n#** H5"
+    assert h3.linenumber == 3
 
     h6 = top_level[1]
     assert h6.heading == "H6"
     assert len(h6.children) == 0
+    assert h6.linenumber == 6
 
 
 def test_commented_clock_entries_are_ignored_by_node_clock():
