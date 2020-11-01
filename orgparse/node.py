@@ -1,5 +1,6 @@
 import re
 import itertools
+from typing import List, Iterable, Iterator, Optional, Union, Tuple, cast, Dict
 try:
     from collections.abc import Sequence
 except ImportError:
@@ -10,8 +11,8 @@ from .inline import to_plain_text
 from .utils.py3compat import PY3, unicode
 
 
-def lines_to_chunks(lines):
-    chunk = []
+def lines_to_chunks(lines: Iterable[str]) -> Iterable[List[str]]:
+    chunk: List[str] = []
     for l in lines:
         if RE_NODE_HEADER.search(l):
             yield chunk
@@ -42,7 +43,7 @@ def parse_heading_level(heading):
 RE_HEADING_STARS = re.compile(r'^(\*+)\s+(.*?)\s*$')
 
 
-def parse_heading_tags(heading):
+def parse_heading_tags(heading: str) -> Tuple[str, List[str]]:
     """
     Get first tags and heading without tags
 
@@ -117,8 +118,8 @@ def parse_heading_priority(heading):
 
 RE_HEADING_PRIORITY = re.compile(r'^\s*\[#([A-Z0-9])\] ?(.*)$')
 
-
-def parse_property(line):
+PropertyValue = Union[str, int]
+def parse_property(line: str) -> Tuple[Optional[str], Optional[PropertyValue]]:
     """
     Get property from given string.
 
@@ -129,7 +130,7 @@ def parse_property(line):
 
     """
     prop_key = None
-    prop_val = None
+    prop_val: Optional[Union[str, int]] = None
     match = RE_PROP.search(line)
     if match:
         prop_key = match.group(1)
@@ -625,7 +626,7 @@ class OrgBaseNode(Sequence):
         return self
 
     def _parse_comments(self):
-        special_comments = {}
+        special_comments: Dict[str, List[str]] = {}
         for line in self._lines:
             parsed = parse_comment(line)
             if parsed:
@@ -751,21 +752,22 @@ class OrgNode(OrgBaseNode):
 
     """
 
-    def __init__(self, *args, **kwds):
+    def __init__(self, *args, **kwds) -> None:
         super(OrgNode, self).__init__(*args, **kwds)
-        self._heading = None
+        # fixme instead of casts, should organize code in such a way that they aren't necessary
+        self._heading = cast(str, None)
         self._level = None
-        self._tags = None
+        self._tags = cast(List[str], None)
         self._todo = None
         self._priority = None
-        self._properties = {}
+        self._properties: Dict[str, PropertyValue] = {}
         self._scheduled = OrgDate(None)
         self._deadline = OrgDate(None)
         self._closed = OrgDate(None)
-        self._timestamps = []
-        self._clocklist = []
-        self._body_lines = []
-        self._repeated_tasks = []
+        self._timestamps: List[OrgDate] = []
+        self._clocklist: List[OrgDateClock] = []
+        self._body_lines: List[str] = []
+        self._repeated_tasks: List[OrgDateRepeatedTask] = []
 
     # parser
 
@@ -773,7 +775,7 @@ class OrgNode(OrgBaseNode):
         """Call parsers which must be called before tree structuring"""
         self._parse_heading()
         # FIXME: make the following parsers "lazy"
-        ilines = iter(self._lines)
+        ilines: Iterator[str] = iter(self._lines)
         try:
             next(ilines)            # skip heading
         except StopIteration:
@@ -785,7 +787,7 @@ class OrgNode(OrgBaseNode):
         ilines = self._iparse_timestamps(ilines)
         self._body_lines = list(ilines)
 
-    def _parse_heading(self):
+    def _parse_heading(self) -> None:
         heading = self._lines[0]
         (heading, self._level) = parse_heading_level(heading)
         (heading, self._tags) = parse_heading_tags(heading)
@@ -800,7 +802,7 @@ class OrgNode(OrgBaseNode):
     # If the item returned by the input iterator must be dedicated to
     # the parser, do not yield the item or yield it as-is otherwise.
 
-    def _iparse_sdc(self, ilines):
+    def _iparse_sdc(self, ilines: Iterator[str]) -> Iterator[str]:
         """
         Parse SCHEDULED, DEADLINE and CLOSED time tamps.
 
@@ -821,24 +823,24 @@ class OrgNode(OrgBaseNode):
         for line in ilines:
             yield line
 
-    def _iparse_clock(self, ilines):
-        self._clocklist = clocklist = []
+    def _iparse_clock(self, ilines: Iterator[str]) -> Iterator[str]:
+        self._clocklist = []
         for line in ilines:
             cl = OrgDateClock.from_str(line)
             if cl:
-                clocklist.append(cl)
+                self._clocklist.append(cl)
             else:
                 yield line
 
-    def _iparse_timestamps(self, ilines):
-        self._timestamps = timestamps = []
-        timestamps.extend(OrgDate.list_from_str(self._heading))
+    def _iparse_timestamps(self, ilines: Iterator[str]) -> Iterator[str]:
+        self._timestamps = []
+        self._timestamps.extend(OrgDate.list_from_str(self._heading))
         for l in ilines:
-            timestamps.extend(OrgDate.list_from_str(l))
+            self._timestamps.extend(OrgDate.list_from_str(l))
             yield l
 
-    def _iparse_properties(self, ilines):
-        self._properties = properties = {}
+    def _iparse_properties(self, ilines: Iterator[str]) -> Iterator[str]:
+        self._properties = {}
         in_property_field = False
         for line in ilines:
             if in_property_field:
@@ -846,8 +848,8 @@ class OrgNode(OrgBaseNode):
                     break
                 else:
                     (key, val) = parse_property(line)
-                    if key:
-                        properties.update({key: val})
+                    if key is not None and val is not None:
+                        self._properties.update({key: val})
             elif line.find(":PROPERTIES:") >= 0:
                 in_property_field = True
             else:
@@ -855,8 +857,8 @@ class OrgNode(OrgBaseNode):
         for line in ilines:
             yield line
 
-    def _iparse_repeated_tasks(self, ilines):
-        self._repeated_tasks = repeated_tasks = []
+    def _iparse_repeated_tasks(self, ilines: Iterator[str]) -> Iterator[str]:
+        self._repeated_tasks = []
         for line in ilines:
             match = self._repeated_tasks_re.search(line)
             if match:
@@ -865,7 +867,7 @@ class OrgNode(OrgBaseNode):
                 done_state = mdict['done']
                 todo_state = mdict['todo']
                 date = OrgDate.from_str(mdict['date'])
-                repeated_tasks.append(
+                self._repeated_tasks.append(
                     OrgDateRepeatedTask(date.start, todo_state, done_state))
             else:
                 yield line
@@ -1256,7 +1258,7 @@ class OrgNode(OrgBaseNode):
         return self._repeated_tasks
 
 
-def parse_lines(lines, filename, env=None):
+def parse_lines(lines: Iterable[str], filename, env=None) -> OrgNode:
     if not env:
         env = OrgEnv(filename=filename)
     elif env.filename != filename:

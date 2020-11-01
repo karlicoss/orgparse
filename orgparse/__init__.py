@@ -107,8 +107,9 @@ True
 # [[[end]]]
 
 import codecs
+from typing import Iterable
 
-from .node import parse_lines
+from .node import parse_lines, OrgNode # todo basenode??
 from .utils.py3compat import basestring
 
 __author__ = 'Takafumi Arakaki, Dmitrii Gerasimov'
@@ -136,7 +137,7 @@ def load(path, env=None):
                  filename=filename, env=env)
 
 
-def loads(string, filename='<string>', env=None):
+def loads(string: str, filename='<string>', env=None) -> OrgNode:
     """
     Load org-mode document from a string.
 
@@ -146,7 +147,7 @@ def loads(string, filename='<string>', env=None):
     return loadi(string.splitlines(), filename=filename, env=env)
 
 
-def loadi(lines, filename='<lines>', env=None):
+def loadi(lines: Iterable[str], filename='<lines>', env=None) -> OrgNode:
     """
     Load org-mode document from an iterative object.
 

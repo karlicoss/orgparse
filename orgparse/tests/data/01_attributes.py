@@ -1,9 +1,13 @@
+from typing import Dict, Any
+
 from orgparse.date import (
     OrgDate, OrgDateScheduled, OrgDateDeadline, OrgDateClosed,
     OrgDateClock,
 )
 
-node1 = dict(
+Raw = Dict[str, Any]
+
+node1: Raw = dict(
     heading="A node with a lot of attributes",
     priority='A',
     scheduled=OrgDateScheduled((2010, 8, 6)),
@@ -27,7 +31,7 @@ node1 = dict(
   - <2019-08-10 Sat 16:30-17:30> TimeRange"""
 )
 
-node2 = dict(
+node2: Raw = dict(
     heading="A node without any attributed",
     priority=None,
     scheduled=OrgDate(None),
@@ -40,7 +44,7 @@ node2 = dict(
     body="",
 )
 
-node3 = dict(
+node3: Raw = dict(
     heading="range in deadline",
     priority=None,
     scheduled=OrgDate(None),
