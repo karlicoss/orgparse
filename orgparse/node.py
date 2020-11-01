@@ -353,6 +353,8 @@ class OrgBaseNode(Sequence):
     5
     """
 
+    _body_lines: List[str] # set by the child classes
+
     def __init__(self, env, index=None) -> None:
         """
         Create an :class:`OrgBaseNode` object.
@@ -703,6 +705,30 @@ class OrgBaseNode(Sequence):
         """
         return self._get_tags(inher=False)
 
+    @staticmethod
+    def _get_text(text, format='plain'):
+        if format == 'plain':
+            return to_plain_text(text)
+        elif format == 'raw':
+            return text
+        else:
+            raise ValueError('format={0} is not supported.'.format(format))
+
+    def get_body(self, format='plain') -> str:
+        """
+        Return a string of body text.
+
+        See also: :meth:`get_heading`.
+
+        """
+        return self._get_text(
+            '\n'.join(self._body_lines), format) if self._lines else ''
+
+    @property
+    def body(self) -> str:
+        """Alias of ``.get_body(format='plain')``."""
+        return self.get_body()
+
     def is_root(self):
         """
         Return ``True`` when it is a root node.
@@ -757,7 +783,11 @@ class OrgRootNode(OrgBaseNode):
 
     """
 
-    # getter
+    @property
+    def _body_lines(self) -> List[str]: # type: ignore[override]
+        # todo hacky..
+        # for root node, the body is whatever is before the first node
+        return self._lines
 
     @property
     def level(self):
@@ -765,8 +795,6 @@ class OrgRootNode(OrgBaseNode):
 
     def get_parent(self, max_level=None):
         return None
-
-    # misc
 
     def is_root(self):
         return True
@@ -909,17 +937,6 @@ class OrgNode(OrgBaseNode):
         \[ (?P<date> [^\]]+) \]''',
         re.VERBOSE)
 
-    # getter
-
-    @staticmethod
-    def _get_text(text, format='plain'):
-        if format == 'plain':
-            return to_plain_text(text)
-        elif format == 'raw':
-            return text
-        else:
-            raise ValueError('format={0} is not supported.'.format(format))
-
     def get_heading(self, format='plain'):
         """
         Return a string of head text without tags and TODO keywords.
@@ -942,25 +959,10 @@ class OrgNode(OrgBaseNode):
         """
         return self._get_text(self._heading, format)
 
-    def get_body(self, format='plain'):
-        """
-        Return a string of body text.
-
-        See also: :meth:`get_heading`.
-
-        """
-        return self._get_text(
-            '\n'.join(self._body_lines), format) if self._lines else ''
-
     @property
-    def heading(self):
+    def heading(self) -> str:
         """Alias of ``.get_heading(format='plain')``."""
         return self.get_heading()
-
-    @property
-    def body(self):
-        """Alias of ``.get_body(format='plain')``."""
-        return self.get_body()
 
     @property
     def level(self):
@@ -1022,7 +1024,7 @@ class OrgNode(OrgBaseNode):
         """
         return self._todo
 
-    def get_property(self, key, val=None):
+    def get_property(self, key, val=None) -> Optional[PropertyValue]:
         """
         Return property named ``key`` if exists or ``val`` otherwise.
 
@@ -1036,7 +1038,7 @@ class OrgNode(OrgBaseNode):
         return self._properties.get(key, val)
 
     @property
-    def properties(self):
+    def properties(self) -> Dict[str, PropertyValue]:
         """
         Node properties as a dictionary.
 

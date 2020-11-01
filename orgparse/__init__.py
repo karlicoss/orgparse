@@ -127,6 +127,7 @@ def load(path, env=None):
     :rtype: :class:`orgparse.node.OrgRootNode`
 
     """
+    path = str(path) # in case of pathlib.Path
     if isinstance(path, basestring):
         orgfile = codecs.open(path, encoding='utf8')
         filename = path

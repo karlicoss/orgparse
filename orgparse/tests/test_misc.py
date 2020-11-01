@@ -14,6 +14,18 @@ def test_empty_heading() -> None:
     assert h.tags == {'sometag'}
 
 
+def test_root() -> None:
+    root = loads('''
+#+STARTUP: hidestars
+Whatever
+# comment
+* heading 1
+    '''.strip())
+    assert len(root.children) == 1
+    # todo not sure if should strip special comments??
+    assert root.body.endswith('Whatever\n# comment')
+
+
 def test_stars():
     # https://github.com/karlicoss/orgparse/issues/7#issuecomment-533732660
     root = loads("""
