@@ -1,7 +1,7 @@
 try:
-    import cPickle as pickle
+    import cPickle as pickle # type: ignore[import]
 except ImportError:
-    import pickle
+    import pickle # type: ignore[no-redef]
 
 from .. import loadi
 

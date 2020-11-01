@@ -1,5 +1,8 @@
 import datetime
 import re
+from typing import Union, Tuple, Optional, List
+
+DateIsh = Union[datetime.date, datetime.datetime]
 
 
 def total_seconds(td):
@@ -191,7 +194,7 @@ class OrgDate(object):
         self._active = self._active_default if active is None else active
 
     @staticmethod
-    def _to_date(date):
+    def _to_date(date) -> DateIsh:
         if isinstance(date, (tuple, list)):
             if len(date) == 3:
                 return datetime.date(*date)
@@ -270,15 +273,15 @@ class OrgDate(object):
         """
         return self._end
 
-    def is_active(self):
+    def is_active(self) -> bool:
         """Return true if the date is active"""
         return self._active
 
-    def has_end(self):
+    def has_end(self) -> bool:
         """Return true if it has the end date"""
         return bool(self._end)
 
-    def has_time(self):
+    def has_time(self) -> bool:
         """
         Return true if the start date has time field
 
@@ -290,7 +293,7 @@ class OrgDate(object):
         """
         return isinstance(self._start, datetime.datetime)
 
-    def has_overlap(self, other):
+    def has_overlap(self, other) -> bool:
         """
         Test if it has overlap with other :class:`OrgDate` instance
 
@@ -336,10 +339,11 @@ class OrgDate(object):
         return date
 
     @staticmethod
-    def _daterange_from_groupdict(dct, prefix=''):
+    def _daterange_from_groupdict(dct, prefix='') -> Tuple[List, Optional[List]]:
         start_keys = ['year', 'month', 'day', 'hour'    , 'min']
         end_keys   = ['year', 'month', 'day', 'end_hour', 'end_min']
         start_range = list(map(int, filter(None, (dct[prefix + k] for k in start_keys))))
+        end_range: Optional[List]
         end_range   = list(map(int, filter(None, (dct[prefix + k] for k in end_keys))))
         if len(end_range) < len(end_keys):
             end_range = None
@@ -350,7 +354,7 @@ class OrgDate(object):
         return cls._daterange_from_groupdict(dct, prefix=prefix)[0]
 
     @classmethod
-    def list_from_str(cls, string):
+    def list_from_str(cls, string: str) -> List['OrgDate']:
         """
         Parse string and return a list of :class:`OrgDate` objects
 
@@ -434,7 +438,9 @@ class OrgDateSDCBase(OrgDate):
     # FIXME: use OrgDate.from_str
     @classmethod
     def from_str(cls, string):
-        match = cls._re.search(string)
+        rgx = cls._re
+        assert rgx is not None
+        match = rgx.search(string)
         if match:
             mdict = match.groupdict()
             start = cls._datetuple_from_groupdict(mdict)
@@ -529,7 +535,7 @@ class OrgDateClock(OrgDate):
                 self._duration == total_minutes(self.duration))
 
     @classmethod
-    def from_str(cls, line):
+    def from_str(cls, line: str) -> 'OrgDateClock':
         """
         Get CLOCK from given string.
 
@@ -545,8 +551,8 @@ class OrgDateClock(OrgDate):
         ymdhm2 = groups[5:10]
         hm3 = groups[10:]
         return cls(
-            datetime.datetime(*ymdhm1),
-            datetime.datetime(*ymdhm2),
+            datetime.datetime(*ymdhm1), # type: ignore[arg-type]
+            datetime.datetime(*ymdhm2), # type: ignore[arg-type]
             hm3[0] * 60 + hm3[1],
         )
 

@@ -5,7 +5,7 @@ def nodedict(parent, children=[], previous=None, next=None):
                 next_same_level_heading=next)
 
 
-data = [nodedict(*args) for args in [
+data = [nodedict(*args) for args in [ # type: ignore[misc]
     # G0
     (None, [], None, 'G1-H1'),
     # G1

@@ -12,7 +12,7 @@ DATADIR = os.path.join(os.path.dirname(__file__), 'data')
 
 def load_data(path):
     """Load data from python file"""
-    ns = {}
+    ns = {} # type: ignore
     execfile(path, ns)
     return ns['data']
 
