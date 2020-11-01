@@ -1,6 +1,6 @@
 import re
 import itertools
-from typing import List, Iterable, Iterator, Optional, Union, Tuple, cast, Dict
+from typing import List, Iterable, Iterator, Optional, Union, Tuple, cast, Dict, Set
 try:
     from collections.abc import Sequence
 except ImportError:
@@ -78,7 +78,7 @@ def parse_heading_tags(heading: str) -> Tuple[str, List[str]]:
 RE_HEADING_TAGS = re.compile(r'(.*?)\s*:([\w@:]+):\s*$')
 
 
-def parse_heading_todos(heading, todo_candidates):
+def parse_heading_todos(heading: str, todo_candidates: List[str]) -> Tuple[str, Optional[str]]:
     """
     Get TODO keyword and heading without TODO keyword.
 
@@ -90,9 +90,10 @@ def parse_heading_todos(heading, todo_candidates):
 
     """
     for todo in todo_candidates:
-        todows = '{0} '.format(todo)
-        if heading.startswith(todows):
-            return (heading[len(todows):], todo)
+        if heading == todo:
+            return ('', todo)
+        if heading.startswith(todo + ' '):
+            return (heading[len(todo) + 1:], todo)
     return (heading, None)
 
 
@@ -656,7 +657,7 @@ class OrgBaseNode(Sequence):
         """
         raise NotImplemented
 
-    def _get_tags(self, inher=False):
+    def _get_tags(self, inher=False) -> Set[str]:
         """
         Return tags
 
@@ -669,7 +670,7 @@ class OrgBaseNode(Sequence):
         return set()
 
     @property
-    def tags(self):
+    def tags(self) -> Set[str]:
         """
         Tags of this and parent's node.
 
@@ -685,7 +686,7 @@ class OrgBaseNode(Sequence):
         return self._get_tags(inher=True)
 
     @property
-    def shallow_tags(self):
+    def shallow_tags(self) -> Set[str]:
         """
         Tags defined for this node (don't look-up parent nodes).
 
@@ -764,7 +765,7 @@ class OrgNode(OrgBaseNode):
         self._heading = cast(str, None)
         self._level = None
         self._tags = cast(List[str], None)
-        self._todo = None
+        self._todo: Optional[str] = None
         self._priority = None
         self._properties: Dict[str, PropertyValue] = {}
         self._scheduled = OrgDate(None)
@@ -978,7 +979,7 @@ class OrgNode(OrgBaseNode):
         """
         return self._priority
 
-    def _get_tags(self, inher=False):
+    def _get_tags(self, inher=False) -> Set[str]:
         tags = set(self._tags)
         if inher:
             parent = self.get_parent()
@@ -987,7 +988,7 @@ class OrgNode(OrgBaseNode):
         return tags
 
     @property
-    def todo(self):
+    def todo(self) -> Optional[str]:
         """
         A TODO keyword of this node if exists or None otherwise.
 

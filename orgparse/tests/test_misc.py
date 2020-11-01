@@ -2,6 +2,18 @@ from .. import load, loads
 from ..node import OrgEnv
 
 
+def test_empty_heading() -> None:
+    root = loads('''
+* TODO :sometag:
+  has no heading but still a todo?
+  it's a bit unclear, but seems to be highligted by emacs..
+''')
+    [h] = root.children
+    assert h.todo == 'TODO'
+    assert h.heading == ''
+    assert h.tags == {'sometag'}
+
+
 def test_stars():
     # https://github.com/karlicoss/orgparse/issues/7#issuecomment-533732660
     root = loads("""
