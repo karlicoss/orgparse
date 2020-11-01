@@ -1,7 +1,0 @@
-#!/bin/bash -eu
-
-cd "$(dirname "$0")"
-cd ../..
-
-pip3 install --user tox
-tox
