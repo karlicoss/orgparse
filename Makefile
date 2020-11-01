@@ -12,7 +12,3 @@ doc: cog
 cog: orgparse/__init__.py
 orgparse/__init__.py: README.rst
 	cd orgparse && cog.py -r __init__.py
-
-build: clean cog
-	python3 setup.py sdist bdist_wheel
-
