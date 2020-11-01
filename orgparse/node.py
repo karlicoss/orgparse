@@ -327,7 +327,7 @@ class OrgBaseNode(Sequence):
     *** Heading 3
     * Heading 4
 
-    It also support sequence protocol.
+    It also supports sequence protocol.
 
     >>> print(root[1])
     * Heading 1
@@ -344,9 +344,13 @@ class OrgBaseNode(Sequence):
     ** Heading 2
     *** Heading 3
 
+    Nodes remember the line number information (1-indexed):
+
+    >>> print(root.children[1].linenumber)
+    5
     """
 
-    def __init__(self, env, index=None):
+    def __init__(self, env, index=None) -> None:
         """
         Create an :class:`OrgBaseNode` object.
 
@@ -356,8 +360,10 @@ class OrgBaseNode(Sequence):
         """
         self.env = env
 
+        self.linenumber = cast(int, None) # set in parse_lines
+
         # content
-        self._lines = []
+        self._lines: List[str] = []
 
         # FIXME: use `index` argument to set index.  (Currently it is
         # done externally in `parse_lines`.)
@@ -1265,7 +1271,14 @@ def parse_lines(lines: Iterable[str], filename, env=None) -> OrgNode:
         raise ValueError('If env is specified, filename must match')
 
     # parse into node of list (environment will be parsed)
-    nodelist = list(env.from_chunks(lines_to_chunks(lines)))
+    ch1, ch2 = itertools.tee(lines_to_chunks(lines))
+    linenos = itertools.accumulate(itertools.chain([0], (len(c) for c in ch1)))
+    nodes = env.from_chunks(ch2)
+    nodelist = []
+    for lineno, node in zip(linenos, nodes):
+        lineno += 1 # in text editors lines are 1-indexed
+        node.linenumber = lineno
+        nodelist.append(node)
     # parse headings (level, TODO, TAGs, and heading)
     nodelist[0]._index = 0
     for (i, node) in enumerate(nodelist[1:], 1):   # nodes except root node
