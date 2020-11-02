@@ -154,8 +154,10 @@ def parse_comment(line):
     >>> parse_comment('# not a special comment')  # None
 
     """
-    if re.match(r'\s*#\+', line):
-        comment = re.split(r':\s+', re.split(r'\s*#\+',line)[1])
+    match = re.match(r'\s*#\+', line)
+    if match:
+        end = match.end(0)
+        comment = line[end:].split(':')
         if len(comment) == 2:
             return (comment[0], comment[1].strip())
 
@@ -725,26 +727,25 @@ class OrgBaseNode(Sequence):
         def __str__(self):
             return unicode(self).encode('utf-8')
 
-    def get_file_property(self, property):
+    # todo hmm, not sure if it really belongs here and not to OrgRootNode?
+    def get_file_property_list(self, property):
         """
         Return a list of the selected property
         """
-        print(self._special_comments)
-        if property in self._special_comments:
-            return self._special_comments[property]
-        else:
-            return None
+        vals = self._special_comments.get(property, None)
+        return [] if vals is None else vals
 
-    def get_only_file_property(self, property):
+    def get_file_property(self, property):
         """
-        Return a single element of the selected property
+        Return a single element of the selected property or None if it doesn't exist
         """
-        elements = self.get_file_property(property)
-        if elements:
-            return elements[0]
-        else:
+        vals = self._special_comments.get(property, None)
+        if vals is None:
             return None
-
+        elif len(vals) == 1:
+            return vals[0]
+        else:
+            raise RuntimeError('Multiple values for property {}: {}'.format(property, vals))
 
 
 class OrgRootNode(OrgBaseNode):
