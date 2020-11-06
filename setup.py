@@ -20,7 +20,7 @@ def main():
 
         packages=[pkg, *subpkgs],
         package_data={
-            'pkg': ['py.typed'], # todo need the rest as well??
+            pkg: ['py.typed'], # todo need the rest as well??
             'orgparse.tests.data': ['*.org'],
         },
 
