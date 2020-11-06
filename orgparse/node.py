@@ -8,6 +8,7 @@ except ImportError:
 
 from .date import OrgDate, OrgDateClock, OrgDateRepeatedTask, parse_sdc
 from .inline import to_plain_text
+from .extra import to_rich_text, Rich
 from .utils.py3compat import PY3, unicode
 
 
@@ -711,6 +712,8 @@ class OrgBaseNode(Sequence):
             return to_plain_text(text)
         elif format == 'raw':
             return text
+        elif format == 'rich':
+            return to_rich_text(text)
         else:
             raise ValueError('format={0} is not supported.'.format(format))
 
@@ -728,6 +731,11 @@ class OrgBaseNode(Sequence):
     def body(self) -> str:
         """Alias of ``.get_body(format='plain')``."""
         return self.get_body()
+
+    @property
+    def body_rich(self) -> Iterator[Rich]:
+        r = self.get_body(format='rich')
+        return cast(Iterator[Rich], r) # meh..
 
     def is_root(self):
         """
