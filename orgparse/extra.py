@@ -3,6 +3,7 @@ from typing import List, Sequence, Dict, Iterator, Iterable, Union, Optional
 
 
 RE_TABLE_SEPARATOR = re.compile(r'\s*\|(\-+\+)*\-+\|')
+RE_TABLE_ROW = re.compile(r'\s*\|([^|]+)+\|')
 STRIP_CELL_WHITESPACE = True
 
 
@@ -63,7 +64,6 @@ class Table:
         )
 
 
-
 class AsDictHelper:
     def __init__(self, columns: Sequence[str], rows: Sequence[Row]) -> None:
         self.columns = columns
@@ -72,3 +72,45 @@ class AsDictHelper:
     def __iter__(self) -> Iterator[Dict[str, str]]:
         for x in self._rows:
             yield {k: v for k, v in zip(self.columns, x)}
+
+
+class Gap:
+    # todo later, add indices etc
+    pass
+
+
+Rich = Union[Table, Gap]
+def to_rich_text(text: str) -> Iterator[Rich]:
+    '''
+    Convert an org-mode text into a 'rich' text, e.g. tables/lists/etc, interleaved by gaps.
+    NOTE: you shouldn't rely on the number of items returned by this function,
+    it might change in the future when more types are supported.
+
+    At the moment only tables are supported.
+    '''
+    lines = text.splitlines(keepends=True)
+    group: List[str] = []
+    last = Gap
+    def emit() -> Rich:
+        nonlocal group, last
+        if   last is Gap:
+            res = Gap()
+        elif last is Table:
+            res = Table(group) # type: ignore
+        else:
+            raise RuntimeError(f'Unexpected type {last}')
+        group = []
+        return res
+
+    for line in lines:
+        if RE_TABLE_ROW.match(line) or RE_TABLE_SEPARATOR.match(line):
+            cur = Table
+        else:
+            cur = Gap # type: ignore
+        if cur is not last:
+            if len(group) > 0:
+                yield emit()
+            last = cur # type: ignore
+        group.append(line)
+    if len(group) > 0:
+        yield emit()
