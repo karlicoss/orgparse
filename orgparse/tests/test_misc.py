@@ -24,6 +24,7 @@ Whatever
     assert len(root.children) == 1
     # todo not sure if should strip special comments??
     assert root.body.endswith('Whatever\n# comment')
+    assert root.heading == ''
 
 
 def test_stars():
@@ -119,13 +120,14 @@ def test_get_file_property():
      root = loads(content)
      assert root.get_file_property('Nosuchproperty') is None
      assert root.get_file_property_list('TITLE') == ['Test title']
-     assert root.get_file_property('TITLE') == 'Test title'
+     # also it's case insensitive
+     assert root.get_file_property('title') == 'Test title'
      assert root.get_file_property_list('Nosuchproperty') == []
 
 def test_get_file_property_multivalued():
      content = """ #+TITLE: Test
      #+OTHER: Test title
-     #+TITLE: alternate title
+     #+title: alternate title
 
      * Node 1
      test 1
@@ -141,3 +143,16 @@ def test_get_file_property_multivalued():
      with pytest.raises(RuntimeError):
          # raises because there are multiple of them
          root.get_file_property('TITLE')
+
+def test_filetags_are_tags() -> None:
+    content = '''
+#+FILETAGS: :f1:f2:
+
+* heading :h1:
+** child :f2:
+    '''.strip()
+    root = loads(content)
+    # breakpoint()
+    assert root.tags == {'f1', 'f2'}
+    child = root.children[0].children[0]
+    assert child.tags == {'f1', 'f2', 'h1'}

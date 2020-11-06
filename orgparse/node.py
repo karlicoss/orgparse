@@ -1,6 +1,6 @@
 import re
 import itertools
-from typing import List, Iterable, Iterator, Optional, Union, Tuple, cast, Dict, Set
+from typing import List, Iterable, Iterator, Optional, Union, Tuple, cast, Dict, Set, Sequence
 try:
     from collections.abc import Sequence
 except ImportError:
@@ -146,21 +146,24 @@ def parse_property(line: str) -> Tuple[Optional[str], Optional[PropertyValue]]:
 RE_PROP = re.compile(r'^\s*:(.*?):\s*(.*?)\s*$')
 
 
-def parse_comment(line):
+def parse_comment(line: str): #  -> Optional[Tuple[str, Sequence[str]]]: # todo wtf?? it says 'ABCMeta isn't subscriptable??'
     """
     Parse special comment such as ``#+SEQ_TODO``
 
     >>> parse_comment('#+SEQ_TODO: TODO | DONE')
-    ('SEQ_TODO', 'TODO | DONE')
+    ('SEQ_TODO', ['TODO | DONE'])
     >>> parse_comment('# not a special comment')  # None
 
+    >>> parse_comment('#+FILETAGS: :tag1:tag2:')
+    ('FILETAGS', ['tag1', 'tag2'])
     """
     match = re.match(r'\s*#\+', line)
     if match:
         end = match.end(0)
         comment = line[end:].split(':')
-        if len(comment) == 2:
-            return (comment[0], comment[1].strip())
+        if len(comment) >= 2:
+            return (comment[0], [c.strip() for c in comment[1:] if len(c.strip()) > 0])
+    return None
 
 
 def parse_seq_todo(line):
@@ -642,8 +645,9 @@ class OrgBaseNode(Sequence):
         for line in self._lines:
             parsed = parse_comment(line)
             if parsed:
-                (key, val) = parsed
-                special_comments.setdefault(key, []).append(val)
+                (key, vals) = parsed
+                key = key.upper() # case insensitive, so keep as uppercase
+                special_comments.setdefault(key, []).extend(vals)
         self._special_comments = special_comments
         # parse TODO keys and store in OrgEnv
         for todokey in ['TODO', 'SEQ_TODO', 'TYP_TODO']:
@@ -770,14 +774,14 @@ class OrgBaseNode(Sequence):
         """
         Return a list of the selected property
         """
-        vals = self._special_comments.get(property, None)
+        vals = self._special_comments.get(property.upper(), None)
         return [] if vals is None else vals
 
     def get_file_property(self, property):
         """
         Return a single element of the selected property or None if it doesn't exist
         """
-        vals = self._special_comments.get(property, None)
+        vals = self._special_comments.get(property.upper(), None)
         if vals is None:
             return None
         elif len(vals) == 1:
@@ -804,6 +808,10 @@ class OrgRootNode(OrgBaseNode):
     @property
     def heading(self) -> str:
         return ''
+
+    def _get_tags(self, inher=False) -> Set[str]:
+        filetags = self.get_file_property_list('FILETAGS')
+        return set(filetags)
 
     @property
     def level(self):
