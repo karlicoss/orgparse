@@ -737,6 +737,10 @@ class OrgBaseNode(Sequence):
         r = self.get_body(format='rich')
         return cast(Iterator[Rich], r) # meh..
 
+    @property
+    def heading(self) -> str:
+        raise NotImplementedError
+
     def is_root(self):
         """
         Return ``True`` when it is a root node.
@@ -796,6 +800,10 @@ class OrgRootNode(OrgBaseNode):
         # todo hacky..
         # for root node, the body is whatever is before the first node
         return self._lines
+
+    @property
+    def heading(self) -> str:
+        return ''
 
     @property
     def level(self):
