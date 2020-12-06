@@ -160,9 +160,16 @@ def parse_comment(line: str): #  -> Optional[Tuple[str, Sequence[str]]]: # todo 
     match = re.match(r'\s*#\+', line)
     if match:
         end = match.end(0)
-        comment = line[end:].split(':')
+        comment = line[end:].split(':', maxsplit=1)
         if len(comment) >= 2:
-            return (comment[0], [c.strip() for c in comment[1:] if len(c.strip()) > 0])
+            key   = comment[0]
+            value = comment[1].strip()
+            if key.upper() == 'FILETAGS':
+                # just legacy behaviour; it seems like filetags is the only one that separated by ':'
+                # see https://orgmode.org/org.html#In_002dbuffer-Settings
+                return (key, [c.strip() for c in value.split(':') if len(c.strip()) > 0])
+            else:
+                return (key, [value])
     return None
 
 

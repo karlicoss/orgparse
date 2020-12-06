@@ -108,8 +108,8 @@ def test_add_custom_todo_keys():
     assert root.env.all_todo_keys == ['CUSTOM_TODO', 'COMMENT_TODO',
                                       'CUSTOM_DONE', 'COMMENT_DONE']
 
-def test_get_file_property():
-     content = """#+TITLE:   Test title
+def test_get_file_property() -> None:
+     content = """#+TITLE:   Test: title
      * Node 1
      test 1
      * Node 2
@@ -119,12 +119,13 @@ def test_get_file_property():
      # after parsing, all keys are set
      root = loads(content)
      assert root.get_file_property('Nosuchproperty') is None
-     assert root.get_file_property_list('TITLE') == ['Test title']
+     assert root.get_file_property_list('TITLE') == ['Test: title']
      # also it's case insensitive
-     assert root.get_file_property('title') == 'Test title'
+     assert root.get_file_property('title') == 'Test: title'
      assert root.get_file_property_list('Nosuchproperty') == []
 
-def test_get_file_property_multivalued():
+
+def test_get_file_property_multivalued() -> None:
      content = """ #+TITLE: Test
      #+OTHER: Test title
      #+title: alternate title
@@ -143,6 +144,7 @@ def test_get_file_property_multivalued():
      with pytest.raises(RuntimeError):
          # raises because there are multiple of them
          root.get_file_property('TITLE')
+
 
 def test_filetags_are_tags() -> None:
     content = '''
