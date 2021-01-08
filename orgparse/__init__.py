@@ -107,9 +107,11 @@ True
 # [[[end]]]
 
 import codecs
-from typing import Iterable
+from pathlib import Path
+from typing import Iterable, Union, Optional, TextIO
 
-from .node import parse_lines, OrgNode # todo basenode??
+
+from .node import parse_lines, OrgEnv, OrgNode # todo basenode??
 from .utils.py3compat import basestring
 
 __author__ = 'Takafumi Arakaki, Dmitrii Gerasimov'
@@ -117,7 +119,7 @@ __license__ = 'BSD License'
 __all__ = ["load", "loads", "loadi"]
 
 
-def load(path, env=None):
+def load(path: Union[str, Path, TextIO], env: Optional[OrgEnv]=None) -> OrgNode:
     """
     Load org-mode document from a file.
 
@@ -127,10 +129,10 @@ def load(path, env=None):
     :rtype: :class:`orgparse.node.OrgRootNode`
 
     """
-    path = str(path) # in case of pathlib.Path
-    if isinstance(path, basestring):
-        orgfile = codecs.open(path, encoding='utf8')
-        filename = path
+    orgfile: TextIO
+    if isinstance(path, (str, Path)):
+        orgfile = codecs.open(str(path), encoding='utf8')
+        filename = str(path)
     else:
         orgfile = path
         filename = path.name if hasattr(path, 'name') else '<file-like>'
@@ -138,7 +140,7 @@ def load(path, env=None):
                  filename=filename, env=env)
 
 
-def loads(string: str, filename='<string>', env=None) -> OrgNode:
+def loads(string: str, filename: str='<string>', env: Optional[OrgEnv]=None) -> OrgNode:
     """
     Load org-mode document from a string.
 
@@ -148,7 +150,7 @@ def loads(string: str, filename='<string>', env=None) -> OrgNode:
     return loadi(string.splitlines(), filename=filename, env=env)
 
 
-def loadi(lines: Iterable[str], filename='<lines>', env=None) -> OrgNode:
+def loadi(lines: Iterable[str], filename: str='<lines>', env: Optional[OrgEnv]=None) -> OrgNode:
     """
     Load org-mode document from an iterative object.
 
