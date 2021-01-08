@@ -158,3 +158,14 @@ def test_filetags_are_tags() -> None:
     assert root.tags == {'f1', 'f2'}
     child = root.children[0].children[0]
     assert child.tags == {'f1', 'f2', 'h1'}
+
+
+def test_load_filelike() -> None:
+    import io
+    stream = io.StringIO('''
+* heading1
+* heading 2
+''')
+    root = load(stream)
+    assert len(root.children) == 2
+    assert root.env.filename == '<file-like>'
