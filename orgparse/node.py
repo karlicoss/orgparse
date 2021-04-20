@@ -120,7 +120,7 @@ def parse_heading_priority(heading):
 
 RE_HEADING_PRIORITY = re.compile(r'^\s*\[#([A-Z0-9])\] ?(.*)$')
 
-PropertyValue = Union[str, int]
+PropertyValue = Union[str, float]
 def parse_property(line: str) -> Tuple[Optional[str], Optional[PropertyValue]]:
     """
     Get property from given string.
@@ -128,23 +128,107 @@ def parse_property(line: str) -> Tuple[Optional[str], Optional[PropertyValue]]:
     >>> parse_property(':Some_property: some value')
     ('Some_property', 'some value')
     >>> parse_property(':Effort: 1:10')
-    ('Effort', 70)
+    ('Effort', 70.0)
 
     """
     prop_key = None
-    prop_val: Optional[Union[str, int]] = None
+    prop_val: Optional[Union[str, float]] = None
     match = RE_PROP.search(line)
     if match:
         prop_key = match.group(1)
         prop_val = match.group(2)
         if prop_key == 'Effort':
-            (h, m) = prop_val.split(":", 2)
-            if h.isdigit() and m.isdigit():
-                prop_val = int(h) * 60 + int(m)
+            prop_val = parse_duration_to_minutes(prop_val)
     return (prop_key, prop_val)
 
 RE_PROP = re.compile(r'^\s*:(.*?):\s*(.*?)\s*$')
 
+def parse_duration_to_minutes(duration: str) -> float:
+    """
+    Parse duration minutes from given string.
+    The following code fully mimics the 'org-duration-to-minutes' function in org mode:
+    https://github.com/emacs-mirror/emacs/blob/master/lisp/org/org-duration.el
+
+    >>> parse_property(':Effort: 3:12')
+    ('Effort', 192.0)
+    >>> parse_property(':Effort: 1:23:45')
+    ('Effort', 83.75)
+    >>> parse_property(':Effort: 1y 3d 3h 4min')
+    ('Effort', 530464.0)
+    >>> parse_property(':Effort: 1d3h5min')
+    ('Effort', 1625.0)
+    >>> parse_property(':Effort: 3d 13:35')
+    ('Effort', 5135.0)
+    >>> parse_property(':Effort: 2.35h')
+    ('Effort', 141.0)
+    >>> parse_property(':Effort: 10')
+    ('Effort', 10.0)
+    >>> parse_property(':Effort: 10.')
+    ('Effort', 10.0)
+    >>> parse_property(':Effort: 1 h')
+    ('Effort', 60.0)
+    >>> parse_property(':Effort: ')
+    ('Effort', 0.0)
+    """
+
+    # Conversion factor to minutes for a duration.
+    ORG_DURATION_UNITS = {
+        "min": 1,
+        "h": 60,
+        "d": 60 * 24,
+        "w": 60 * 24 * 7,
+        "m": 60 * 24 * 30,
+        "y": 60 * 24 * 365.25,
+    }
+    # Regexp matching for all units.
+    ORG_DURATION_UNITS_RE = r'(%s)' % r'|'.join(ORG_DURATION_UNITS.keys())
+    # Regexp matching a duration expressed with H:MM or H:MM:SS format.
+    # Hours can use any number of digits.
+    ORG_DURATION_H_MM_RE = r'[ \t]*[0-9]+(?::[0-9]{2}){1,2}[ \t]*'
+    RE_ORG_DURATION_H_MM = re.compile(ORG_DURATION_H_MM_RE)
+    # Regexp matching a duration with an unit.
+    # Allowed units are defined in ORG_DURATION_UNITS.
+    # Match group 1 contains the bare number.
+    # Match group 2 contains the unit.
+    ORG_DURATION_UNIT_RE = r'([0-9]+(?:[.][0-9]*)?)[ \t]*' + ORG_DURATION_UNITS_RE
+    RE_ORG_DURATION_UNIT = re.compile(ORG_DURATION_UNIT_RE)
+    # Regexp matching a duration expressed with units.
+    # Allowed units are defined in ORG_DURATION_UNITS.
+    ORG_DURATION_FULL_RE = r'(?:[ \t]*%s)+[ \t]*' % ORG_DURATION_UNIT_RE
+    RE_ORG_DURATION_FULL = re.compile(ORG_DURATION_FULL_RE)
+    # Regexp matching a duration expressed with units and H:MM or H:MM:SS format.
+    # Allowed units are defined in ORG_DURATION_UNITS.
+    # Match group A contains units part.
+    # Match group B contains H:MM or H:MM:SS part.
+    ORG_DURATION_MIXED_RE = r'(?P<A>([ \t]*%s)+)[ \t]*(?P<B>[0-9]+(?::[0-9][0-9]){1,2})[ \t]*' % ORG_DURATION_UNIT_RE
+    RE_ORG_DURATION_MIXED = re.compile(ORG_DURATION_MIXED_RE)
+    # Regexp matching float numbers.
+    RE_FLOAT = re.compile(r'[0-9]+([.][0-9]*)?')
+
+    match: Optional[re.Match[str]]
+    if duration == "":
+        return 0.0
+    if isinstance(duration, float):
+        return float(duration)
+    if RE_ORG_DURATION_H_MM.fullmatch(duration):
+        hours, minutes, *seconds_ = map(float, duration.split(":"))
+        seconds = seconds_[0] if seconds_ else 0
+        return seconds / 60.0 + minutes + 60 * hours
+    if RE_ORG_DURATION_FULL.fullmatch(duration):
+        minutes = 0
+        for match in RE_ORG_DURATION_UNIT.finditer(duration):
+            value = float(match.group(1))
+            unit = match.group(2)
+            minutes += value * ORG_DURATION_UNITS[unit]
+        return float(minutes)
+    match = RE_ORG_DURATION_MIXED.fullmatch(duration)
+    if match:
+        units_part = match.groupdict()['A']
+        hms_part = match.groupdict()['B']
+        return parse_duration_to_minutes(units_part) + parse_duration_to_minutes(hms_part)
+    if RE_FLOAT.fullmatch(duration):
+        return float(duration)
+    raise ValueError("Invalid duration format %s" % duration)
 
 def parse_comment(line: str): #  -> Optional[Tuple[str, Sequence[str]]]: # todo wtf?? it says 'ABCMeta isn't subscriptable??'
     """
