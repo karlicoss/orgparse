@@ -7,8 +7,10 @@ on:
     tags: 'v[0-9]+.*' # only trigger on 'release' tags for PyPi
     # Ideally I would put this in the pypi job... but github syntax doesn't allow for regexes there :shrug:
     # P.S. fuck made up yaml DSLs.
-    # TODO cron?
+  pull_request: # needed to trigger on others' PRs
+  # Note that people who fork it need to go to "Actions" tab on their fork and click "I understand my workflows, go ahead and enable them".
   workflow_dispatch: # needed to trigger workflows manually
+  # todo cron?
 
 env:
   # useful for scripts & sometimes tests to know
@@ -18,8 +20,8 @@ jobs:
   build:
     strategy:
       matrix:
-        platform: [ubuntu-latest] # macos-latest] # TODO windows-latest??
-        python-version: [3.6, 3.7, 3.8]
+        platform: [ubuntu-latest, macos-latest] # TODO windows-latest??
+        python-version: [3.6, 3.7, 3.8, 3.9]
 
     runs-on: ${{ matrix.platform }}
 
@@ -36,7 +38,7 @@ jobs:
         submodules: recursive
 
     # uncomment for SSH debugging
-    # - uses: mxschmitt/action-tmate@v2
+    # - uses: mxschmitt/action-tmate@v3
 
     - run: .ci/run
 
@@ -64,7 +66,7 @@ jobs:
 
     - name: 'release to test pypi'
       # always deploy merged master to test pypi
-      if: github.event.ref == 'refs/heads/master'
+      if: github.event_name != 'pull_request' && github.event.ref == 'refs/heads/master'
       env:
         TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD_TEST }}
       run: pip3 install --user wheel twine && .ci/release --test
@@ -72,7 +74,7 @@ jobs:
     - name: 'release to pypi'
       # always deploy tags to release pypi
       # NOTE: release tags are guarded by on: push: tags on the top
-      if: startsWith(github.event.ref, 'refs/tags')
+      if: github.event_name != 'pull_request' && startsWith(github.event.ref, 'refs/tags')
       env:
         TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
       run: pip3 install --user wheel twine && .ci/release
