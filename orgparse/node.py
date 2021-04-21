@@ -120,7 +120,7 @@ def parse_heading_priority(heading):
 
 RE_HEADING_PRIORITY = re.compile(r'^\s*\[#([A-Z0-9])\] ?(.*)$')
 
-PropertyValue = Union[str, float]
+PropertyValue = Union[str, int, float]
 def parse_property(line: str) -> Tuple[Optional[str], Optional[PropertyValue]]:
     """
     Get property from given string.
@@ -128,11 +128,11 @@ def parse_property(line: str) -> Tuple[Optional[str], Optional[PropertyValue]]:
     >>> parse_property(':Some_property: some value')
     ('Some_property', 'some value')
     >>> parse_property(':Effort: 1:10')
-    ('Effort', 70.0)
+    ('Effort', 70)
 
     """
     prop_key = None
-    prop_val: Optional[Union[str, float]] = None
+    prop_val: Optional[Union[str, int, float]] = None
     match = RE_PROP.search(line)
     if match:
         prop_key = match.group(1)
@@ -143,32 +143,62 @@ def parse_property(line: str) -> Tuple[Optional[str], Optional[PropertyValue]]:
 
 RE_PROP = re.compile(r'^\s*:(.*?):\s*(.*?)\s*$')
 
-def parse_duration_to_minutes(duration: str) -> float:
+def parse_duration_to_minutes(duration: str) -> Union[float, int]:
     """
     Parse duration minutes from given string.
-    The following code fully mimics the 'org-duration-to-minutes' function in org mode:
+    Convert to integer if number has no decimal points
+
+    >>> parse_duration_to_minutes('3:12')
+    192
+    >>> parse_duration_to_minutes('1:23:45')
+    83.75
+    >>> parse_duration_to_minutes('1y 3d 3h 4min')
+    530464
+    >>> parse_duration_to_minutes('1d3h5min')
+    1625
+    >>> parse_duration_to_minutes('3d 13:35')
+    5135
+    >>> parse_duration_to_minutes('2.35h')
+    141
+    >>> parse_duration_to_minutes('10')
+    10
+    >>> parse_duration_to_minutes('10.')
+    10
+    >>> parse_duration_to_minutes('1 h')
+    60
+    >>> parse_duration_to_minutes('')
+    0
+    """
+
+    minutes = parse_duration_to_minutes_float(duration)
+    return int(minutes) if minutes.is_integer() else minutes
+
+def parse_duration_to_minutes_float(duration: str) -> float:
+    """
+    Parse duration minutes from given string.
+    The following code is fully compatible with the 'org-duration-to-minutes' function in org mode:
     https://github.com/emacs-mirror/emacs/blob/master/lisp/org/org-duration.el
 
-    >>> parse_property(':Effort: 3:12')
-    ('Effort', 192.0)
-    >>> parse_property(':Effort: 1:23:45')
-    ('Effort', 83.75)
-    >>> parse_property(':Effort: 1y 3d 3h 4min')
-    ('Effort', 530464.0)
-    >>> parse_property(':Effort: 1d3h5min')
-    ('Effort', 1625.0)
-    >>> parse_property(':Effort: 3d 13:35')
-    ('Effort', 5135.0)
-    >>> parse_property(':Effort: 2.35h')
-    ('Effort', 141.0)
-    >>> parse_property(':Effort: 10')
-    ('Effort', 10.0)
-    >>> parse_property(':Effort: 10.')
-    ('Effort', 10.0)
-    >>> parse_property(':Effort: 1 h')
-    ('Effort', 60.0)
-    >>> parse_property(':Effort: ')
-    ('Effort', 0.0)
+    >>> parse_duration_to_minutes_float('3:12')
+    192.0
+    >>> parse_duration_to_minutes_float('1:23:45')
+    83.75
+    >>> parse_duration_to_minutes_float('1y 3d 3h 4min')
+    530464.0
+    >>> parse_duration_to_minutes_float('1d3h5min')
+    1625.0
+    >>> parse_duration_to_minutes_float('3d 13:35')
+    5135.0
+    >>> parse_duration_to_minutes_float('2.35h')
+    141.0
+    >>> parse_duration_to_minutes_float('10')
+    10.0
+    >>> parse_duration_to_minutes_float('10.')
+    10.0
+    >>> parse_duration_to_minutes_float('1 h')
+    60.0
+    >>> parse_duration_to_minutes_float('')
+    0.0
     """
 
     # Conversion factor to minutes for a duration.
@@ -225,7 +255,7 @@ def parse_duration_to_minutes(duration: str) -> float:
     if match:
         units_part = match.groupdict()['A']
         hms_part = match.groupdict()['B']
-        return parse_duration_to_minutes(units_part) + parse_duration_to_minutes(hms_part)
+        return parse_duration_to_minutes_float(units_part) + parse_duration_to_minutes_float(hms_part)
     if RE_FLOAT.fullmatch(duration):
         return float(duration)
     raise ValueError("Invalid duration format %s" % duration)

@@ -96,7 +96,7 @@ False
 >>> node.tags == set(['TAG'])
 True
 >>> node.get_property('Effort')
-60.0
+60
 >>> node.get_property('UndefinedProperty')  # returns None
 >>> node.get_property('OtherProperty')
 'some text'
