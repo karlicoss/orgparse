@@ -1,6 +1,6 @@
 import re
 import itertools
-from typing import List, Iterable, Iterator, Optional, Union, Tuple, cast, Dict, Set, Sequence
+from typing import List, Iterable, Iterator, Optional, Union, Tuple, cast, Dict, Set, Sequence, Any
 try:
     from collections.abc import Sequence
 except ImportError:
@@ -201,7 +201,7 @@ def parse_duration_to_minutes_float(duration: str) -> float:
     0.0
     """
 
-    match: Optional[re.Match[str]]
+    match: Optional[Any]
     if duration == "":
         return 0.0
     if isinstance(duration, float):
