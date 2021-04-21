@@ -201,40 +201,6 @@ def parse_duration_to_minutes_float(duration: str) -> float:
     0.0
     """
 
-    # Conversion factor to minutes for a duration.
-    ORG_DURATION_UNITS = {
-        "min": 1,
-        "h": 60,
-        "d": 60 * 24,
-        "w": 60 * 24 * 7,
-        "m": 60 * 24 * 30,
-        "y": 60 * 24 * 365.25,
-    }
-    # Regexp matching for all units.
-    ORG_DURATION_UNITS_RE = r'(%s)' % r'|'.join(ORG_DURATION_UNITS.keys())
-    # Regexp matching a duration expressed with H:MM or H:MM:SS format.
-    # Hours can use any number of digits.
-    ORG_DURATION_H_MM_RE = r'[ \t]*[0-9]+(?::[0-9]{2}){1,2}[ \t]*'
-    RE_ORG_DURATION_H_MM = re.compile(ORG_DURATION_H_MM_RE)
-    # Regexp matching a duration with an unit.
-    # Allowed units are defined in ORG_DURATION_UNITS.
-    # Match group 1 contains the bare number.
-    # Match group 2 contains the unit.
-    ORG_DURATION_UNIT_RE = r'([0-9]+(?:[.][0-9]*)?)[ \t]*' + ORG_DURATION_UNITS_RE
-    RE_ORG_DURATION_UNIT = re.compile(ORG_DURATION_UNIT_RE)
-    # Regexp matching a duration expressed with units.
-    # Allowed units are defined in ORG_DURATION_UNITS.
-    ORG_DURATION_FULL_RE = r'(?:[ \t]*%s)+[ \t]*' % ORG_DURATION_UNIT_RE
-    RE_ORG_DURATION_FULL = re.compile(ORG_DURATION_FULL_RE)
-    # Regexp matching a duration expressed with units and H:MM or H:MM:SS format.
-    # Allowed units are defined in ORG_DURATION_UNITS.
-    # Match group A contains units part.
-    # Match group B contains H:MM or H:MM:SS part.
-    ORG_DURATION_MIXED_RE = r'(?P<A>([ \t]*%s)+)[ \t]*(?P<B>[0-9]+(?::[0-9][0-9]){1,2})[ \t]*' % ORG_DURATION_UNIT_RE
-    RE_ORG_DURATION_MIXED = re.compile(ORG_DURATION_MIXED_RE)
-    # Regexp matching float numbers.
-    RE_FLOAT = re.compile(r'[0-9]+([.][0-9]*)?')
-
     match: Optional[re.Match[str]]
     if duration == "":
         return 0.0
@@ -259,6 +225,40 @@ def parse_duration_to_minutes_float(duration: str) -> float:
     if RE_FLOAT.fullmatch(duration):
         return float(duration)
     raise ValueError("Invalid duration format %s" % duration)
+
+# Conversion factor to minutes for a duration.
+ORG_DURATION_UNITS = {
+    "min": 1,
+    "h": 60,
+    "d": 60 * 24,
+    "w": 60 * 24 * 7,
+    "m": 60 * 24 * 30,
+    "y": 60 * 24 * 365.25,
+}
+# Regexp matching for all units.
+ORG_DURATION_UNITS_RE = r'(%s)' % r'|'.join(ORG_DURATION_UNITS.keys())
+# Regexp matching a duration expressed with H:MM or H:MM:SS format.
+# Hours can use any number of digits.
+ORG_DURATION_H_MM_RE = r'[ \t]*[0-9]+(?::[0-9]{2}){1,2}[ \t]*'
+RE_ORG_DURATION_H_MM = re.compile(ORG_DURATION_H_MM_RE)
+# Regexp matching a duration with an unit.
+# Allowed units are defined in ORG_DURATION_UNITS.
+# Match group 1 contains the bare number.
+# Match group 2 contains the unit.
+ORG_DURATION_UNIT_RE = r'([0-9]+(?:[.][0-9]*)?)[ \t]*' + ORG_DURATION_UNITS_RE
+RE_ORG_DURATION_UNIT = re.compile(ORG_DURATION_UNIT_RE)
+# Regexp matching a duration expressed with units.
+# Allowed units are defined in ORG_DURATION_UNITS.
+ORG_DURATION_FULL_RE = r'(?:[ \t]*%s)+[ \t]*' % ORG_DURATION_UNIT_RE
+RE_ORG_DURATION_FULL = re.compile(ORG_DURATION_FULL_RE)
+# Regexp matching a duration expressed with units and H:MM or H:MM:SS format.
+# Allowed units are defined in ORG_DURATION_UNITS.
+# Match group A contains units part.
+# Match group B contains H:MM or H:MM:SS part.
+ORG_DURATION_MIXED_RE = r'(?P<A>([ \t]*%s)+)[ \t]*(?P<B>[0-9]+(?::[0-9][0-9]){1,2})[ \t]*' % ORG_DURATION_UNIT_RE
+RE_ORG_DURATION_MIXED = re.compile(ORG_DURATION_MIXED_RE)
+# Regexp matching float numbers.
+RE_FLOAT = re.compile(r'[0-9]+([.][0-9]*)?')
 
 def parse_comment(line: str): #  -> Optional[Tuple[str, Sequence[str]]]: # todo wtf?? it says 'ABCMeta isn't subscriptable??'
     """
