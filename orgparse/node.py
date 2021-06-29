@@ -1076,7 +1076,7 @@ class OrgNode(OrgBaseNode):
 
     _repeated_tasks_re = re.compile(
         r'''
-        \s+ - \s+
+        \s*- \s+
         State \s+ "(?P<done> [^"]+)" \s+
         from  \s+ "(?P<todo> [^"]+)" \s+
         \[ (?P<date> [^\]]+) \]''',
