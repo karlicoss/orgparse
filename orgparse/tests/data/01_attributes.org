@@ -25,3 +25,5 @@
 * range in deadline
 DEADLINE: <2019-09-06 Fri 10:00--11:20>
   body
+* node with a second line but no date
+body
