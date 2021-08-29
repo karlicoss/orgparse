@@ -34,9 +34,9 @@ node1: Raw = dict(
 node2: Raw = dict(
     heading="A node without any attributed",
     priority=None,
-    scheduled=OrgDate(None),
-    deadline=OrgDate(None),
-    closed=OrgDate(None),
+    scheduled=OrgDateScheduled(None),
+    deadline=OrgDateDeadline(None),
+    closed=OrgDateClosed(None),
     clock=[],
     properties={},
     datelist=[],
@@ -47,9 +47,9 @@ node2: Raw = dict(
 node3: Raw = dict(
     heading="range in deadline",
     priority=None,
-    scheduled=OrgDate(None),
+    scheduled=OrgDateScheduled(None),
     deadline=OrgDateDeadline((2019, 9, 6, 10, 0), (2019, 9, 6, 11, 20)),
-    closed=OrgDate(None),
+    closed=OrgDateClosed(None),
     clock=[],
     properties={},
     datelist=[],
@@ -57,4 +57,17 @@ node3: Raw = dict(
     body="  body",
 )
 
-data = [node1, node2, node1, node3]
+node4: Raw = dict(
+    heading="node with a second line but no date",
+    priority=None,
+    scheduled=OrgDateScheduled(None),
+    deadline=OrgDateDeadline(None),
+    closed=OrgDateClosed(None),
+    clock=[],
+    properties={},
+    datelist=[],
+    rangelist=[],
+    body="body",
+)
+
+data = [node1, node2, node1, node3, node4]

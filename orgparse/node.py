@@ -6,7 +6,7 @@ try:
 except ImportError:
     from collections import Sequence
 
-from .date import OrgDate, OrgDateClock, OrgDateRepeatedTask, parse_sdc
+from .date import OrgDate, OrgDateClock, OrgDateRepeatedTask, parse_sdc, OrgDateScheduled, OrgDateDeadline, OrgDateClosed
 from .inline import to_plain_text
 from .extra import to_rich_text, Rich
 from .utils.py3compat import PY3, unicode
@@ -963,9 +963,9 @@ class OrgNode(OrgBaseNode):
         self._todo: Optional[str] = None
         self._priority = None
         self._properties: Dict[str, PropertyValue] = {}
-        self._scheduled = OrgDate(None)
-        self._deadline = OrgDate(None)
-        self._closed = OrgDate(None)
+        self._scheduled = OrgDateScheduled(None)
+        self._deadline = OrgDateDeadline(None)
+        self._closed = OrgDateClosed(None)
         self._timestamps: List[OrgDate] = []
         self._clocklist: List[OrgDateClock] = []
         self._body_lines: List[str] = []
