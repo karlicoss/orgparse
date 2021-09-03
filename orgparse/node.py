@@ -495,6 +495,8 @@ class OrgBaseNode(Sequence):
         # content
         self._lines: List[str] = []
 
+        self._properties: Dict[str, PropertyValue] = {}
+
         # FIXME: use `index` argument to set index.  (Currently it is
         # done externally in `parse_lines`.)
         if index is not None:
@@ -752,6 +754,37 @@ class OrgBaseNode(Sequence):
                 return root
             root = parent
 
+    @property
+    def properties(self) -> Dict[str, PropertyValue]:
+        """
+        Node properties as a dictionary.
+
+        >>> from orgparse import loads
+        >>> root = loads('''
+        ... * Node
+        ...   :PROPERTIES:
+        ...   :SomeProperty: value
+        ...   :END:
+        ... ''')
+        >>> root.children[0].properties['SomeProperty']
+        'value'
+
+        """
+        return self._properties
+
+    def get_property(self, key, val=None) -> Optional[PropertyValue]:
+        """
+        Return property named ``key`` if exists or ``val`` otherwise.
+
+        :arg str key:
+            Key of property.
+
+        :arg val:
+            Default value to return.
+
+        """
+        return self._properties.get(key, val)
+
     # parser
 
     @classmethod
@@ -774,6 +807,24 @@ class OrgBaseNode(Sequence):
         for todokey in ['TODO', 'SEQ_TODO', 'TYP_TODO']:
             for val in special_comments.get(todokey, []):
                 self.env.add_todo_keys(*parse_seq_todo(val))
+
+    def _iparse_properties(self, ilines: Iterator[str]) -> Iterator[str]:
+        self._properties = {}
+        in_property_field = False
+        for line in ilines:
+            if in_property_field:
+                if line.find(":END:") >= 0:
+                    break
+                else:
+                    (key, val) = parse_property(line)
+                    if key is not None and val is not None:
+                        self._properties.update({key: val})
+            elif line.find(":PROPERTIES:") >= 0:
+                in_property_field = True
+            else:
+                yield line
+        for line in ilines:
+            yield line
 
     # misc
 
@@ -914,17 +965,11 @@ class OrgBaseNode(Sequence):
 class OrgRootNode(OrgBaseNode):
 
     """
-    Node to represent a file
+    Node to represent a file. Its body contains all lines before the first
+    headline
 
     See :class:`OrgBaseNode` for other available functions.
-
     """
-
-    @property
-    def _body_lines(self) -> List[str]: # type: ignore[override]
-        # todo hacky..
-        # for root node, the body is whatever is before the first node
-        return self._lines
 
     @property
     def heading(self) -> str:
@@ -944,6 +989,14 @@ class OrgRootNode(OrgBaseNode):
     def is_root(self):
         return True
 
+    # parsers
+
+    def _parse_pre(self):
+        """Call parsers which must be called before tree structuring"""
+        ilines: Iterator[str] = iter(self._lines)
+        ilines = self._iparse_properties(ilines)
+        self._body_lines = list(ilines)
+
 
 class OrgNode(OrgBaseNode):
 
@@ -962,7 +1015,6 @@ class OrgNode(OrgBaseNode):
         self._tags = cast(List[str], None)
         self._todo: Optional[str] = None
         self._priority = None
-        self._properties: Dict[str, PropertyValue] = {}
         self._scheduled = OrgDate(None)
         self._deadline = OrgDate(None)
         self._closed = OrgDate(None)
@@ -1040,24 +1092,6 @@ class OrgNode(OrgBaseNode):
         for l in ilines:
             self._timestamps.extend(OrgDate.list_from_str(l))
             yield l
-
-    def _iparse_properties(self, ilines: Iterator[str]) -> Iterator[str]:
-        self._properties = {}
-        in_property_field = False
-        for line in ilines:
-            if in_property_field:
-                if line.find(":END:") >= 0:
-                    break
-                else:
-                    (key, val) = parse_property(line)
-                    if key is not None and val is not None:
-                        self._properties.update({key: val})
-            elif line.find(":PROPERTIES:") >= 0:
-                in_property_field = True
-            else:
-                yield line
-        for line in ilines:
-            yield line
 
     def _iparse_repeated_tasks(self, ilines: Iterator[str]) -> Iterator[str]:
         self._repeated_tasks = []
@@ -1168,37 +1202,6 @@ class OrgNode(OrgBaseNode):
 
         """
         return self._todo
-
-    def get_property(self, key, val=None) -> Optional[PropertyValue]:
-        """
-        Return property named ``key`` if exists or ``val`` otherwise.
-
-        :arg str key:
-            Key of property.
-
-        :arg val:
-            Default value to return.
-
-        """
-        return self._properties.get(key, val)
-
-    @property
-    def properties(self) -> Dict[str, PropertyValue]:
-        """
-        Node properties as a dictionary.
-
-        >>> from orgparse import loads
-        >>> root = loads('''
-        ... * Node
-        ...   :PROPERTIES:
-        ...   :SomeProperty: value
-        ...   :END:
-        ... ''')
-        >>> root.children[0].properties['SomeProperty']
-        'value'
-
-        """
-        return self._properties
 
     @property
     def scheduled(self):
@@ -1451,6 +1454,8 @@ def parse_lines(lines: Iterable[str], filename, env=None) -> OrgNode:
         nodelist.append(node)
     # parse headings (level, TODO, TAGs, and heading)
     nodelist[0]._index = 0
+    # parse the root node
+    nodelist[0]._parse_pre()
     for (i, node) in enumerate(nodelist[1:], 1):   # nodes except root node
         node._index = i
         node._parse_pre()

@@ -169,3 +169,21 @@ def test_load_filelike() -> None:
     root = load(stream)
     assert len(root.children) == 2
     assert root.env.filename == '<file-like>'
+
+
+def test_level_0_properties() -> None:
+    content = '''
+foo bar
+
+:PROPERTIES:
+:PROP-FOO: Bar
+:PROP-BAR: Bar bar
+:END:
+
+* heading :h1:
+** child :f2:
+    '''.strip()
+    root = loads(content)
+    assert root.get_property('PROP-FOO') == 'Bar'
+    assert root.get_property('PROP-BAR') == 'Bar bar'
+    assert root.get_property('PROP-INVALID') is None
