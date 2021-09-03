@@ -182,12 +182,17 @@ foo bar
 :END:
 
 * heading :h1:
+:PROPERTIES:
+:HEADING-PROP: foo
+:END:
 ** child :f2:
     '''.strip()
     root = loads(content)
     assert root.get_property('PROP-FOO') == 'Bar'
     assert root.get_property('PROP-BAR') == 'Bar bar'
     assert root.get_property('PROP-INVALID') is None
+    assert root.get_property('HEADING-PROP') is None
+    assert root.children[0].get_property('HEADING-PROP') == 'foo'
 
 
 def test_level_0_timestamps() -> None:
