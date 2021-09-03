@@ -496,6 +496,7 @@ class OrgBaseNode(Sequence):
         self._lines: List[str] = []
 
         self._properties: Dict[str, PropertyValue] = {}
+        self._timestamps: List[OrgDate] = []
 
         # FIXME: use `index` argument to set index.  (Currently it is
         # done externally in `parse_lines`.)
@@ -932,6 +933,112 @@ class OrgBaseNode(Sequence):
         """
         return False
 
+    def get_timestamps(self, active=False, inactive=False,
+                       range=False, point=False):
+        """
+        Return a list of timestamps in the body text.
+
+        :type   active: bool
+        :arg    active: Include active type timestamps.
+        :type inactive: bool
+        :arg  inactive: Include inactive type timestamps.
+        :type    range: bool
+        :arg     range: Include timestamps which has end date.
+        :type    point: bool
+        :arg     point: Include timestamps which has no end date.
+
+        :rtype: list of :class:`orgparse.date.OrgDate` subclasses
+
+
+        Consider the following org node:
+
+        >>> from orgparse import loads
+        >>> node = loads('''
+        ... * Node
+        ...   CLOSED: [2012-02-26 Sun 21:15] SCHEDULED: <2012-02-26 Sun>
+        ...   CLOCK: [2012-02-26 Sun 21:10]--[2012-02-26 Sun 21:15] =>  0:05
+        ...   Some inactive timestamp [2012-02-23 Thu] in body text.
+        ...   Some active timestamp <2012-02-24 Fri> in body text.
+        ...   Some inactive time range [2012-02-25 Sat]--[2012-02-27 Mon].
+        ...   Some active time range <2012-02-26 Sun>--<2012-02-28 Tue>.
+        ... ''').children[0]
+
+        The default flags are all off, so it does not return anything.
+
+        >>> node.get_timestamps()
+        []
+
+        You can fetch appropriate timestamps using keyword arguments.
+
+        >>> node.get_timestamps(inactive=True, point=True)
+        [OrgDate((2012, 2, 23), None, False)]
+        >>> node.get_timestamps(active=True, point=True)
+        [OrgDate((2012, 2, 24))]
+        >>> node.get_timestamps(inactive=True, range=True)
+        [OrgDate((2012, 2, 25), (2012, 2, 27), False)]
+        >>> node.get_timestamps(active=True, range=True)
+        [OrgDate((2012, 2, 26), (2012, 2, 28))]
+
+        This is more complex example.  Only active timestamps,
+        regardless of range/point type.
+
+        >>> node.get_timestamps(active=True, point=True, range=True)
+        [OrgDate((2012, 2, 24)), OrgDate((2012, 2, 26), (2012, 2, 28))]
+
+        """
+        return [
+            ts for ts in self._timestamps if
+            (((active and ts.is_active()) or
+              (inactive and not ts.is_active())) and
+             ((range and ts.has_end()) or
+              (point and not ts.has_end())))]
+
+    @property
+    def datelist(self):
+        """
+        Alias of ``.get_timestamps(active=True, inactive=True, point=True)``.
+
+        :rtype: list of :class:`orgparse.date.OrgDate` subclasses
+
+        >>> from orgparse import loads
+        >>> root = loads('''
+        ... * Node with point dates <2012-02-25 Sat>
+        ...   CLOSED: [2012-02-25 Sat 21:15]
+        ...   Some inactive timestamp [2012-02-26 Sun] in body text.
+        ...   Some active timestamp <2012-02-27 Mon> in body text.
+        ... ''')
+        >>> root.children[0].datelist      # doctest: +NORMALIZE_WHITESPACE
+        [OrgDate((2012, 2, 25)),
+         OrgDate((2012, 2, 26), None, False),
+         OrgDate((2012, 2, 27))]
+
+        """
+        return self.get_timestamps(active=True, inactive=True, point=True)
+
+    @property
+    def rangelist(self):
+        """
+        Alias of ``.get_timestamps(active=True, inactive=True, range=True)``.
+
+        :rtype: list of :class:`orgparse.date.OrgDate` subclasses
+
+        >>> from orgparse import loads
+        >>> root = loads('''
+        ... * Node with range dates <2012-02-25 Sat>--<2012-02-28 Tue>
+        ...   CLOCK: [2012-02-26 Sun 21:10]--[2012-02-26 Sun 21:15] => 0:05
+        ...   Some inactive time range [2012-02-25 Sat]--[2012-02-27 Mon].
+        ...   Some active time range <2012-02-26 Sun>--<2012-02-28 Tue>.
+        ...   Some time interval <2012-02-27 Mon 11:23-12:10>.
+        ... ''')
+        >>> root.children[0].rangelist     # doctest: +NORMALIZE_WHITESPACE
+        [OrgDate((2012, 2, 25), (2012, 2, 28)),
+         OrgDate((2012, 2, 25), (2012, 2, 27), False),
+         OrgDate((2012, 2, 26), (2012, 2, 28)),
+         OrgDate((2012, 2, 27, 11, 23, 0), (2012, 2, 27, 12, 10, 0))]
+
+        """
+        return self.get_timestamps(active=True, inactive=True, range=True)
+
     def __unicode__(self):
         return unicode("\n").join(self._lines)
 
@@ -995,7 +1102,14 @@ class OrgRootNode(OrgBaseNode):
         """Call parsers which must be called before tree structuring"""
         ilines: Iterator[str] = iter(self._lines)
         ilines = self._iparse_properties(ilines)
+        ilines = self._iparse_timestamps(ilines)
         self._body_lines = list(ilines)
+
+    def _iparse_timestamps(self, ilines: Iterator[str]) -> Iterator[str]:
+        self._timestamps = []
+        for line in ilines:
+            self._timestamps.extend(OrgDate.list_from_str(line))
+            yield line
 
 
 class OrgNode(OrgBaseNode):
@@ -1018,7 +1132,6 @@ class OrgNode(OrgBaseNode):
         self._scheduled = OrgDate(None)
         self._deadline = OrgDate(None)
         self._closed = OrgDate(None)
-        self._timestamps: List[OrgDate] = []
         self._clocklist: List[OrgDateClock] = []
         self._body_lines: List[str] = []
         self._repeated_tasks: List[OrgDateRepeatedTask] = []
@@ -1274,112 +1387,6 @@ class OrgNode(OrgBaseNode):
 
         """
         return self._clocklist
-
-    def get_timestamps(self, active=False, inactive=False,
-                       range=False, point=False):
-        """
-        Return a list of timestamps in the body text.
-
-        :type   active: bool
-        :arg    active: Include active type timestamps.
-        :type inactive: bool
-        :arg  inactive: Include inactive type timestamps.
-        :type    range: bool
-        :arg     range: Include timestamps which has end date.
-        :type    point: bool
-        :arg     point: Include timestamps which has no end date.
-
-        :rtype: list of :class:`orgparse.date.OrgDate` subclasses
-
-
-        Consider the following org node:
-
-        >>> from orgparse import loads
-        >>> node = loads('''
-        ... * Node
-        ...   CLOSED: [2012-02-26 Sun 21:15] SCHEDULED: <2012-02-26 Sun>
-        ...   CLOCK: [2012-02-26 Sun 21:10]--[2012-02-26 Sun 21:15] =>  0:05
-        ...   Some inactive timestamp [2012-02-23 Thu] in body text.
-        ...   Some active timestamp <2012-02-24 Fri> in body text.
-        ...   Some inactive time range [2012-02-25 Sat]--[2012-02-27 Mon].
-        ...   Some active time range <2012-02-26 Sun>--<2012-02-28 Tue>.
-        ... ''').children[0]
-
-        The default flags are all off, so it does not return anything.
-
-        >>> node.get_timestamps()
-        []
-
-        You can fetch appropriate timestamps using keyword arguments.
-
-        >>> node.get_timestamps(inactive=True, point=True)
-        [OrgDate((2012, 2, 23), None, False)]
-        >>> node.get_timestamps(active=True, point=True)
-        [OrgDate((2012, 2, 24))]
-        >>> node.get_timestamps(inactive=True, range=True)
-        [OrgDate((2012, 2, 25), (2012, 2, 27), False)]
-        >>> node.get_timestamps(active=True, range=True)
-        [OrgDate((2012, 2, 26), (2012, 2, 28))]
-
-        This is more complex example.  Only active timestamps,
-        regardless of range/point type.
-
-        >>> node.get_timestamps(active=True, point=True, range=True)
-        [OrgDate((2012, 2, 24)), OrgDate((2012, 2, 26), (2012, 2, 28))]
-
-        """
-        return [
-            ts for ts in self._timestamps if
-            (((active and ts.is_active()) or
-              (inactive and not ts.is_active())) and
-             ((range and ts.has_end()) or
-              (point and not ts.has_end())))]
-
-    @property
-    def datelist(self):
-        """
-        Alias of ``.get_timestamps(active=True, inactive=True, point=True)``.
-
-        :rtype: list of :class:`orgparse.date.OrgDate` subclasses
-
-        >>> from orgparse import loads
-        >>> root = loads('''
-        ... * Node with point dates <2012-02-25 Sat>
-        ...   CLOSED: [2012-02-25 Sat 21:15]
-        ...   Some inactive timestamp [2012-02-26 Sun] in body text.
-        ...   Some active timestamp <2012-02-27 Mon> in body text.
-        ... ''')
-        >>> root.children[0].datelist      # doctest: +NORMALIZE_WHITESPACE
-        [OrgDate((2012, 2, 25)),
-         OrgDate((2012, 2, 26), None, False),
-         OrgDate((2012, 2, 27))]
-
-        """
-        return self.get_timestamps(active=True, inactive=True, point=True)
-
-    @property
-    def rangelist(self):
-        """
-        Alias of ``.get_timestamps(active=True, inactive=True, range=True)``.
-
-        :rtype: list of :class:`orgparse.date.OrgDate` subclasses
-
-        >>> from orgparse import loads
-        >>> root = loads('''
-        ... * Node with range dates <2012-02-25 Sat>--<2012-02-28 Tue>
-        ...   CLOCK: [2012-02-26 Sun 21:10]--[2012-02-26 Sun 21:15] => 0:05
-        ...   Some inactive time range [2012-02-25 Sat]--[2012-02-27 Mon].
-        ...   Some active time range <2012-02-26 Sun>--<2012-02-28 Tue>.
-        ...   Some time interval <2012-02-27 Mon 11:23-12:10>.
-        ... ''')
-        >>> root.children[0].rangelist     # doctest: +NORMALIZE_WHITESPACE
-        [OrgDate((2012, 2, 25), (2012, 2, 28)),
-         OrgDate((2012, 2, 25), (2012, 2, 27), False),
-         OrgDate((2012, 2, 26), (2012, 2, 28)),
-         OrgDate((2012, 2, 27, 11, 23, 0), (2012, 2, 27, 12, 10, 0))]
-
-        """
-        return self.get_timestamps(active=True, inactive=True, range=True)
 
     def has_date(self):
         """
