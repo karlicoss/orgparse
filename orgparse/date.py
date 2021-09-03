@@ -333,8 +333,12 @@ class OrgDate(object):
         return False
 
     @staticmethod
-    def _as_datetime(date):
-        if isinstance(date, datetime.date):
+    def _as_datetime(date) -> datetime.datetime:
+        """
+        Convert the given date into datetime (if it already is, return it
+        unmodified
+        """
+        if not isinstance(date, datetime.datetime):
             return datetime.datetime(*date.timetuple()[:3])
         return date
 
