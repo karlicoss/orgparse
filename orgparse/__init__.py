@@ -131,13 +131,15 @@ def load(path: Union[str, Path, TextIO], env: Optional[OrgEnv]=None) -> OrgNode:
     """
     orgfile: TextIO
     if isinstance(path, (str, Path)):
-        orgfile = codecs.open(str(path), encoding='utf8')
+        # Use 'with' to close the file inside this function.
+        with codecs.open(str(path), encoding='utf8') as orgfile:
+            lines = (l.rstrip('\n') for l in orgfile.readlines())
         filename = str(path)
     else:
         orgfile = path
+        lines = (l.rstrip('\n') for l in orgfile.readlines())
         filename = path.name if hasattr(path, 'name') else '<file-like>'
-    return loadi((l.rstrip('\n') for l in orgfile.readlines()),
-                 filename=filename, env=env)
+    return loadi(lines, filename=filename, env=env)
 
 
 def loads(string: str, filename: str='<string>', env: Optional[OrgEnv]=None) -> OrgNode:
