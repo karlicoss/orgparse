@@ -10,7 +10,7 @@ if ! command -v sudo; then
     }
 fi
 
-if ! [ -z "$CI" ]; then
+if [ -n "${CI-}" ]; then
     # install OS specific stuff here
     if [[ "$OSTYPE" == "darwin"* ]]; then
         # macos

@@ -29,3 +29,11 @@ def test_date_as_string() -> None:
 
     assert str(OrgDateClock(testdatetime, testdatetime2)) == "[2021-09-03 Fri 16:19]--[2021-09-03 Fri 17:00]"
     assert str(OrgDateClock(testdatetime, testdatetime_nextday)) == "[2021-09-03 Fri 16:19]--[2021-09-04 Sat 00:02]"
+
+    
+def test_date_as_datetime() -> None:
+    testdate = (2021, 9, 3)
+    testdatetime = (2021, 9, 3, 16, 19, 13)
+
+    assert OrgDate._as_datetime(datetime.date(*testdate)) == datetime.datetime(*testdate, 0, 0, 0)
+    assert OrgDate._as_datetime(datetime.datetime(*testdatetime)) == datetime.datetime(*testdatetime)

@@ -65,6 +65,7 @@ def test_data(dataname):
         for key in kwds:
             val = value_from_data_key(node, key)
             assert kwds[key] == val, 'check value of {0}-th node of key "{1}" from "{2}".\n\nParsed:\n{3}\n\nReal:\n{4}'.format(i, key, dataname, val, kwds[key])
+            assert type(kwds[key]) == type(val), 'check type of {0}-th node of key "{1}" from "{2}".\n\nParsed:\n{3}\n\nReal:\n{4}'.format(i, key, dataname, type(val), type(kwds[key]))
 
     assert root.env.filename == oname
 
