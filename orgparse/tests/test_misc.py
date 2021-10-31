@@ -1,5 +1,6 @@
 from .. import load, loads
 from ..node import OrgEnv
+from orgparse.date import OrgDate
 
 
 def test_empty_heading() -> None:
@@ -169,3 +170,47 @@ def test_load_filelike() -> None:
     root = load(stream)
     assert len(root.children) == 2
     assert root.env.filename == '<file-like>'
+
+
+def test_level_0_properties() -> None:
+    content = '''
+foo bar
+
+:PROPERTIES:
+:PROP-FOO: Bar
+:PROP-BAR: Bar bar
+:END:
+
+* heading :h1:
+:PROPERTIES:
+:HEADING-PROP: foo
+:END:
+** child :f2:
+    '''.strip()
+    root = loads(content)
+    assert root.get_property('PROP-FOO') == 'Bar'
+    assert root.get_property('PROP-BAR') == 'Bar bar'
+    assert root.get_property('PROP-INVALID') is None
+    assert root.get_property('HEADING-PROP') is None
+    assert root.children[0].get_property('HEADING-PROP') == 'foo'
+
+
+def test_level_0_timestamps() -> None:
+    content = '''
+foo bar
+
+  - <2010-08-16 Mon> DateList
+  - <2010-08-07 Sat>--<2010-08-08 Sun>
+  - <2010-08-09 Mon 00:30>--<2010-08-10 Tue 13:20> RangeList
+  - <2019-08-10 Sat 16:30-17:30> TimeRange"
+
+* heading :h1:
+** child :f2:
+    '''.strip()
+    root = loads(content)
+    assert root.datelist == [OrgDate((2010, 8, 16))]
+    assert root.rangelist == [
+        OrgDate((2010, 8, 7), (2010, 8, 8)),
+        OrgDate((2010, 8, 9, 0, 30), (2010, 8, 10, 13, 20)),
+        OrgDate((2019, 8, 10, 16, 30, 0), (2019, 8, 10, 17, 30, 0)),
+    ]
