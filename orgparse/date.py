@@ -133,6 +133,28 @@ def gene_timestamp_regex(brtype, prefix=None, nocookie=False):
     return regex.format(prefix=prefix, ignore=ignore)
 
 
+def date_time_format(date) -> str:
+    """
+    Format a date or datetime in default org format
+
+    @param date The date
+
+    @return Formatted date(time)
+    """
+    default_format_date = "%Y-%m-%d %a"
+    default_format_datetime = "%Y-%m-%d %a %H:%M"
+    is_datetime = isinstance(date, datetime.datetime)
+
+    return date.strftime(default_format_datetime if is_datetime else default_format_date)
+
+
+def is_same_day(date0, date1) -> bool:
+    """
+    Check if two dates or datetimes are on the same day
+    """
+    return (OrgDate._date_to_tuple(date0)[:3] == OrgDate._date_to_tuple(date1)[:3])
+
+
 TIMESTAMP_NOBRACE_RE = re.compile(
     gene_timestamp_regex('nobrace', prefix=''),
     re.VERBOSE)
@@ -153,6 +175,14 @@ class OrgDate(object):
     This value will be used.
 
     """
+
+    """
+    When formatting the date to string via __str__, and there is an end date on
+    the same day as the start date, allow formatting in the short syntax
+    <2021-09-03 Fri 16:01--17:30>? Otherwise the string represenation would be
+    <2021-09-03 Fri 16:01>--<2021-09-03 Fri 17:30>
+    """
+    _allow_short_range = True
 
     def __init__(self, start, end=None, active=None):
         """
@@ -231,6 +261,24 @@ class OrgDate(object):
             return '{0}({1!r}, {2!r})'.format(*args)
         else:
             return '{0}({1!r}, {2!r}, {3!r})'.format(*args)
+
+    def __str__(self):
+        fence = ("<", ">") if self.is_active() else ("[", "]")
+
+        start = date_time_format(self.start)
+        end = None
+
+        if self.has_end():
+            if self._allow_short_range and is_same_day(self.start, self.end):
+                start += "--%s" % self.end.strftime("%H:%M")
+            else:
+                end = date_time_format(self.end)
+
+        ret = "%s%s%s" % (fence[0], start, fence[1])
+        if end:
+            ret += "--%s%s%s" % (fence[0], end, fence[1])
+
+        return ret
 
     def __nonzero__(self):
         return bool(self._start)
@@ -333,8 +381,12 @@ class OrgDate(object):
         return False
 
     @staticmethod
-    def _as_datetime(date):
-        if isinstance(date, datetime.date):
+    def _as_datetime(date) -> datetime.datetime:
+        """
+        Convert the given date into datetime (if it already is, return it
+        unmodified
+        """
+        if not isinstance(date, datetime.datetime):
             return datetime.datetime(*date.timetuple()[:3])
         return date
 
@@ -493,6 +545,8 @@ class OrgDateClock(OrgDate):
     """
 
     _active_default = False
+
+    _allow_short_range = False
 
     def __init__(self, start, end, duration=None, active=None):
         """
