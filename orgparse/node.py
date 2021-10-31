@@ -1,10 +1,6 @@
 import re
 import itertools
 from typing import List, Iterable, Iterator, Optional, Union, Tuple, cast, Dict, Set, Sequence, Any
-try:
-    from collections.abc import Sequence
-except ImportError:
-    from collections import Sequence
 
 from .date import OrgDate, OrgDateClock, OrgDateRepeatedTask, parse_sdc
 from .inline import to_plain_text
