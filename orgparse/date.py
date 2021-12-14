@@ -114,13 +114,13 @@ def gene_timestamp_regex(brtype, prefix=None, nocookie=False):
            ({ignore}+?)
            (?P<{prefix}repeatpre>  [\.\+]{{1,2}})
            (?P<{prefix}repeatnum>  \d+)
-           (?P<{prefix}repeatdwmy> [dwmy])
+           (?P<{prefix}repeatdwmy> [hdwmy])
         )?
         (  # optional warning
            ({ignore}+?)
            (?P<{prefix}warnpre>  \-)
            (?P<{prefix}warnnum>  \d+)
-           (?P<{prefix}warndwmy> [dwmy])
+           (?P<{prefix}warndwmy> [hdwmy])
         )?
         """
     # http://www.pythonregex.com/
