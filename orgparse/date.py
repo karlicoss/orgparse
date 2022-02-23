@@ -548,7 +548,7 @@ class OrgDateClock(OrgDate):
 
     _allow_short_range = False
 
-    def __init__(self, start, end, duration=None, active=None):
+    def __init__(self, start, end=None, duration=None, active=None):
         """
         Create OrgDateClock object
         """
@@ -600,20 +600,25 @@ class OrgDateClock(OrgDate):
         match = cls._re.search(line)
         if not match:
             return cls(None, None)
-        groups = [int(d) for d in match.groups()]
-        ymdhm1 = groups[:5]
-        ymdhm2 = groups[5:10]
-        hm3 = groups[10:]
+
+        ymdhm1 = [int(d) for d in match.groups()[:5]]
+
+        # second part starting with "--", does not exist for open clock dates
+        has_end = bool(match.group(6))
+        if has_end:
+            ymdhm2 = [int(d) for d in match.groups()[6:11]]
+            hm3 = [int(d) for d in match.groups()[11:]]
+
         return cls(
             datetime.datetime(*ymdhm1), # type: ignore[arg-type]
-            datetime.datetime(*ymdhm2), # type: ignore[arg-type]
-            hm3[0] * 60 + hm3[1],
+            datetime.datetime(*ymdhm2) if has_end else None, # type: ignore[arg-type]
+            hm3[0] * 60 + hm3[1] if has_end else None,
         )
 
     _re = re.compile(
         r'^(?!#).*CLOCK:\s+'
-        r'\[(\d+)\-(\d+)\-(\d+)[^\]\d]*(\d+)\:(\d+)\]--'
-        r'\[(\d+)\-(\d+)\-(\d+)[^\]\d]*(\d+)\:(\d+)\]\s+=>\s+(\d+)\:(\d+)'
+        r'\[(\d+)\-(\d+)\-(\d+)[^\]\d]*(\d+)\:(\d+)\]'
+        r'(--\[(\d+)\-(\d+)\-(\d+)[^\]\d]*(\d+)\:(\d+)\]\s+=>\s+(\d+)\:(\d+))?'
         )
 
 
