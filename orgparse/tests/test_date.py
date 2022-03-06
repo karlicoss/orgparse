@@ -17,8 +17,10 @@ def test_date_as_string() -> None:
 
     assert str(OrgDate(testdate, testdate2)) == "<2021-09-03 Fri>--<2021-09-05 Sun>"
     assert str(OrgDate(testdate, testdate2)) == "<2021-09-03 Fri>--<2021-09-05 Sun>"
+    assert str(OrgDate(testdatetime, testdatetime2)) == "<2021-09-03 Fri 16:19--17:00>"
     assert str(OrgDate(testdate, testdate2, active=False)) == "[2021-09-03 Fri]--[2021-09-05 Sun]"
     assert str(OrgDate(testdate, testdate2, active=False)) == "[2021-09-03 Fri]--[2021-09-05 Sun]"
+    assert str(OrgDate(testdatetime, testdatetime2, active=False)) == "[2021-09-03 Fri 16:19--17:00]"
 
     assert str(OrgDateScheduled(testdate)) == "<2021-09-03 Fri>"
     assert str(OrgDateScheduled(testdatetime)) == "<2021-09-03 Fri 16:19>"

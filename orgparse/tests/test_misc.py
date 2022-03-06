@@ -214,3 +214,30 @@ foo bar
         OrgDate((2010, 8, 9, 0, 30), (2010, 8, 10, 13, 20)),
         OrgDate((2019, 8, 10, 16, 30, 0), (2019, 8, 10, 17, 30, 0)),
     ]
+
+def test_date_with_cookies() -> None:
+    testcases = [
+        ('<2010-06-21 Mon +1y>', "OrgDate((2010, 6, 21), None, True, ('+', 1, 'y'))"),
+        ('<2005-10-01 Sat +1m>', "OrgDate((2005, 10, 1), None, True, ('+', 1, 'm'))"),
+        ('<2005-10-01 Sat +1m -3d>', "OrgDate((2005, 10, 1), None, True, ('+', 1, 'm'), ('-', 3, 'd'))"),
+        ('<2005-10-01 Sat -3d>', "OrgDate((2005, 10, 1), None, True, None, ('-', 3, 'd'))"),
+        ('<2008-02-10 Sun ++1w>', "OrgDate((2008, 2, 10), None, True, ('++', 1, 'w'))"),
+        ('<2008-02-08 Fri 20:00 ++1d>', "OrgDate((2008, 2, 8, 20, 0, 0), None, True, ('++', 1, 'd'))"),
+        ('<2019-04-05 Fri 08:00 .+1h>', "OrgDate((2019, 4, 5, 8, 0, 0), None, True, ('.+', 1, 'h'))"),
+        ('[2019-04-05 Fri 08:00 .+1h]', "OrgDate((2019, 4, 5, 8, 0, 0), None, False, ('.+', 1, 'h'))"),
+        ('<2007-05-16 Wed 12:30 +1w>', "OrgDate((2007, 5, 16, 12, 30, 0), None, True, ('+', 1, 'w'))"),
+    ]
+    for (input, expected) in testcases:
+        root = loads(input)
+        output = root[0].datelist[0]
+        assert str(output) == input
+        assert repr(output) == expected
+    testcases = [
+        ('<2006-11-02 Thu 20:00-22:00 +1w>', "OrgDate((2006, 11, 2, 20, 0, 0), (2006, 11, 2, 22, 0, 0), True, ('+', 1, 'w'))"),
+        ('<2006-11-02 Thu 20:00--22:00 +1w>', "OrgDate((2006, 11, 2, 20, 0, 0), (2006, 11, 2, 22, 0, 0), True, ('+', 1, 'w'))"),
+    ]
+    for (input, expected) in testcases:
+        root = loads(input)
+        output = root[0].rangelist[0]
+        assert str(output) == "<2006-11-02 Thu 20:00--22:00 +1w>"
+        assert repr(output) == expected

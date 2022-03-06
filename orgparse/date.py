@@ -184,7 +184,8 @@ class OrgDate(object):
     """
     _allow_short_range = True
 
-    def __init__(self, start, end=None, active=None):
+    def __init__(self, start, end=None, active=None, repeater=None,
+                 warning=None):
         """
         Create :class:`OrgDate` object
 
@@ -197,6 +198,10 @@ class OrgDate(object):
         :arg  active: Active/inactive flag.
                       None means using its default value, which
                       may be different for different subclasses.
+        :type repeater: tuple or None
+        :arg  repeater: Repeater interval.
+        :type warning: tuple or None
+        :arg  warning: Deadline warning interval.
 
         >>> OrgDate(datetime.date(2012, 2, 10))
         OrgDate((2012, 2, 10))
@@ -222,6 +227,9 @@ class OrgDate(object):
         self._start = self._to_date(start)
         self._end = self._to_date(end)
         self._active = self._active_default if active is None else active
+        # repeater and warning are tuples of (prefix, number, interval)
+        self._repeater = repeater
+        self._warning = warning
 
     @staticmethod
     def _to_date(date) -> DateIsh:
@@ -254,13 +262,14 @@ class OrgDate(object):
             self._date_to_tuple(self.start),
             self._date_to_tuple(self.end) if self.has_end() else None,
             None if self._active is self._active_default else self._active,
+            self._repeater,
+            self._warning,
         ]
-        if args[2] is None and args[3] is None:
-            return '{0}({1!r})'.format(*args)
-        elif args[3] is None:
-            return '{0}({1!r}, {2!r})'.format(*args)
-        else:
-            return '{0}({1!r}, {2!r}, {3!r})'.format(*args)
+        while args[-1] is None:
+            args.pop()
+        if len(args) > 3 and args[3] is None:
+            args[3] = self._active_default
+        return '{0}({1})'.format(args[0], ', '.join(map(repr, args[1:])))
 
     def __str__(self):
         fence = ("<", ">") if self.is_active() else ("[", "]")
@@ -274,6 +283,10 @@ class OrgDate(object):
             else:
                 end = date_time_format(self.end)
 
+        if self._repeater:
+            start += " %s%d%s" % self._repeater
+        if self._warning:
+            start += " %s%d%s" % self._warning
         ret = "%s%s%s" % (fence[0], start, fence[1])
         if end:
             ret += "--%s%s%s" % (fence[0], end, fence[1])
@@ -421,6 +434,7 @@ class OrgDate(object):
         >>> OrgDate.list_from_str("<2012-02-11 Sat 10:11--11:20>")
         [OrgDate((2012, 2, 11, 10, 11, 0), (2012, 2, 11, 11, 20, 0))]
         """
+        cookie_suffix = ['pre', 'num', 'dwmy']
         match = TIMESTAMP_RE.search(string)
         if match:
             rest = string[match.end():]
@@ -433,6 +447,16 @@ class OrgDate(object):
                 prefix = 'inactive_'
                 active = False
                 rangedash = '--['
+            repeater: Optional[Tuple[str, int, str]] = None
+            warning: Optional[Tuple[str, int, str]] = None
+            if mdict[prefix + 'repeatpre'] is not None:
+                keys = [prefix + 'repeat' + suffix for suffix in cookie_suffix]
+                values = [mdict[k] for k in keys]
+                repeater = (values[0], int(values[1]), values[2])
+            if mdict[prefix + 'warnpre'] is not None:
+                keys = [prefix + 'warn' + suffix for suffix in cookie_suffix]
+                values = [mdict[k] for k in keys]
+                warning = (values[0], int(values[1]), values[2])
             has_rangedash = rest.startswith(rangedash)
             match2 = TIMESTAMP_RE.search(rest) if has_rangedash else None
             if has_rangedash and match2:
@@ -442,12 +466,11 @@ class OrgDate(object):
                 odate = cls(
                     cls._datetuple_from_groupdict(mdict, prefix),
                     cls._datetuple_from_groupdict(mdict2, prefix),
-                    active=active)
+                    active=active, repeater=repeater, warning=warning)
             else:
                 odate = cls(
                     *cls._daterange_from_groupdict(mdict, prefix),
-                    active=active)
-            # FIXME: treat "repeater" and "warn"
+                    active=active, repeater=repeater, warning=warning)
             return [odate] + cls.list_from_str(rest)
         else:
             return []
