@@ -732,6 +732,18 @@ class OrgBaseNode(Sequence):
         """
         return list(self._find_children())
 
+    def get_nodes_with_heading(self, heading) -> List[Any]:
+        """Returns a list of nodes with a certain heading. """
+
+        nodeiter = iter(self.env._nodes[self._index + 1:])
+        hits = []
+        for node in nodeiter:
+            node_heading = node.get_heading()
+            if node_heading == heading:
+                hits.append(node)
+
+        return hits
+
     @property
     def root(self):
         """
@@ -1247,6 +1259,7 @@ class OrgNode(OrgBaseNode):
         """
         return self._get_text(self._heading, format)
 
+
     @property
     def heading(self) -> str:
         """Alias of ``.get_heading(format='plain')``."""
@@ -1464,3 +1477,5 @@ def parse_lines(lines: Iterable[str], filename, env=None) -> OrgNode:
         node._parse_pre()
     env._nodes = nodelist
     return nodelist[0]  # root
+
+
