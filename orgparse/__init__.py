@@ -106,20 +106,19 @@ True
 """
 # [[[end]]]
 
-import codecs
+from io import IOBase
 from pathlib import Path
 from typing import Iterable, Union, Optional, TextIO
 
 
-from .node import parse_lines, OrgEnv, OrgNode # todo basenode??
-from .utils.py3compat import basestring
+from .node import parse_lines, OrgEnv, OrgNode  # todo basenode??
 
 __author__ = 'Takafumi Arakaki, Dmitrii Gerasimov'
 __license__ = 'BSD License'
 __all__ = ["load", "loads", "loadi"]
 
 
-def load(path: Union[str, Path, TextIO], env: Optional[OrgEnv]=None) -> OrgNode:
+def load(path: Union[str, Path, TextIO], env: Optional[OrgEnv] = None) -> OrgNode:
     """
     Load org-mode document from a file.
 
@@ -130,16 +129,28 @@ def load(path: Union[str, Path, TextIO], env: Optional[OrgEnv]=None) -> OrgNode:
 
     """
     orgfile: TextIO
-    if isinstance(path, (str, Path)):
-        # Use 'with' to close the file inside this function.
-        with codecs.open(str(path), encoding='utf8') as orgfile:
-            lines = (l.rstrip('\n') for l in orgfile.readlines())
-        filename = str(path)
-    else:
+
+    # file-like object (e.g. io.StringIO)
+    if isinstance(path, IOBase):
         orgfile = path
-        lines = (l.rstrip('\n') for l in orgfile.readlines())
-        filename = path.name if hasattr(path, 'name') else '<file-like>'
-    return loadi(lines, filename=filename, env=env)
+        all_lines = orgfile.readlines()
+
+    else:
+        # Make sure it is a Path object.
+        if isinstance(path, str):
+            path = Path(path)
+
+        # open
+        with path.open('r', encoding='utf8') as orgfile:
+            all_lines = orgfile.readlines()
+
+    # get the filename
+    try:
+        filename = path.name
+    except AttributeError:
+        filename = '<file-like>'
+
+    return loadi(all_lines, filename=filename, env=env)
 
 
 def loads(string: str, filename: str='<string>', env: Optional[OrgEnv]=None) -> OrgNode:
