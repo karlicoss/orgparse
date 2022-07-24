@@ -130,19 +130,22 @@ def load(path: Union[str, Path, TextIO], env: Optional[OrgEnv] = None) -> OrgNod
     """
     orgfile: TextIO
 
-    # file-like object (e.g. io.StringIO)
-    if isinstance(path, IOBase):
-        orgfile = path
-        all_lines = orgfile.readlines()
+    orgfile = path
 
-    else:
+    # file-like object (e.g. io.StringIO)
+    try:
+        # This will raise an AttributeError if it's not a file-like object.
+        all_lines = orgfile.readlines()
+        all_lines = (line.rstrip('\n') for line in all_lines)
+    except AttributeError:
         # Make sure it is a Path object.
         if isinstance(path, str):
             path = Path(path)
 
-        # open
+        # open that Path
         with path.open('r', encoding='utf8') as orgfile:
-            all_lines = orgfile.readlines()
+            # try again loading
+            return load(orgfile, env)
 
     # get the filename
     try:
