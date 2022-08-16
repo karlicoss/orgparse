@@ -133,7 +133,7 @@ def load(path: Union[str, Path, TextIO], env: Optional[OrgEnv] = None) -> OrgNod
     orgfile = path
 
     # file-like object (e.g. io.StringIO)
-    if isinstance(path, io.IOBase):
+    if isinstance(path, IOBase):
         # This will raise an AttributeError if it's not a file-like object.
         all_lines = orgfile.readlines()
         all_lines = (line.rstrip('\n') for line in all_lines)
