@@ -128,24 +128,20 @@ def load(path: Union[str, Path, TextIO], env: Optional[OrgEnv] = None) -> OrgNod
     :rtype: :class:`orgparse.node.OrgRootNode`
 
     """
-    orgfile: TextIO
+    # Make sure it is a Path object.
+    if isinstance(path, str):
+        path = Path(path)
 
-    orgfile = path
-
-    # file-like object (e.g. io.StringIO)
-    if isinstance(path, IOBase):
-        # This will raise an AttributeError if it's not a file-like object.
-        all_lines = orgfile.readlines()
-        all_lines = (line.rstrip('\n') for line in all_lines)
-    else:
-        # Make sure it is a Path object.
-        if isinstance(path, str):
-            path = Path(path)
-
+    # if it is a Path
+    if isinstance(path, Path):
         # open that Path
         with path.open('r', encoding='utf8') as orgfile:
             # try again loading
             return load(orgfile, env)
+
+    # We assume it is a file-like object (e.g. io.StringIO)
+    all_lines = path.readlines()
+    all_lines = (line.rstrip('\n') for line in all_lines)
 
     # get the filename
     filename = path.name if hasattr(path, 'name') else '<file-like>'
