@@ -24,13 +24,17 @@ jobs:
         platform: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ['3.6', '3.7', '3.8', '3.9', '3.10', '3.11']
         # seems like 3.6 isn't available on their osx image anymore
-        exclude: [{platform: macos-latest, python-version: '3.6'}]
+        exclude: [{platform: macos-latest, python-version: '3.6'}, {platform: ubuntu-latest, python-version: '3.6'}]
+        include: [{platform: ubuntu-20.04, python-version: '3.6'}]
 
     runs-on: ${{ matrix.platform }}
 
     steps:
     # ugh https://github.com/actions/toolkit/blob/main/docs/commands.md#path-manipulation
     - run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+    - if: ${{ matrix.platform == 'macos-latest' && matrix.python-version == '3.11' }}
+      run: echo "$HOME/Library/${{ matrix.python-version }}/bin" >> $GITHUB_PATH
 
     - uses: actions/setup-python@v4
       with:
