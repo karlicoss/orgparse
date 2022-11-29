@@ -19,8 +19,8 @@ env:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
-        fail-fast: false
         platform: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ['3.6', '3.7', '3.8', '3.9', '3.10', '3.11']
         # seems like 3.6 isn't available on their osx image anymore
