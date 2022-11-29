@@ -34,7 +34,7 @@ jobs:
     - run: echo "$HOME/.local/bin" >> $GITHUB_PATH
 
     - if: ${{ matrix.platform == 'macos-latest' && matrix.python-version == '3.11' }}
-      run: echo "$HOME/Library/${{ matrix.python-version }}/bin" >> $GITHUB_PATH
+      run: echo "$HOME/Library/Python/${{ matrix.python-version }}/bin" >> $GITHUB_PATH
 
     - uses: actions/setup-python@v4
       with:
