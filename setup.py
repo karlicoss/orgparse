@@ -14,7 +14,7 @@ def main():
             'version_scheme': 'python-simplified-semver',
             'local_scheme': 'dirty-tag',
         },
-        setup_requires=['setuptools_scm==6.4.2'],
+        setup_requires=['setuptools_scm'],
 
         zip_safe=False,
 

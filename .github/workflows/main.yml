@@ -22,10 +22,7 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10', '3.11']
-        # seems like 3.6 isn't available on their osx image anymore
-        exclude: [{platform: macos-latest, python-version: '3.6'}, {platform: ubuntu-latest, python-version: '3.6'}]
-        include: [{platform: ubuntu-20.04, python-version: '3.6'}]
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
 
     runs-on: ${{ matrix.platform }}
 
