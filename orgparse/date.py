@@ -527,7 +527,20 @@ class OrgDateSDCBase(OrgDate):
                 end_dict.update(mdict)
                 end_dict.update({'hour': end_hour, 'min': end_min})
                 end = cls._datetuple_from_groupdict(end_dict)
-            return cls(start, end, active=cls._active_default)
+            cookie_suffix = ['pre', 'num', 'dwmy']
+            repeater: Optional[Tuple[str, int, str]] = None
+            warning: Optional[Tuple[str, int, str]] = None
+            prefix = ''
+            if mdict[prefix + 'repeatpre'] is not None:
+                keys = [prefix + 'repeat' + suffix for suffix in cookie_suffix]
+                values = [mdict[k] for k in keys]
+                repeater = (values[0], int(values[1]), values[2])
+            if mdict[prefix + 'warnpre'] is not None:
+                keys = [prefix + 'warn' + suffix for suffix in cookie_suffix]
+                values = [mdict[k] for k in keys]
+                warning = (values[0], int(values[1]), values[2])
+            return cls(start, end, active=cls._active_default,
+                       repeater=repeater, warning=warning)
         else:
             return cls(None)
 
