@@ -140,8 +140,7 @@ def load(path: Union[str, Path, TextIO], env: Optional[OrgEnv] = None) -> OrgNod
             return load(orgfile, env)
 
     # We assume it is a file-like object (e.g. io.StringIO)
-    all_lines = path.readlines()
-    all_lines = (line.rstrip('\n') for line in all_lines)
+    all_lines = (line.rstrip('\n') for line in path)
 
     # get the filename
     filename = path.name if hasattr(path, 'name') else '<file-like>'
