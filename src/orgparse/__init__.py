@@ -113,8 +113,6 @@ from typing import Iterable, Union, Optional, TextIO
 
 from .node import parse_lines, OrgEnv, OrgNode  # todo basenode??
 
-__author__ = 'Takafumi Arakaki, Dmitrii Gerasimov'
-__license__ = 'BSD License'
 __all__ = ["load", "loads", "loadi"]
 
 

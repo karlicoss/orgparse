@@ -1,10 +1,11 @@
-#!/bin/bash -eu
+#!/bin/bash
+set -eu
 
 cd "$(dirname "$0")"
-cd ..
+cd .. # git root
 
 if ! command -v sudo; then
-    # CI or Docker sometimes don't have it, so useful to have a dummy
+    # CI or Docker sometimes doesn't have it, so useful to have a dummy
     function sudo {
         "$@"
     }
@@ -12,13 +13,28 @@ fi
 
 if [ -n "${CI-}" ]; then
     # install OS specific stuff here
-    if [[ "$OSTYPE" == "darwin"* ]]; then
+    case "$OSTYPE" in
+    darwin*) 
         # macos
         :
-    else
+        ;;
+    cygwin* | msys* | win*)
+        # windows
         :
-    fi
+        ;;
+    *)
+        # must be linux?
+        :
+        ;;
+    esac
 fi
 
-pip3 install --user tox
-tox
+
+PY_BIN="python3"
+# some systems might have python pointing to python3
+if ! command -v python3 &> /dev/null; then
+    PY_BIN="python"
+fi
+
+"$PY_BIN" -m pip install --user tox
+"$PY_BIN" -m tox --parallel --parallel-live "$@"

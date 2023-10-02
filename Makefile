@@ -11,4 +11,4 @@ doc: cog
 ## Update files using cog.py
 cog: orgparse/__init__.py
 orgparse/__init__.py: README.rst
-	cd orgparse && cog.py -r __init__.py
+	cd src/orgparse && cog.py -r __init__.py

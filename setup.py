@@ -4,10 +4,9 @@ from setuptools import setup, find_namespace_packages # type: ignore
 
 
 def main():
-    pkg = 'orgparse'
-    subpkgs = find_namespace_packages('.', include=(pkg + '.*',))
+    pkgs = find_namespace_packages('src')
+    pkg = min(pkgs)
 
-    import orgparse
     setup(
         name=pkg,
         use_scm_version={
@@ -18,22 +17,24 @@ def main():
 
         zip_safe=False,
 
-        packages=[pkg, *subpkgs],
+        packages=pkgs,
+        package_dir={'': 'src'},
         package_data={
             pkg: ['py.typed'], # todo need the rest as well??
             'orgparse.tests.data': ['*.org'],
         },
 
-        author=orgparse.__author__,
+        author='Takafumi Arakaki, Dmitrii Gerasimov',
         author_email='aka.tkf@gmail.com',
         maintainer='Dima Gerasimov (@karlicoss)',
         maintainer_email='karlicoss@gmail.com',
 
         url='https://github.com/karlicoss/orgparse',
-        license=orgparse.__license__,
+        license='BSD License',
 
         description='orgparse - Emacs org-mode parser in Python',
-        long_description=orgparse.__doc__,
+        # TODO add it back later, perhaps via ast?
+        # long_description=orgparse.__doc__,
 
         keywords='org org-mode emacs',
         classifiers=[
