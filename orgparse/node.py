@@ -5,7 +5,6 @@ from typing import List, Iterable, Iterator, Optional, Union, Tuple, cast, Dict,
 from .date import OrgDate, OrgDateClock, OrgDateRepeatedTask, parse_sdc, OrgDateScheduled, OrgDateDeadline, OrgDateClosed
 from .inline import to_plain_text
 from .extra import to_rich_text, Rich
-from .utils.py3compat import PY3, unicode
 
 
 def lines_to_chunks(lines: Iterable[str]) -> Iterable[List[str]]:
@@ -1035,14 +1034,8 @@ class OrgBaseNode(Sequence):
         """
         return self.get_timestamps(active=True, inactive=True, range=True)
 
-    def __unicode__(self):
-        return unicode("\n").join(self._lines)
-
-    if PY3:
-        __str__ = __unicode__
-    else:
-        def __str__(self):
-            return unicode(self).encode('utf-8')
+    def __str__(self) -> str:
+        return "\n".join(self._lines)
 
     # todo hmm, not sure if it really belongs here and not to OrgRootNode?
     def get_file_property_list(self, property):
