@@ -1,10 +1,9 @@
 import os
 from glob import glob
+from pathlib import Path
 import pickle
 
 from .. import load, loads
-from ..utils.py3compat import execfile, PY3
-
 import pytest # type: ignore
 
 DATADIR = os.path.join(os.path.dirname(__file__), 'data')
@@ -12,8 +11,8 @@ DATADIR = os.path.join(os.path.dirname(__file__), 'data')
 
 def load_data(path):
     """Load data from python file"""
-    ns = {} # type: ignore
-    execfile(path, ns)
+    ns = {}  # type: ignore
+    exec(Path(path).read_text(), ns)
     return ns['data']
 
 
@@ -52,11 +51,6 @@ def test_data(dataname):
     """
     Compare parsed data from 'data/*.org' and its correct answer 'data/*.py'
     """
-    if dataname == '05_tags':
-        if not PY3:
-            # python2 is end of life, so not worth fixing properly
-            pytest.skip('Ignoring test involving unicode')
-
     oname = data_path(dataname, "org")
     data = load_data(data_path(dataname, "py"))
     root = load(oname)
