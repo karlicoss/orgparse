@@ -10,11 +10,14 @@ on:
   pull_request: # needed to trigger on others' PRs
   # Note that people who fork it need to go to "Actions" tab on their fork and click "I understand my workflows, go ahead and enable them".
   workflow_dispatch: # needed to trigger workflows manually
-  # todo cron?
+    # todo cron?
+    inputs:
+      debug_enabled:
+        type: boolean
+        description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
+        required: false
+        default: false
 
-env:
-  # useful for scripts & sometimes tests to know
-  CI: true
 
 jobs:
   build:
@@ -22,15 +25,17 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12.0-rc.3']
+        # vvv just an example of excluding stuff from matrix
+        # exclude: [{platform: macos-latest, python-version: '3.6'}]
 
     runs-on: ${{ matrix.platform }}
 
     steps:
     # ugh https://github.com/actions/toolkit/blob/main/docs/commands.md#path-manipulation
     - run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-
     - if: ${{ matrix.platform == 'macos-latest' && matrix.python-version == '3.11' }}
+      # hmm somehow only seems necessary for 3.11 on osx?? 
       run: echo "$HOME/Library/Python/${{ matrix.python-version }}/bin" >> $GITHUB_PATH
 
     - uses: actions/setup-python@v4
@@ -41,12 +46,14 @@ jobs:
       with:
         submodules: recursive
 
-    # uncomment for SSH debugging
-    # - uses: mxschmitt/action-tmate@v3
+    - uses: mxschmitt/action-tmate@v3
+      if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
 
-    - run: .ci/run
+    # explicit bash command is necessary for Windows CI runner, otherwise it thinks it's cmd...
+    - run: bash .ci/run
 
-    - uses: actions/upload-artifact@v3
+    - if: matrix.platform == 'ubuntu-latest'  # no need to compute coverage for other platforms
+      uses: actions/upload-artifact@v3
       with:
         name: .coverage.mypy_${{ matrix.platform }}_${{ matrix.python-version }}
         path: .coverage.mypy/
@@ -62,7 +69,7 @@ jobs:
 
     - uses: actions/setup-python@v4
       with:
-        python-version: '3.7'
+        python-version: '3.8'
 
     - uses: actions/checkout@v3
       with:

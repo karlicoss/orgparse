@@ -13,7 +13,8 @@ DATADIR = os.path.join(os.path.dirname(__file__), 'data')
 def load_data(path):
     """Load data from python file"""
     ns = {}  # type: ignore
-    exec(Path(path).read_text(), ns)
+    # read_bytes() and compile hackery to avoid encoding issues (e.g. see 05_tags)
+    exec(compile(Path(path).read_bytes(), path, 'exec'), ns)
     return ns['data']
 
 
