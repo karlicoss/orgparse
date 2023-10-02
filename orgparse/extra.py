@@ -1,5 +1,5 @@
 import re
-from typing import List, Sequence, Dict, Iterator, Iterable, Union, Optional
+from typing import List, Sequence, Dict, Iterator, Iterable, Union, Optional, Type
 
 
 RE_TABLE_SEPARATOR = re.compile(r'\s*\|(\-+\+)*\-+\|')
@@ -90,7 +90,7 @@ def to_rich_text(text: str) -> Iterator[Rich]:
     '''
     lines = text.splitlines(keepends=True)
     group: List[str] = []
-    last = Gap
+    last: Type[Rich] = Gap
     def emit() -> Rich:
         nonlocal group, last
         if   last is Gap:
@@ -106,11 +106,11 @@ def to_rich_text(text: str) -> Iterator[Rich]:
         if RE_TABLE_ROW.match(line) or RE_TABLE_SEPARATOR.match(line):
             cur = Table
         else:
-            cur = Gap # type: ignore
+            cur = Gap  # type: ignore
         if cur is not last:
             if len(group) > 0:
                 yield emit()
-            last = cur # type: ignore
+            last = cur
         group.append(line)
     if len(group) > 0:
         yield emit()

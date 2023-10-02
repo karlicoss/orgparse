@@ -1,4 +1,7 @@
-def nodedict(i, level, todo=None, shallow_tags=set([]), tags=set([])):
+from typing import Any, Dict, Set
+
+
+def nodedict(i, level, todo=None, shallow_tags=set([]), tags=set([])) -> Dict[str, Any]:
     return dict(
         heading="Heading {0}".format(i),
         level=level,
@@ -8,12 +11,12 @@ def nodedict(i, level, todo=None, shallow_tags=set([]), tags=set([])):
     )
 
 
-def tags(nums):
+def tags(nums) -> Set[str]:
     return set(map('TAG{0}'.format, nums))
 
 
 data = [
-    nodedict(i, *vals) for (i, vals) in enumerate([ # type: ignore[misc]
+    nodedict(i, *vals) for (i, vals) in enumerate([  # type: ignore[misc]
         [1, 'TODO1', tags([1])   , tags(range(1, 2))],
         [2, 'TODO2', tags([2])   , tags(range(1, 3))],
         [3, 'TODO3', tags([3])   , tags(range(1, 4))],

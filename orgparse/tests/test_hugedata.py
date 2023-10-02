@@ -1,7 +1,4 @@
-try:
-    import cPickle as pickle # type: ignore[import]
-except ImportError:
-    import pickle # type: ignore[no-redef]
+import pickle
 
 from .. import loadi
 
@@ -24,7 +21,7 @@ def num_generate_org_lines(num_top_nodes, depth=3, nodes_per_level=1):
             nodes_per_level, depth - 1, nodes_per_level))
 
 
-def test_picklable():
+def test_picklable() -> None:
     num = 1000
     depth = 3
     nodes_per_level = 1
