@@ -42,7 +42,7 @@ def main() -> None:
     if dist.exists():
         shutil.rmtree(dist)
 
-    check_call('python3 setup.py sdist bdist_wheel', shell=True)
+    check_call(['python3', '-m', 'build'])
 
     TP = 'TWINE_PASSWORD'
     password = os.environ.get(TP)

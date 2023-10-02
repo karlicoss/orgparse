@@ -1,0 +1,59 @@
+[project]
+dynamic = ["version"]  # version is managed by setuptools_scm
+name = "orgparse"
+description = "orgparse - Emacs org-mode parser in Python"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Takafumi Arakaki (@tkf)", email = "aka.tkf@gmail.com"},
+    {name = "Dmitrii Gerasimov (@karlicoss)", email = "karlicoss@gmail.com"},
+]
+maintainers = [
+    {name = "Dmitrii Gerasimov (@karlicoss)", email = "karlicoss@gmail.com"},
+]
+keywords = ["org", "org-mode", "emacs"]
+# see: http://pypi.python.org/pypi?%3Aaction=list_classifiers
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "License :: OSI Approved :: BSD License",
+    "Topic :: Text Processing :: Markup",
+]
+# TODO add it back later, perhaps via ast?
+# long_description=orgparse.__doc__,
+
+[project.urls]
+Homepage = "https://github.com/karlicoss/orgparse"
+
+[project.optional-dependencies]
+testing = [
+    "pytest", 
+]
+linting = [
+    "pytest",
+    "mypy",
+    "lxml",  # for mypy html coverage
+]
+
+
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+version_scheme = "python-simplified-semver"
+local_scheme = "dirty-tag"
+
+
+# nice things about pyproject.toml
+# - zip_safe=False isn't neccessary anymore
+# - correctly discovers namespace packages by defuilt?
+# - correctly handles py.typed by default?
+# - handles src layout automatically https://setuptools.pypa.io/en/latest/userguide/package_discovery.html#src-layout
+
+# things I'm not sure about yet
+# - avoiding dupliation/variable reuse?
+# - file/git dependencies?
+# - unclear how to specify namespace package order https://github.com/seanbreckenridge/reorder_editable/issues/2
+
+# TODO
+# - maybe it has a nicer pypi upload system? not sure
+#   e.g. possibly use hatch/flit/pdb/poetry -- but not sure what's the benefit tbh
