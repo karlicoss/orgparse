@@ -641,14 +641,22 @@ class OrgDateClock(OrgDate):
 
         # second part starting with "--", does not exist for open clock dates
         has_end = bool(match.group(6))
+        ymdhm2_dt: Optional[datetime.datetime]
+        len_min: Optional[int]
         if has_end:
             ymdhm2 = [int(d) for d in match.groups()[6:11]]
             hm3 = [int(d) for d in match.groups()[11:]]
 
+            ymdhm2_dt = datetime.datetime(*ymdhm2)  # type: ignore[arg-type]
+            len_min = hm3[0] * 60 + hm3[1]
+        else:
+            ymdhm2_dt = None
+            len_min = None
+
         return cls(
-            datetime.datetime(*ymdhm1), # type: ignore[arg-type]
-            datetime.datetime(*ymdhm2) if has_end else None, # type: ignore[arg-type]
-            hm3[0] * 60 + hm3[1] if has_end else None,
+            datetime.datetime(*ymdhm1),  # type: ignore[arg-type]
+            ymdhm2_dt,
+            len_min,
         )
 
     _re = re.compile(

@@ -4,7 +4,7 @@ Tests for rich formatting: tables etc.
 from .. import load, loads
 from ..extra import Table
 
-import pytest # type: ignore
+import pytest
 
 
 def test_table() -> None:

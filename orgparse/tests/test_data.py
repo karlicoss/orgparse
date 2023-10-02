@@ -1,10 +1,11 @@
-import os
 from glob import glob
+import os
 from pathlib import Path
 import pickle
 
 from .. import load, loads
-import pytest # type: ignore
+
+import pytest
 
 DATADIR = os.path.join(os.path.dirname(__file__), 'data')
 
