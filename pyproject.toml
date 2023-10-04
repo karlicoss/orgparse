@@ -29,6 +29,7 @@ testing = [
 ]
 linting = [
     "pytest",
+    "ruff",
     "mypy",
     "lxml",  # for mypy html coverage
 ]

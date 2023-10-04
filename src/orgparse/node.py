@@ -832,7 +832,7 @@ class OrgBaseNode(Sequence):
         :rtype: int
 
         """
-        raise NotImplemented
+        raise NotImplementedError
 
     def _get_tags(self, inher=False) -> Set[str]:
         """
