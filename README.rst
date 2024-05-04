@@ -6,11 +6,22 @@
 * `Documentation (Read the Docs) <https://orgparse.readthedocs.org>`_
 * `Repository (at GitHub) <https://github.com/karlicoss/orgparse>`_
 * `PyPI <https://pypi.python.org/pypi/orgparse>`_
+* `conda-forge <https://anaconda.org/conda-forge/orgparse>`_
 
 Install
 -------
 
+You can install ``orgpase`` via PyPI
+
+.. code-block:: console
+
   pip install orgparse
+
+or via conda-forge
+
+.. code-block:: console
+
+  conda install orgparse -c conda-forge
 
 
 Usage
