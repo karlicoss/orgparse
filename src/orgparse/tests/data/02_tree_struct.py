@@ -1,11 +1,13 @@
-from typing import Any, Dict
+from typing import Any
 
 
-def nodedict(parent, children=[], previous=None, next=None) -> Dict[str, Any]:
-    return dict(parent_heading=parent,
-                children_heading=children,
-                previous_same_level_heading=previous,
-                next_same_level_heading=next)
+def nodedict(parent, children=None, previous=None, next_=None) -> dict[str, Any]:
+    if children is None:
+        children = []
+    return {'parent_heading': parent,
+                'children_heading': children,
+                'previous_same_level_heading': previous,
+                'next_same_level_heading': next_}
 
 
 data = [nodedict(*args) for args in [

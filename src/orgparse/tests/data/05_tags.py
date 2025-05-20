@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 
 def nodedict(i, tags):
-    return dict(
-        heading="Node {0}".format(i),
-        tags=set(tags),
-    )
+    return {
+        "heading": f"Node {i}",
+        "tags": set(tags),
+    }
 
 
 data = [
@@ -17,7 +16,7 @@ data = [
         [["@_"]],
         [["_tag_"]],
     ])] + [
-        dict(heading='Heading: :with:colon:', tags=set(["tag"])),
+        {"heading": 'Heading: :with:colon:', "tags": {"tag"}},
     ] + [
-        dict(heading='unicode', tags=set(['ёж', 'tag', 'háček'])),
+        {"heading": 'unicode', "tags": {'ёж', 'tag', 'háček'}},
     ]

@@ -1,11 +1,11 @@
-from glob import glob
 import os
-from pathlib import Path
 import pickle
-
-from .. import load, loads
+from glob import glob
+from pathlib import Path
 
 import pytest
+
+from .. import load, loads
 
 DATADIR = os.path.join(os.path.dirname(__file__), 'data')
 
@@ -34,13 +34,13 @@ def value_from_data_key(node, key):
         if othernode and not othernode.is_root():
             return othernode.heading
         else:
-            return
+            return None
     else:
         return getattr(node, key)
 
 
 def data_path(dataname, ext):
-    return os.path.join(DATADIR, '{0}.{1}'.format(dataname, ext))
+    return os.path.join(DATADIR, f'{dataname}.{ext}')
 
 
 def get_datanames():
@@ -60,8 +60,8 @@ def test_data(dataname):
     for (i, (node, kwds)) in enumerate(zip(root[1:], data)):
         for key in kwds:
             val = value_from_data_key(node, key)
-            assert kwds[key] == val, 'check value of {0}-th node of key "{1}" from "{2}".\n\nParsed:\n{3}\n\nReal:\n{4}'.format(i, key, dataname, val, kwds[key])
-            assert type(kwds[key]) == type(val), 'check type of {0}-th node of key "{1}" from "{2}".\n\nParsed:\n{3}\n\nReal:\n{4}'.format(i, key, dataname, type(val), type(kwds[key]))
+            assert kwds[key] == val, f'check value of {i}-th node of key "{key}" from "{dataname}".\n\nParsed:\n{val}\n\nReal:\n{kwds[key]}'
+            assert type(kwds[key]) == type(val), f'check type of {i}-th node of key "{key}" from "{dataname}".\n\nParsed:\n{type(val)}\n\nReal:\n{type(kwds[key])}'  # noqa: E721
 
     assert root.env.filename == oname
 

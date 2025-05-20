@@ -1,22 +1,25 @@
+from __future__ import annotations
+
 import datetime
 import re
-from typing import Union, Tuple, Optional, List
+from datetime import timedelta
+from typing import Optional, Union
 
 DateIsh = Union[datetime.date, datetime.datetime]
 
 
-def total_seconds(td):
+def total_seconds(td: timedelta) -> float:
     """Equivalent to `datetime.timedelta.total_seconds`."""
     return float(td.microseconds +
                  (td.seconds + td.days * 24 * 3600) * 10 ** 6) / 10 ** 6
 
 
-def total_minutes(td):
+def total_minutes(td: timedelta) -> float:
     """Alias for ``total_seconds(td) / 60``."""
     return total_seconds(td) / 60
 
 
-def gene_timestamp_regex(brtype, prefix=None, nocookie=False):
+def gene_timestamp_regex(brtype: str, prefix: str | None = None, *, nocookie: bool = False) -> str:
     """
     Generate timestamp regex for active/inactive/nobrace brace type
 
@@ -84,15 +87,15 @@ def gene_timestamp_regex(brtype, prefix=None, nocookie=False):
     elif brtype == 'nobrace':
         (bo, bc) = ('', '')
     else:
-        raise ValueError("brtype='{0!r}' is invalid".format(brtype))
+        raise ValueError(f"brtype='{brtype!r}' is invalid")
 
     if brtype == 'nobrace':
         ignore = r'[\s\w]'
     else:
-        ignore = '[^{bc}]'.format(bc=bc)
+        ignore = f'[^{bc}]'
 
     if prefix is None:
-        prefix = '{0}_'.format(brtype)
+        prefix = f'{brtype}_'
 
     regex_date_time = r"""
         (?P<{prefix}year>\d{{4}}) -
@@ -133,7 +136,7 @@ def gene_timestamp_regex(brtype, prefix=None, nocookie=False):
     return regex.format(prefix=prefix, ignore=ignore)
 
 
-def date_time_format(date) -> str:
+def date_time_format(date: DateIsh) -> str:
     """
     Format a date or datetime in default org format
 
@@ -165,7 +168,10 @@ TIMESTAMP_RE = re.compile(
     re.VERBOSE)
 
 
-class OrgDate(object):
+_Repeater = tuple[str, int, str]
+
+
+class OrgDate:
 
     _active_default = True
     """
@@ -184,8 +190,14 @@ class OrgDate(object):
     """
     _allow_short_range = True
 
-    def __init__(self, start, end=None, active=None, repeater=None,
-                 warning=None):
+    def __init__(
+        self,
+        start,
+        end=None,
+        active: bool | None = None,
+        repeater: _Repeater | None = None,
+        warning: _Repeater | None = None,
+    ) -> None:
         """
         Create :class:`OrgDate` object
 
@@ -242,21 +254,23 @@ class OrgDate(object):
                 raise ValueError(
                     "Automatic conversion to the datetime object "
                     "requires at least 3 elements in the tuple. "
-                    "Only {0} elements are in the given tuple '{1}'."
-                    .format(len(date), date))
+                    f"Only {len(date)} elements are in the given tuple '{date}'."
+                    )
         elif isinstance(date, (int, float)):
             return datetime.datetime.fromtimestamp(date)
         else:
             return date
 
     @staticmethod
-    def _date_to_tuple(date):
+    def _date_to_tuple(date: DateIsh) -> tuple[int, ...]:
         if isinstance(date, datetime.datetime):
             return tuple(date.timetuple()[:6])
         elif isinstance(date, datetime.date):
             return tuple(date.timetuple()[:3])
+        else:
+            raise RuntimeError(f"can't happen: {date}")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         args = [
             self.__class__.__name__,
             self._date_to_tuple(self.start),
@@ -269,9 +283,9 @@ class OrgDate(object):
             args.pop()
         if len(args) > 3 and args[3] is None:
             args[3] = self._active_default
-        return '{0}({1})'.format(args[0], ', '.join(map(repr, args[1:])))
+        return '{}({})'.format(args[0], ', '.join(map(repr, args[1:])))
 
-    def __str__(self):
+    def __str__(self) -> str:
         fence = ("<", ">") if self.is_active() else ("[", "]")
 
         start = date_time_format(self.start)
@@ -279,26 +293,26 @@ class OrgDate(object):
 
         if self.has_end():
             if self._allow_short_range and is_same_day(self.start, self.end):
-                start += "--%s" % self.end.strftime("%H:%M")
+                start += "--{}".format(self.end.strftime("%H:%M"))
             else:
                 end = date_time_format(self.end)
 
-        if self._repeater:
-            start += " %s%d%s" % self._repeater
-        if self._warning:
-            start += " %s%d%s" % self._warning
-        ret = "%s%s%s" % (fence[0], start, fence[1])
+        if self._repeater is not None:
+            (x, y, z) = self._repeater
+            start += f" {x}{y}{z}"
+        if self._warning is not None:
+            (x, y, z) = self._warning
+            start += f" {x}{y}{z}"
+        ret = f"{fence[0]}{start}{fence[1]}"
         if end:
-            ret += "--%s%s%s" % (fence[0], end, fence[1])
+            ret += f"--{fence[0]}{end}{fence[1]}"
 
         return ret
 
-    def __nonzero__(self):
+    def __bool__(self) -> bool:
         return bool(self._start)
 
-    __bool__ = __nonzero__  # PY3
-
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if (isinstance(other, OrgDate) and
             self._start is None and
             other._start is None):
@@ -309,7 +323,7 @@ class OrgDate(object):
                 self._active == other._active)
 
     @property
-    def start(self):
+    def start(self) -> DateIsh:
         """
         Get date or datetime object
 
@@ -322,7 +336,7 @@ class OrgDate(object):
         return self._start
 
     @property
-    def end(self):
+    def end(self) -> DateIsh:
         """
         Get date or datetime object
 
@@ -404,11 +418,11 @@ class OrgDate(object):
         return date
 
     @staticmethod
-    def _daterange_from_groupdict(dct, prefix='') -> Tuple[List, Optional[List]]:
+    def _daterange_from_groupdict(dct, prefix='') -> tuple[list, Optional[list]]:
         start_keys = ['year', 'month', 'day', 'hour'    , 'min']
         end_keys   = ['year', 'month', 'day', 'end_hour', 'end_min']
         start_range = list(map(int, filter(None, (dct[prefix + k] for k in start_keys))))
-        end_range: Optional[List]
+        end_range: Optional[list]
         end_range   = list(map(int, filter(None, (dct[prefix + k] for k in end_keys))))
         if len(end_range) < len(end_keys):
             end_range = None
@@ -419,7 +433,7 @@ class OrgDate(object):
         return cls._daterange_from_groupdict(dct, prefix=prefix)[0]
 
     @classmethod
-    def list_from_str(cls, string: str) -> List['OrgDate']:
+    def list_from_str(cls, string: str) -> list[OrgDate]:
         """
         Parse string and return a list of :class:`OrgDate` objects
 
@@ -447,8 +461,8 @@ class OrgDate(object):
                 prefix = 'inactive_'
                 active = False
                 rangedash = '--['
-            repeater: Optional[Tuple[str, int, str]] = None
-            warning: Optional[Tuple[str, int, str]] = None
+            repeater: Optional[tuple[str, int, str]] = None
+            warning: Optional[tuple[str, int, str]] = None
             if mdict[prefix + 'repeatpre'] is not None:
                 keys = [prefix + 'repeat' + suffix for suffix in cookie_suffix]
                 values = [mdict[k] for k in keys]
@@ -471,12 +485,12 @@ class OrgDate(object):
                 odate = cls(
                     *cls._daterange_from_groupdict(mdict, prefix),
                     active=active, repeater=repeater, warning=warning)
-            return [odate] + cls.list_from_str(rest)
+            return [odate, *cls.list_from_str(rest)]
         else:
             return []
 
     @classmethod
-    def from_str(cls, string):
+    def from_str(cls, string: str) -> OrgDate:
         """
         Parse string and return an :class:`OrgDate` objects.
 
@@ -500,7 +514,7 @@ class OrgDate(object):
 def compile_sdc_re(sdctype):
     brtype = 'inactive' if sdctype == 'CLOSED' else 'active'
     return re.compile(
-        r'^(?!\#).*{0}:\s+{1}'.format(
+        r'^(?!\#).*{}:\s+{}'.format(
             sdctype,
             gene_timestamp_regex(brtype, prefix='', nocookie=True)),
         re.VERBOSE)
@@ -528,8 +542,8 @@ class OrgDateSDCBase(OrgDate):
                 end_dict.update({'hour': end_hour, 'min': end_min})
                 end = cls._datetuple_from_groupdict(end_dict)
             cookie_suffix = ['pre', 'num', 'dwmy']
-            repeater: Optional[Tuple[str, int, str]] = None
-            warning: Optional[Tuple[str, int, str]] = None
+            repeater: Optional[tuple[str, int, str]] = None
+            warning: Optional[tuple[str, int, str]] = None
             prefix = ''
             if mdict[prefix + 'repeatpre'] is not None:
                 keys = [prefix + 'repeat' + suffix for suffix in cookie_suffix]
@@ -588,7 +602,7 @@ class OrgDateClock(OrgDate):
         """
         Create OrgDateClock object
         """
-        super(OrgDateClock, self).__init__(start, end, active=active)
+        super().__init__(start, end, active=active)
         self._duration = duration
 
     @property
@@ -625,7 +639,7 @@ class OrgDateClock(OrgDate):
                 self._duration == total_minutes(self.duration))
 
     @classmethod
-    def from_str(cls, line: str) -> 'OrgDateClock':
+    def from_str(cls, line: str) -> OrgDateClock:
         """
         Get CLOCK from given string.
 
@@ -674,26 +688,26 @@ class OrgDateRepeatedTask(OrgDate):
 
     _active_default = False
 
-    def __init__(self, start, before, after, active=None):
-        super(OrgDateRepeatedTask, self).__init__(start, active=active)
+    def __init__(self, start, before: str, after: str, active=None) -> None:
+        super().__init__(start, active=active)
         self._before = before
         self._after = after
 
-    def __repr__(self):
-        args = [self._date_to_tuple(self.start), self.before, self.after]
+    def __repr__(self) -> str:
+        args: list = [self._date_to_tuple(self.start), self.before, self.after]
         if self._active is not self._active_default:
             args.append(self._active)
-        return '{0}({1})'.format(
+        return '{}({})'.format(
             self.__class__.__name__, ', '.join(map(repr, args)))
 
-    def __eq__(self, other):
-        return super(OrgDateRepeatedTask, self).__eq__(other) and \
+    def __eq__(self, other) -> bool:
+        return super().__eq__(other) and \
             isinstance(other, self.__class__) and \
             self._before == other._before and \
             self._after == other._after
 
     @property
-    def before(self):
+    def before(self) -> str:
         """
         The state of task before marked as done.
 
@@ -705,7 +719,7 @@ class OrgDateRepeatedTask(OrgDate):
         return self._before
 
     @property
-    def after(self):
+    def after(self) -> str:
         """
         The state of task after marked as done.
 

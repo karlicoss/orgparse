@@ -106,14 +106,13 @@ True
 """
 # [[[end]]]
 
-from io import IOBase
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable, Union, Optional, TextIO
+from typing import Optional, TextIO, Union
 
+from .node import OrgEnv, OrgNode, parse_lines  # todo basenode??
 
-from .node import parse_lines, OrgEnv, OrgNode  # todo basenode??
-
-__all__ = ["load", "loads", "loadi"]
+__all__ = ["load", "loadi", "loads"]
 
 
 def load(path: Union[str, Path, TextIO], env: Optional[OrgEnv] = None) -> OrgNode:

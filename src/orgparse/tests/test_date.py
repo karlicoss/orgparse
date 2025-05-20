@@ -1,5 +1,12 @@
-from orgparse.date import OrgDate, OrgDateScheduled, OrgDateDeadline, OrgDateClock, OrgDateClosed
 import datetime
+
+from orgparse.date import (
+    OrgDate,
+    OrgDateClock,
+    OrgDateClosed,
+    OrgDateDeadline,
+    OrgDateScheduled,
+)
 
 
 def test_date_as_string() -> None:

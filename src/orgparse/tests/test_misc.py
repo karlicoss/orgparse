@@ -1,6 +1,7 @@
+from orgparse.date import OrgDate
+
 from .. import load, loads
 from ..node import OrgEnv
-from orgparse.date import OrgDate
 
 
 def test_empty_heading() -> None:
@@ -56,7 +57,7 @@ This text is under the "anonymous" heading above, which would be (B).
 ** Subheading with text (B1)
 
 This subheading is a child of the "anonymous" heading (B), not of heading (A).
-    """)
+    """)  # noqa: W291
     [h1, h2] = root.children
     assert h1.heading == 'Heading with text (A)'
     assert h2.heading == ''
@@ -95,7 +96,7 @@ def test_add_custom_todo_keys():
     todo_keys = ['CUSTOM_TODO']
     done_keys = ['CUSTOM_DONE']
     filename = '<string>'  # default for loads
-    content = """#+TODO: COMMENT_TODO | COMMENT_DONE 
+    content = """#+TODO: COMMENT_TODO | COMMENT_DONE
     """
 
     env = OrgEnv(filename=filename)
@@ -236,10 +237,10 @@ def test_date_with_cookies() -> None:
         ('<2007-05-16 Wed 12:30 +1w>',
          "OrgDate((2007, 5, 16, 12, 30, 0), None, True, ('+', 1, 'w'))"),
     ]
-    for (input, expected) in testcases:
-        root = loads(input)
+    for (inp, expected) in testcases:
+        root = loads(inp)
         output = root[0].datelist[0]
-        assert str(output) == input
+        assert str(output) == inp
         assert repr(output) == expected
     testcases = [
         ('<2006-11-02 Thu 20:00-22:00 +1w>',
@@ -247,8 +248,8 @@ def test_date_with_cookies() -> None:
         ('<2006-11-02 Thu 20:00--22:00 +1w>',
          "OrgDate((2006, 11, 2, 20, 0, 0), (2006, 11, 2, 22, 0, 0), True, ('+', 1, 'w'))"),
     ]
-    for (input, expected) in testcases:
-        root = loads(input)
+    for (inp, expected) in testcases:
+        root = loads(inp)
         output = root[0].rangelist[0]
         assert str(output) == "<2006-11-02 Thu 20:00--22:00 +1w>"
         assert repr(output) == expected
@@ -270,8 +271,8 @@ def test_date_with_cookies() -> None:
          "<2005-10-01 Sat .+1m>",
          "OrgDateDeadline((2005, 10, 1), None, True, ('.+', 1, 'm'))"),
     ]
-    for (input, expected_str, expected_repr) in testcases2:
-        root = loads(input)
+    for (inp, expected_str, expected_repr) in testcases2:
+        root = loads(inp)
         output = root[1].deadline
         assert str(output) == expected_str
         assert repr(output) == expected_repr
@@ -292,8 +293,8 @@ def test_date_with_cookies() -> None:
          "<2005-10-01 Sat .+1m>",
          "OrgDateScheduled((2005, 10, 1), None, True, ('.+', 1, 'm'))"),
     ]
-    for (input, expected_str, expected_repr) in testcases2:
-        root = loads(input)
+    for (inp, expected_str, expected_repr) in testcases2:
+        root = loads(inp)
         output = root[1].scheduled
         assert str(output) == expected_str
         assert repr(output) == expected_repr
