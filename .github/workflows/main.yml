@@ -6,7 +6,6 @@ on:
     branches: '*'
     tags: 'v[0-9]+.*' # only trigger on 'release' tags for PyPi
     # Ideally I would put this in the pypi job... but github syntax doesn't allow for regexes there :shrug:
-    # P.S. fuck made up yaml DSLs.
   pull_request: # needed to trigger on others' PRs
   # Note that people who fork it need to go to "Actions" tab on their fork and click "I understand my workflows, go ahead and enable them".
   workflow_dispatch: # needed to trigger workflows manually
@@ -25,23 +24,31 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
         # vvv just an example of excluding stuff from matrix
         # exclude: [{platform: macos-latest, python-version: '3.6'}]
 
     runs-on: ${{ matrix.platform }}
 
+    # useful for 'optional' pipelines
+    # continue-on-error: ${{ matrix.platform == 'windows-latest' }}
+
     steps:
     # ugh https://github.com/actions/toolkit/blob/main/docs/commands.md#path-manipulation
     - run: echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-    - uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
+        fetch-depth: 0  # nicer to have all git history when debugging/for tests
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+      
+    - uses: astral-sh/setup-uv@v5
+      with:
+        enable-cache: false  # we don't have lock files, so can't use them as cache key
 
     - uses: mxschmitt/action-tmate@v3
       if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
@@ -50,8 +57,9 @@ jobs:
     - run: bash .ci/run
 
     - if: matrix.platform == 'ubuntu-latest'  # no need to compute coverage for other platforms
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
+        include-hidden-files: true
         name: .coverage.mypy_${{ matrix.platform }}_${{ matrix.python-version }}
         path: .coverage.mypy/
 
@@ -59,30 +67,32 @@ jobs:
   pypi:
     runs-on: ubuntu-latest
     needs: [build] # add all other jobs here
-
+    permissions:
+      # necessary for Trusted Publishing
+      id-token: write
     steps:
     # ugh https://github.com/actions/toolkit/blob/main/docs/commands.md#path-manipulation
     - run: echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-    - uses: actions/setup-python@v4
-      with:
-        python-version: '3.8'
-
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - uses: astral-sh/setup-uv@v5
+      with:
+        enable-cache: false  # we don't have lock files, so can't use them as cache key
 
     - name: 'release to test pypi'
       # always deploy merged master to test pypi
       if: github.event_name != 'pull_request' && github.event.ref == 'refs/heads/master'
-      env:
-        TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD_TEST }}
-      run: pip3 install --user --upgrade build twine && .ci/release --test
+      run: .ci/release-uv --use-test-pypi
 
     - name: 'release to pypi'
       # always deploy tags to release pypi
       # NOTE: release tags are guarded by on: push: tags on the top
       if: github.event_name != 'pull_request' && startsWith(github.event.ref, 'refs/tags')
-      env:
-        TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
-      run: pip3 install --user --upgrade build twine && .ci/release
+      run: .ci/release-uv
