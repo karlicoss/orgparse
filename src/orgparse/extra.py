@@ -96,7 +96,7 @@ def to_rich_text(text: str) -> Iterator[Rich]:
         if   last is Gap:
             res = Gap()
         elif last is Table:
-            res = Table(group) # type: ignore
+            res = Table(group) # type: ignore[assignment]
         else:
             raise RuntimeError(f'Unexpected type {last}')
         group = []
@@ -106,7 +106,7 @@ def to_rich_text(text: str) -> Iterator[Rich]:
         if RE_TABLE_ROW.match(line) or RE_TABLE_SEPARATOR.match(line):
             cur = Table
         else:
-            cur = Gap  # type: ignore
+            cur = Gap  # type: ignore[assignment]
         if cur is not last:
             if len(group) > 0:
                 yield emit()

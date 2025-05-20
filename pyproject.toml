@@ -1,6 +1,9 @@
 [project]
-dynamic = ["version"]  # version is managed by setuptools_scm
+dynamic = ["version"]  # version is managed by build backend
 name = "orgparse"
+dependencies = [
+]
+requires-python = ">=3.9"
 description = "orgparse - Emacs org-mode parser in Python"
 license = {file = "LICENSE"}
 authors = [
@@ -24,10 +27,8 @@ classifiers = [
 Homepage = "https://github.com/karlicoss/orgparse"
 
 [project.optional-dependencies]
+[dependency-groups]
 testing = [
-    "pytest", 
-]
-linting = [
     "pytest",
     "ruff",
     "mypy",
@@ -35,26 +36,20 @@ linting = [
 ]
 
 
+
+# workaround for error during uv publishing
+# see https://github.com/astral-sh/uv/issues/9513#issuecomment-2519527822
+[tool.setuptools]
+license-files = []
+
+
 [build-system]
-requires = ["setuptools", "setuptools-scm"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
 
-[tool.setuptools_scm]
-version_scheme = "python-simplified-semver"
-local_scheme = "dirty-tag"
+# unfortunately have to duplicate project name here atm, see https://github.com/pypa/hatch/issues/1894
+[tool.hatch.build.targets.wheel]
+packages = ["src/orgparse"]
 
-
-# nice things about pyproject.toml
-# - zip_safe=False isn't neccessary anymore
-# - correctly discovers namespace packages by defuilt?
-# - correctly handles py.typed by default?
-# - handles src layout automatically https://setuptools.pypa.io/en/latest/userguide/package_discovery.html#src-layout
-
-# things I'm not sure about yet
-# - avoiding dupliation/variable reuse?
-# - file/git dependencies?
-# - unclear how to specify namespace package order https://github.com/seanbreckenridge/reorder_editable/issues/2
-
-# TODO
-# - maybe it has a nicer pypi upload system? not sure
-#   e.g. possibly use hatch/flit/pdb/poetry -- but not sure what's the benefit tbh
+[tool.hatch.version]
+source = "vcs"
