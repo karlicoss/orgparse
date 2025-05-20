@@ -1,14 +1,30 @@
-import re
+from __future__ import annotations
+
 import itertools
-from typing import List, Iterable, Iterator, Optional, Union, Tuple, cast, Dict, Set, Sequence, Any
+import re
+from collections.abc import Iterable, Iterator, Sequence
+from typing import (
+    Any,
+    Optional,
+    Union,
+    cast,
+)
 
-from .date import OrgDate, OrgDateClock, OrgDateRepeatedTask, parse_sdc, OrgDateScheduled, OrgDateDeadline, OrgDateClosed
+from .date import (
+    OrgDate,
+    OrgDateClock,
+    OrgDateClosed,
+    OrgDateDeadline,
+    OrgDateRepeatedTask,
+    OrgDateScheduled,
+    parse_sdc,
+)
+from .extra import Rich, to_rich_text
 from .inline import to_plain_text
-from .extra import to_rich_text, Rich
 
 
-def lines_to_chunks(lines: Iterable[str]) -> Iterable[List[str]]:
-    chunk: List[str] = []
+def lines_to_chunks(lines: Iterable[str]) -> Iterable[list[str]]:
+    chunk: list[str] = []
     for l in lines:
         if RE_NODE_HEADER.search(l):
             yield chunk
@@ -19,7 +35,7 @@ def lines_to_chunks(lines: Iterable[str]) -> Iterable[List[str]]:
 RE_NODE_HEADER = re.compile(r"^\*+ ")
 
 
-def parse_heading_level(heading):
+def parse_heading_level(heading: str) -> tuple[str, int] | None:
     """
     Get star-stripped heading and its level
 
@@ -32,14 +48,15 @@ def parse_heading_level(heading):
     >>> parse_heading_level('not heading')  # None
 
     """
-    match = RE_HEADING_STARS.search(heading)
-    if match:
-        return (match.group(2), len(match.group(1)))
+    m = RE_HEADING_STARS.search(heading)
+    if m is not None:
+        return (m.group(2), len(m.group(1)))
+    return None
 
 RE_HEADING_STARS = re.compile(r'^(\*+)\s+(.*?)\s*$')
 
 
-def parse_heading_tags(heading: str) -> Tuple[str, List[str]]:
+def parse_heading_tags(heading: str) -> tuple[str, list[str]]:
     """
     Get first tags and heading without tags
 
@@ -74,7 +91,7 @@ def parse_heading_tags(heading: str) -> Tuple[str, List[str]]:
 RE_HEADING_TAGS = re.compile(r'(.*?)\s*:([\w@:]+):\s*$')
 
 
-def parse_heading_todos(heading: str, todo_candidates: List[str]) -> Tuple[str, Optional[str]]:
+def parse_heading_todos(heading: str, todo_candidates: list[str]) -> tuple[str, Optional[str]]:
     """
     Get TODO keyword and heading without TODO keyword.
 
@@ -116,7 +133,7 @@ def parse_heading_priority(heading):
 RE_HEADING_PRIORITY = re.compile(r'^\s*\[#([A-Z0-9])\] ?(.*)$')
 
 PropertyValue = Union[str, int, float]
-def parse_property(line: str) -> Tuple[Optional[str], Optional[PropertyValue]]:
+def parse_property(line: str) -> tuple[Optional[str], Optional[PropertyValue]]:
     """
     Get property from given string.
 
@@ -219,7 +236,7 @@ def parse_duration_to_minutes_float(duration: str) -> float:
         return parse_duration_to_minutes_float(units_part) + parse_duration_to_minutes_float(hms_part)
     if RE_FLOAT.fullmatch(duration):
         return float(duration)
-    raise ValueError("Invalid duration format %s" % duration)
+    raise ValueError(f"Invalid duration format {duration}")
 
 # Conversion factor to minutes for a duration.
 ORG_DURATION_UNITS = {
@@ -231,7 +248,7 @@ ORG_DURATION_UNITS = {
     "y": 60 * 24 * 365.25,
 }
 # Regexp matching for all units.
-ORG_DURATION_UNITS_RE = r'(%s)' % r'|'.join(ORG_DURATION_UNITS.keys())
+ORG_DURATION_UNITS_RE = r'({})'.format(r'|'.join(ORG_DURATION_UNITS.keys()))
 # Regexp matching a duration expressed with H:MM or H:MM:SS format.
 # Hours can use any number of digits.
 ORG_DURATION_H_MM_RE = r'[ \t]*[0-9]+(?::[0-9]{2}){1,2}[ \t]*'
@@ -244,13 +261,13 @@ ORG_DURATION_UNIT_RE = r'([0-9]+(?:[.][0-9]*)?)[ \t]*' + ORG_DURATION_UNITS_RE
 RE_ORG_DURATION_UNIT = re.compile(ORG_DURATION_UNIT_RE)
 # Regexp matching a duration expressed with units.
 # Allowed units are defined in ORG_DURATION_UNITS.
-ORG_DURATION_FULL_RE = r'(?:[ \t]*%s)+[ \t]*' % ORG_DURATION_UNIT_RE
+ORG_DURATION_FULL_RE = rf'(?:[ \t]*{ORG_DURATION_UNIT_RE})+[ \t]*'
 RE_ORG_DURATION_FULL = re.compile(ORG_DURATION_FULL_RE)
 # Regexp matching a duration expressed with units and H:MM or H:MM:SS format.
 # Allowed units are defined in ORG_DURATION_UNITS.
 # Match group A contains units part.
 # Match group B contains H:MM or H:MM:SS part.
-ORG_DURATION_MIXED_RE = r'(?P<A>([ \t]*%s)+)[ \t]*(?P<B>[0-9]+(?::[0-9][0-9]){1,2})[ \t]*' % ORG_DURATION_UNIT_RE
+ORG_DURATION_MIXED_RE = rf'(?P<A>([ \t]*{ORG_DURATION_UNIT_RE})+)[ \t]*(?P<B>[0-9]+(?::[0-9][0-9]){{1,2}})[ \t]*'
 RE_ORG_DURATION_MIXED = re.compile(ORG_DURATION_MIXED_RE)
 # Regexp matching float numbers.
 RE_FLOAT = re.compile(r'[0-9]+([.][0-9]*)?')
@@ -311,22 +328,30 @@ def parse_seq_todo(line):
             list(map(strip_fast_access_key, dones.split())))
 
 
-class OrgEnv(object):
+class OrgEnv:
 
     """
     Information global to the file (e.g, TODO keywords).
     """
 
-    def __init__(self, todos=['TODO'], dones=['DONE'],
-                 filename='<undefined>'):
+    def __init__(
+        self,
+        todos: Sequence[str] | None = None,
+        dones: Sequence[str] | None = None,
+        filename: str = '<undefined>',
+    ) -> None:
+        if dones is None:
+            dones = ['DONE']
+        if todos is None:
+            todos = ['TODO']
         self._todos = list(todos)
         self._dones = list(dones)
         self._todo_not_specified_in_comment = True
         self._filename = filename
-        self._nodes = []
+        self._nodes: list[OrgBaseNode] = []
 
     @property
-    def nodes(self):
+    def nodes(self) -> list[OrgBaseNode]:
         """
         A list of org nodes.
 
@@ -392,15 +417,12 @@ class OrgEnv(object):
         return self._todos + self._dones
 
     @property
-    def filename(self):
+    def filename(self) -> str:
         """
         Return a path to the source file or similar information.
 
         If the org objects are not loaded from a file, this value
         will be a string of the form ``<SOME_TEXT>``.
-
-        :rtype: str
-
         """
         return self._filename
 
@@ -473,25 +495,18 @@ class OrgBaseNode(Sequence):
     5
     """
 
-    _body_lines: List[str] # set by the child classes
+    _body_lines: list[str] # set by the child classes
 
-    def __init__(self, env, index=None) -> None:
-        """
-        Create an :class:`OrgBaseNode` object.
-
-        :type env: :class:`OrgEnv`
-        :arg  env: This will be set to the :attr:`env` attribute.
-
-        """
+    def __init__(self, env: OrgEnv, index: int | None = None) -> None:
         self.env = env
 
         self.linenumber = cast(int, None) # set in parse_lines
 
         # content
-        self._lines: List[str] = []
+        self._lines: list[str] = []
 
-        self._properties: Dict[str, PropertyValue] = {}
-        self._timestamps: List[OrgDate] = []
+        self._properties: dict[str, PropertyValue] = {}
+        self._timestamps: list[OrgDate] = []
 
         # FIXME: use `index` argument to set index.  (Currently it is
         # done externally in `parse_lines`.)
@@ -518,15 +533,13 @@ class OrgBaseNode(Sequence):
             else:
                 break
 
-    def __len__(self):
+    def __len__(self) -> int:
         return sum(1 for _ in self)
 
-    def __nonzero__(self):
+    def __bool__(self) -> bool:
         # As self.__len__ returns non-zero value always this is not
         # needed.  This function is only for performance.
         return True
-
-    __bool__ = __nonzero__  # PY3
 
     def __getitem__(self, key):
         if isinstance(key, slice):
@@ -537,22 +550,23 @@ class OrgBaseNode(Sequence):
             for (i, node) in enumerate(self):
                 if i == key:
                     return node
-            raise IndexError("Out of range {0}".format(key))
+            raise IndexError(f"Out of range {key}")
         else:
-            raise TypeError("Inappropriate type {0} for {1}"
-                            .format(type(key), type(self)))
+            raise TypeError(f"Inappropriate type {type(key)} for {type(self)}"
+                            )
 
     # tree structure
 
-    def _find_same_level(self, iterable):
+    def _find_same_level(self, iterable) -> OrgBaseNode | None:
         for node in iterable:
             if node.level < self.level:
-                return
+                return None
             if node.level == self.level:
                 return node
+        return None
 
     @property
-    def previous_same_level(self):
+    def previous_same_level(self) -> OrgBaseNode | None:
         """
         Return previous node if exists or None otherwise.
 
@@ -574,7 +588,7 @@ class OrgBaseNode(Sequence):
         return self._find_same_level(reversed(self.env._nodes[:self._index]))
 
     @property
-    def next_same_level(self):
+    def next_same_level(self) -> OrgBaseNode | None:
         """
         Return next node if exists or None otherwise.
 
@@ -600,8 +614,9 @@ class OrgBaseNode(Sequence):
         for node in reversed(self.env._nodes[:self._index]):
             if node.level < self.level:
                 return node
+        return None
 
-    def get_parent(self, max_level=None):
+    def get_parent(self, max_level: int | None = None):
         """
         Return a parent node.
 
@@ -751,7 +766,7 @@ class OrgBaseNode(Sequence):
             root = parent
 
     @property
-    def properties(self) -> Dict[str, PropertyValue]:
+    def properties(self) -> dict[str, PropertyValue]:
         """
         Node properties as a dictionary.
 
@@ -791,7 +806,7 @@ class OrgBaseNode(Sequence):
         return self
 
     def _parse_comments(self):
-        special_comments: Dict[str, List[str]] = {}
+        special_comments: dict[str, list[str]] = {}
         for line in self._lines:
             parsed = parse_comment(line)
             if parsed:
@@ -825,29 +840,23 @@ class OrgBaseNode(Sequence):
     # misc
 
     @property
-    def level(self):
+    def level(self) -> int:
         """
         Level of this node.
-
-        :rtype: int
-
         """
         raise NotImplementedError
 
-    def _get_tags(self, inher=False) -> Set[str]:
+    def _get_tags(self, *, inher: bool = False) -> set[str]:  # noqa: ARG002
         """
         Return tags
 
-        :arg bool inher:
+        :arg inher:
             Mix with tags of all ancestor nodes if ``True``.
-
-        :rtype: set
-
         """
         return set()
 
     @property
-    def tags(self) -> Set[str]:
+    def tags(self) -> set[str]:
         """
         Tags of this and parent's node.
 
@@ -863,7 +872,7 @@ class OrgBaseNode(Sequence):
         return self._get_tags(inher=True)
 
     @property
-    def shallow_tags(self) -> Set[str]:
+    def shallow_tags(self) -> set[str]:
         """
         Tags defined for this node (don't look-up parent nodes).
 
@@ -879,7 +888,7 @@ class OrgBaseNode(Sequence):
         return self._get_tags(inher=False)
 
     @staticmethod
-    def _get_text(text, format='plain'):
+    def _get_text(text, format: str = 'plain'):  # noqa: A002
         if format == 'plain':
             return to_plain_text(text)
         elif format == 'raw':
@@ -887,9 +896,9 @@ class OrgBaseNode(Sequence):
         elif format == 'rich':
             return to_rich_text(text)
         else:
-            raise ValueError('format={0} is not supported.'.format(format))
+            raise ValueError(f'format={format} is not supported.')
 
-    def get_body(self, format='plain') -> str:
+    def get_body(self, format: str = 'plain') -> str:  # noqa: A002
         """
         Return a string of body text.
 
@@ -928,8 +937,7 @@ class OrgBaseNode(Sequence):
         """
         return False
 
-    def get_timestamps(self, active=False, inactive=False,
-                       range=False, point=False):
+    def get_timestamps(self, active=False, inactive=False, range=False, point=False):  # noqa: FBT002,A002  # will fix later
         """
         Return a list of timestamps in the body text.
 
@@ -1038,14 +1046,14 @@ class OrgBaseNode(Sequence):
         return "\n".join(self._lines)
 
     # todo hmm, not sure if it really belongs here and not to OrgRootNode?
-    def get_file_property_list(self, property):
+    def get_file_property_list(self, property: str):  # noqa: A002
         """
         Return a list of the selected property
         """
         vals = self._special_comments.get(property.upper(), None)
         return [] if vals is None else vals
 
-    def get_file_property(self, property):
+    def get_file_property(self, property: str):  # noqa: A002
         """
         Return a single element of the selected property or None if it doesn't exist
         """
@@ -1055,7 +1063,7 @@ class OrgBaseNode(Sequence):
         elif len(vals) == 1:
             return vals[0]
         else:
-            raise RuntimeError('Multiple values for property {}: {}'.format(property, vals))
+            raise RuntimeError(f'Multiple values for property {property}: {vals}')
 
 
 class OrgRootNode(OrgBaseNode):
@@ -1071,18 +1079,18 @@ class OrgRootNode(OrgBaseNode):
     def heading(self) -> str:
         return ''
 
-    def _get_tags(self, inher=False) -> Set[str]:
+    def _get_tags(self, *, inher: bool = False) -> set[str]:  # noqa: ARG002
         filetags = self.get_file_property_list('FILETAGS')
         return set(filetags)
 
     @property
-    def level(self):
+    def level(self) -> int:
         return 0
 
-    def get_parent(self, max_level=None):
+    def get_parent(self, max_level=None):  # noqa: ARG002
         return None
 
-    def is_root(self):
+    def is_root(self) -> bool:
         return True
 
     # parsers
@@ -1111,19 +1119,19 @@ class OrgNode(OrgBaseNode):
     """
 
     def __init__(self, *args, **kwds) -> None:
-        super(OrgNode, self).__init__(*args, **kwds)
+        super().__init__(*args, **kwds)
         # fixme instead of casts, should organize code in such a way that they aren't necessary
         self._heading = cast(str, None)
-        self._level = None
-        self._tags = cast(List[str], None)
+        self._level: int | None = None
+        self._tags = cast(list[str], None)
         self._todo: Optional[str] = None
         self._priority = None
         self._scheduled = OrgDateScheduled(None)
         self._deadline = OrgDateDeadline(None)
         self._closed = OrgDateClosed(None)
-        self._clocklist: List[OrgDateClock] = []
-        self._body_lines: List[str] = []
-        self._repeated_tasks: List[OrgDateRepeatedTask] = []
+        self._clocklist: list[OrgDateClock] = []
+        self._body_lines: list[str] = []
+        self._repeated_tasks: list[OrgDateRepeatedTask] = []
 
     # parser
 
@@ -1145,10 +1153,11 @@ class OrgNode(OrgBaseNode):
 
     def _parse_heading(self) -> None:
         heading = self._lines[0]
-        (heading, self._level) = parse_heading_level(heading)
+        heading_level = parse_heading_level(heading)
+        if heading_level is not None:
+            (heading, self._level) = heading_level
         (heading, self._tags) = parse_heading_tags(heading)
-        (heading, self._todo) = parse_heading_todos(
-            heading, self.env.all_todo_keys)
+        (heading, self._todo) = parse_heading_todos(heading, self.env.all_todo_keys)
         (heading, self._priority) = parse_heading_priority(heading)
         self._heading = heading
 
@@ -1218,7 +1227,7 @@ class OrgNode(OrgBaseNode):
         \[ (?P<date> [^\]]+) \]''',
         re.VERBOSE)
 
-    def get_heading(self, format='plain'):
+    def get_heading(self, format: str ='plain') -> str:  # noqa: A002
         """
         Return a string of head text without tags and TODO keywords.
 
@@ -1247,7 +1256,6 @@ class OrgNode(OrgBaseNode):
 
     @property
     def level(self):
-        return self._level
         """
         Level attribute of this node.  Top level node is level 1.
 
@@ -1256,7 +1264,7 @@ class OrgNode(OrgBaseNode):
         ... * Node 1
         ... ** Node 2
         ... ''')
-        >>> (n1, n2) = root.children
+        >>> (n1, n2) = list(root[1:])
         >>> root.level
         0
         >>> n1.level
@@ -1265,9 +1273,10 @@ class OrgNode(OrgBaseNode):
         2
 
         """
+        return self._level
 
     @property
-    def priority(self):
+    def priority(self) -> str | None:
         """
         Priority attribute of this node.  It is None if undefined.
 
@@ -1284,7 +1293,7 @@ class OrgNode(OrgBaseNode):
         """
         return self._priority
 
-    def _get_tags(self, inher=False) -> Set[str]:
+    def _get_tags(self, *, inher: bool = False) -> set[str]:
         tags = set(self._tags)
         if inher:
             parent = self.get_parent()

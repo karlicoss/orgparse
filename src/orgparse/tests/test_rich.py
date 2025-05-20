@@ -1,10 +1,10 @@
 '''
 Tests for rich formatting: tables etc.
 '''
-from .. import load, loads
-from ..extra import Table
-
 import pytest
+
+from .. import loads
+from ..extra import Table
 
 
 def test_table() -> None:

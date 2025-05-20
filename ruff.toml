@@ -25,7 +25,7 @@ lint.extend-select = [
     "TRY",  # various exception handling rules
     "UP",   # detect deprecated python stdlib stuff
     "FA",   # suggest using from __future__ import annotations
-    "PTH",  # pathlib migration
+    # "PTH",  # pathlib migration  # FIXME do later.. a bit overwhelming
     "ARG",  # unused argument checks
     "A",    # builtin shadowing
     "G",    # logging stuff

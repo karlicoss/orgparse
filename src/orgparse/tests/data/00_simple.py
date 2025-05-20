@@ -1,17 +1,21 @@
-from typing import Any, Dict, Set
+from typing import Any
 
 
-def nodedict(i, level, todo=None, shallow_tags=set([]), tags=set([])) -> Dict[str, Any]:
-    return dict(
-        heading="Heading {0}".format(i),
-        level=level,
-        todo=todo,
-        shallow_tags=shallow_tags,
-        tags=tags,
-    )
+def nodedict(i, level, todo=None, shallow_tags=None, tags=None) -> dict[str, Any]:
+    if tags is None:
+        tags = set()
+    if shallow_tags is None:
+        shallow_tags = set()
+    return {
+        "heading": f"Heading {i}",
+        "level": level,
+        "todo": todo,
+        "shallow_tags": shallow_tags,
+        "tags": tags,
+    }
 
 
-def tags(nums) -> Set[str]:
+def tags(nums) -> set[str]:
     return set(map('TAG{0}'.format, nums))
 
 

@@ -1,6 +1,8 @@
-import re
-from typing import List, Sequence, Dict, Iterator, Iterable, Union, Optional, Type
+from __future__ import annotations
 
+import re
+from collections.abc import Iterator, Sequence
+from typing import Optional, Union
 
 RE_TABLE_SEPARATOR = re.compile(r'\s*\|(\-+\+)*\-+\|')
 RE_TABLE_ROW = re.compile(r'\s*\|([^|]+)+\|')
@@ -10,12 +12,12 @@ STRIP_CELL_WHITESPACE = True
 Row = Sequence[str]
 
 class Table:
-    def __init__(self, lines: List[str]) -> None:
+    def __init__(self, lines: list[str]) -> None:
         self._lines = lines
 
     @property
     def blocks(self) -> Iterator[Sequence[Row]]:
-        group: List[Row] = []
+        group: list[Row] = []
         first = True
         for r in self._pre_rows():
             if r is None:
@@ -49,7 +51,7 @@ class Table:
         # TODO use iparse helper?
 
     @property
-    def as_dicts(self) -> 'AsDictHelper':
+    def as_dicts(self) -> AsDictHelper:
         bl = list(self.blocks)
         if len(bl) != 2:
             raise RuntimeError('Need two-block table to non-ambiguously guess column names')
@@ -69,9 +71,9 @@ class AsDictHelper:
         self.columns = columns
         self._rows = rows
 
-    def __iter__(self) -> Iterator[Dict[str, str]]:
+    def __iter__(self) -> Iterator[dict[str, str]]:
         for x in self._rows:
-            yield {k: v for k, v in zip(self.columns, x)}
+            yield dict(zip(self.columns, x))
 
 
 class Gap:
@@ -89,8 +91,8 @@ def to_rich_text(text: str) -> Iterator[Rich]:
     At the moment only tables are supported.
     '''
     lines = text.splitlines(keepends=True)
-    group: List[str] = []
-    last: Type[Rich] = Gap
+    group: list[str] = []
+    last: type[Rich] = Gap
     def emit() -> Rich:
         nonlocal group, last
         if   last is Gap:
