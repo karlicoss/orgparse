@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
-
-from os.path import dirname
 import sys
-sys.path.insert(0, dirname(dirname(dirname(__file__))))
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 # -- General configuration ------------------------------------------------
 extensions = [
@@ -19,14 +18,14 @@ master_doc = 'index'
 import orgparse
 
 # General information about the project.
-project = u'orgparse'
-copyright = u'2012, Takafumi Arakaki'
+project = 'orgparse'
+copyright = '2012, Takafumi Arakaki'  # noqa: A001
 
 # The short X.Y version.
 # TODO use setup.py for version
-version = orgparse.__version__
+version = orgparse.__version__  # ty: ignore[unresolved-attribute]
 # The full version, including alpha/beta/rc tags.
-release = orgparse.__version__
+release = orgparse.__version__  # ty: ignore[unresolved-attribute]
 
 exclude_patterns = []
 
@@ -43,22 +42,19 @@ htmlhelp_basename = 'orgparsedoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 latex_elements = {
-# The paper size ('letterpaper' or 'a4paper').
-#'papersize': 'letterpaper',
-
-# The font size ('10pt', '11pt' or '12pt').
-#'pointsize': '10pt',
-
-# Additional stuff for the LaTeX preamble.
-#'preamble': '',
+    # The paper size ('letterpaper' or 'a4paper').
+    #'papersize': 'letterpaper',
+    # The font size ('10pt', '11pt' or '12pt').
+    #'pointsize': '10pt',
+    # Additional stuff for the LaTeX preamble.
+    #'preamble': '',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'orgparse.tex', u'orgparse Documentation',
-   u'Takafumi Arakaki', 'manual'),
+    ('index', 'orgparse.tex', 'orgparse Documentation', 'Takafumi Arakaki', 'manual'),
 ]
 
 
@@ -66,12 +62,11 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'orgparse', u'orgparse Documentation',
-     [u'Takafumi Arakaki'], 1)
+    ('index', 'orgparse', 'orgparse Documentation', ['Takafumi Arakaki'], 1),
 ]
 
 # If true, show URL addresses after external links.
-#man_show_urls = False
+# man_show_urls = False
 
 
 # -- Options for Texinfo output -------------------------------------------
@@ -79,9 +74,15 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'orgparse', u'orgparse Documentation',
-   u'Takafumi Arakaki', 'orgparse', 'One line description of project.',
-   'Miscellaneous'),
+    (
+        'index',
+        'orgparse',
+        'orgparse Documentation',
+        'Takafumi Arakaki',
+        'orgparse',
+        'One line description of project.',
+        'Miscellaneous',
+    ),
 ]
 
 
@@ -93,4 +94,4 @@ intersphinx_mapping = {'http://docs.python.org/': None}
 autodoc_member_order = 'bysource'
 autodoc_default_flags = ['members']
 
-inheritance_graph_attrs = dict(rankdir="TB")
+inheritance_graph_attrs = {'rankdir': "TB"}

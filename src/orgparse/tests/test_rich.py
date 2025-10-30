@@ -1,6 +1,7 @@
 '''
 Tests for rich formatting: tables etc.
 '''
+
 import pytest
 
 from .. import loads
@@ -36,7 +37,7 @@ some irrelevant text
 | value2 |
     ''')
 
-    [gap1, t1, gap2, t2, gap3, t3, gap4] = root.body_rich
+    [_gap1, t1, _gap2, t2, _gap3, t3, _gap4] = root.body_rich
 
     t1 = Table(root._lines[1:10])
     t2 = Table(root._lines[11:19])
@@ -47,12 +48,11 @@ some irrelevant text
     assert ilen(t1.rows) == 6
 
     with pytest.raises(RuntimeError):
-        list(t1.as_dicts) # not sure what should it be
+        list(t1.as_dicts)  # not sure what should it be
 
     assert ilen(t2.blocks) == 2
     assert ilen(t2.rows) == 5
     assert list(t2.rows)[3] == ['[2020-11-05 Thu 23:44]', '']
-
 
     assert ilen(t3.blocks) == 2
     assert list(t3.rows) == [['simple'], ['value1'], ['value2']]

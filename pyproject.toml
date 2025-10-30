@@ -32,15 +32,9 @@ testing = [
     "pytest",
     "ruff",
     "mypy",
-    "lxml",  # for mypy html coverage
+    "lxml", # for mypy html coverage
+    "ty>=0.0.1a25",
 ]
-
-
-
-# workaround for error during uv publishing
-# see https://github.com/astral-sh/uv/issues/9513#issuecomment-2519527822
-[tool.setuptools]
-license-files = []
 
 
 [build-system]

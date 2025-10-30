@@ -25,9 +25,7 @@ def to_plain_text(org_text):
     See also: info:org#Link format
 
     """
-    return RE_LINK.sub(
-        lambda m: m.group('desc0') or m.group('desc1'),
-        org_text)
+    return RE_LINK.sub(lambda m: m.group('desc0') or m.group('desc1'), org_text)
 
 
 RE_LINK = re.compile(
@@ -45,4 +43,5 @@ RE_LINK = re.compile(
         \] \]
     )
     """,
-    re.VERBOSE)
+    re.VERBOSE,
+)

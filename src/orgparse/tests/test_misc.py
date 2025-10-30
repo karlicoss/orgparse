@@ -1,3 +1,7 @@
+import io
+
+import pytest
+
 from orgparse.date import OrgDate
 
 from .. import load, loads
@@ -17,12 +21,14 @@ def test_empty_heading() -> None:
 
 
 def test_root() -> None:
-    root = loads('''
+    root = loads(
+        '''
 #+STARTUP: hidestars
 Whatever
 # comment
 * heading 1
-    '''.strip())
+    '''.strip()
+    )
     assert len(root.children) == 1
     # todo not sure if should strip special comments??
     assert root.body.endswith('Whatever\n# comment')
@@ -82,8 +88,7 @@ def test_parse_custom_todo_keys():
     env = OrgEnv(todos=todo_keys, dones=done_keys, filename=filename)
     root = loads(content, env=env)
 
-    assert root.env.all_todo_keys == ['TODO', 'CUSTOM1',
-                                      'ANOTHER_KEYWORD', 'DONE', 'A']
+    assert root.env.all_todo_keys == ['TODO', 'CUSTOM1', 'ANOTHER_KEYWORD', 'DONE', 'A']
     assert len(root.children) == 5
     assert root.children[0].todo == 'TODO'
     assert root.children[1].todo == 'DONE'
@@ -107,28 +112,28 @@ def test_add_custom_todo_keys():
 
     # after parsing, all keys are set
     root = loads(content, filename, env)
-    assert root.env.all_todo_keys == ['CUSTOM_TODO', 'COMMENT_TODO',
-                                      'CUSTOM_DONE', 'COMMENT_DONE']
+    assert root.env.all_todo_keys == ['CUSTOM_TODO', 'COMMENT_TODO', 'CUSTOM_DONE', 'COMMENT_DONE']
+
 
 def test_get_file_property() -> None:
-     content = """#+TITLE:   Test: title
+    content = """#+TITLE:   Test: title
      * Node 1
      test 1
      * Node 2
      test 2
      """
 
-     # after parsing, all keys are set
-     root = loads(content)
-     assert root.get_file_property('Nosuchproperty') is None
-     assert root.get_file_property_list('TITLE') == ['Test: title']
-     # also it's case insensitive
-     assert root.get_file_property('title') == 'Test: title'
-     assert root.get_file_property_list('Nosuchproperty') == []
+    # after parsing, all keys are set
+    root = loads(content)
+    assert root.get_file_property('Nosuchproperty') is None
+    assert root.get_file_property_list('TITLE') == ['Test: title']
+    # also it's case insensitive
+    assert root.get_file_property('title') == 'Test: title'
+    assert root.get_file_property_list('Nosuchproperty') == []
 
 
 def test_get_file_property_multivalued() -> None:
-     content = """ #+TITLE: Test
+    content = """ #+TITLE: Test
      #+OTHER: Test title
      #+title: alternate title
 
@@ -138,14 +143,13 @@ def test_get_file_property_multivalued() -> None:
      test 2
      """
 
-     # after parsing, all keys are set
-     root = loads(content)
-     import pytest
+    # after parsing, all keys are set
+    root = loads(content)
 
-     assert root.get_file_property_list('TITLE') == ['Test', 'alternate title']
-     with pytest.raises(RuntimeError):
-         # raises because there are multiple of them
-         root.get_file_property('TITLE')
+    assert root.get_file_property_list('TITLE') == ['Test', 'alternate title']
+    with pytest.raises(RuntimeError):
+        # raises because there are multiple of them
+        root.get_file_property('TITLE')
 
 
 def test_filetags_are_tags() -> None:
@@ -163,7 +167,6 @@ def test_filetags_are_tags() -> None:
 
 
 def test_load_filelike() -> None:
-    import io
     stream = io.StringIO('''
 * heading1
 * heading 2
@@ -216,6 +219,7 @@ foo bar
         OrgDate((2019, 8, 10, 16, 30, 0), (2019, 8, 10, 17, 30, 0)),
     ]
 
+
 def test_date_with_cookies() -> None:
     testcases = [
         ('<2010-06-21 Mon +1y>',
@@ -236,8 +240,8 @@ def test_date_with_cookies() -> None:
          "OrgDate((2019, 4, 5, 8, 0, 0), None, False, ('.+', 1, 'h'))"),
         ('<2007-05-16 Wed 12:30 +1w>',
          "OrgDate((2007, 5, 16, 12, 30, 0), None, True, ('+', 1, 'w'))"),
-    ]
-    for (inp, expected) in testcases:
+    ]  # fmt: skip
+    for inp, expected in testcases:
         root = loads(inp)
         output = root[0].datelist[0]
         assert str(output) == inp
@@ -247,8 +251,8 @@ def test_date_with_cookies() -> None:
          "OrgDate((2006, 11, 2, 20, 0, 0), (2006, 11, 2, 22, 0, 0), True, ('+', 1, 'w'))"),
         ('<2006-11-02 Thu 20:00--22:00 +1w>',
          "OrgDate((2006, 11, 2, 20, 0, 0), (2006, 11, 2, 22, 0, 0), True, ('+', 1, 'w'))"),
-    ]
-    for (inp, expected) in testcases:
+    ]  # fmt: skip
+    for inp, expected in testcases:
         root = loads(inp)
         output = root[0].rangelist[0]
         assert str(output) == "<2006-11-02 Thu 20:00--22:00 +1w>"
@@ -270,8 +274,8 @@ def test_date_with_cookies() -> None:
         ('* TODO Pay the rent\nDEADLINE: <2005-10-01 Sat .+1m>',
          "<2005-10-01 Sat .+1m>",
          "OrgDateDeadline((2005, 10, 1), None, True, ('.+', 1, 'm'))"),
-    ]
-    for (inp, expected_str, expected_repr) in testcases2:
+    ]  # fmt: skip
+    for inp, expected_str, expected_repr in testcases2:
         root = loads(inp)
         output = root[1].deadline
         assert str(output) == expected_str
@@ -292,8 +296,8 @@ def test_date_with_cookies() -> None:
         ('* TODO Pay the rent\nSCHEDULED: <2005-10-01 Sat .+1m>',
          "<2005-10-01 Sat .+1m>",
          "OrgDateScheduled((2005, 10, 1), None, True, ('.+', 1, 'm'))"),
-    ]
-    for (inp, expected_str, expected_repr) in testcases2:
+    ]  # fmt: skip
+    for inp, expected_str, expected_repr in testcases2:
         root = loads(inp)
         output = root[1].scheduled
         assert str(output) == expected_str
