@@ -145,7 +145,7 @@ def load(path: Union[str, Path, TextIO], env: Optional[OrgEnv] = None) -> OrgNod
     return loadi(all_lines, filename=filename, env=env)
 
 
-def loads(string: str, filename: str='<string>', env: Optional[OrgEnv]=None) -> OrgNode:
+def loads(string: str, filename: str = '<string>', env: Optional[OrgEnv] = None) -> OrgNode:
     """
     Load org-mode document from a string.
 
@@ -155,7 +155,7 @@ def loads(string: str, filename: str='<string>', env: Optional[OrgEnv]=None) -> 
     return loadi(string.splitlines(), filename=filename, env=env)
 
 
-def loadi(lines: Iterable[str], filename: str='<lines>', env: Optional[OrgEnv]=None) -> OrgNode:
+def loadi(lines: Iterable[str], filename: str = '<lines>', env: Optional[OrgEnv] = None) -> OrgNode:
     """
     Load org-mode document from an iterative object.
 

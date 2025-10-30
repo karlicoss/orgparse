@@ -1,20 +1,19 @@
-import os
 import pickle
-from glob import glob
+from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
 
 from .. import load, loads
 
-DATADIR = os.path.join(os.path.dirname(__file__), 'data')
+DATADIR = Path(__file__).parent / 'data'
 
 
-def load_data(path):
+def load_data(path: Path):
     """Load data from python file"""
     ns = {}  # type: ignore[var-annotated]
     # read_bytes() and compile hackery to avoid encoding issues (e.g. see 05_tags)
-    exec(compile(Path(path).read_bytes(), path, 'exec'), ns)
+    exec(compile(path.read_bytes(), path, 'exec'), ns)
     return ns['data']
 
 
@@ -26,10 +25,11 @@ def value_from_data_key(node, key):
         return node.tags
     elif key == 'children_heading':
         return [c.heading for c in node.children]
-    elif key in ('parent_heading',
-                 'previous_same_level_heading',
-                 'next_same_level_heading',
-                 ):
+    elif key in (
+        'parent_heading',
+        'previous_same_level_heading',
+        'next_same_level_heading',
+    ):
         othernode = getattr(node, key.rsplit('_', 1)[0])
         if othernode and not othernode.is_root():
             return othernode.heading
@@ -39,13 +39,13 @@ def value_from_data_key(node, key):
         return getattr(node, key)
 
 
-def data_path(dataname, ext):
-    return os.path.join(DATADIR, f'{dataname}.{ext}')
+def data_path(dataname: str, ext: str) -> Path:
+    return DATADIR / f'{dataname}.{ext}'
 
 
-def get_datanames():
-    for oname in sorted(glob(os.path.join(DATADIR, '*.org'))):
-        yield os.path.splitext(os.path.basename(oname))[0]
+def get_datanames() -> Iterator[str]:
+    for oname in sorted(DATADIR.glob('*.org')):
+        yield oname.stem
 
 
 @pytest.mark.parametrize('dataname', get_datanames())
@@ -57,13 +57,17 @@ def test_data(dataname):
     data = load_data(data_path(dataname, "py"))
     root = load(oname)
 
-    for (i, (node, kwds)) in enumerate(zip(root[1:], data)):
+    for i, (node, kwds) in enumerate(zip(root[1:], data)):
         for key in kwds:
             val = value_from_data_key(node, key)
-            assert kwds[key] == val, f'check value of {i}-th node of key "{key}" from "{dataname}".\n\nParsed:\n{val}\n\nReal:\n{kwds[key]}'
-            assert type(kwds[key]) == type(val), f'check type of {i}-th node of key "{key}" from "{dataname}".\n\nParsed:\n{type(val)}\n\nReal:\n{type(kwds[key])}'  # noqa: E721
+            assert kwds[key] == val, (
+                f'check value of {i}-th node of key "{key}" from "{dataname}".\n\nParsed:\n{val}\n\nReal:\n{kwds[key]}'
+            )
+            assert type(kwds[key]) == type(val), (  # noqa: E721
+                f'check type of {i}-th node of key "{key}" from "{dataname}".\n\nParsed:\n{type(val)}\n\nReal:\n{type(kwds[key])}'
+            )
 
-    assert root.env.filename == oname
+    assert root.env.filename == str(oname)
 
 
 @pytest.mark.parametrize('dataname', get_datanames())
@@ -71,7 +75,6 @@ def test_picklable(dataname):
     oname = data_path(dataname, "org")
     root = load(oname)
     pickle.dumps(root)
-
 
 
 def test_iter_node():

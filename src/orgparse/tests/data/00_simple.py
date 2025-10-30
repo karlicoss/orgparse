@@ -34,4 +34,5 @@ data = [
         [4, None   , tags([1])   , tags([1, 2])     ],
         [2, None   , tags([])    , tags([2])        ],
         [1],
-    ])]
+    ])
+]  # fmt: skip

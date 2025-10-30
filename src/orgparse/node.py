@@ -32,6 +32,7 @@ def lines_to_chunks(lines: Iterable[str]) -> Iterable[list[str]]:
         chunk.append(l)
     yield chunk
 
+
 RE_NODE_HEADER = re.compile(r"^\*+ ")
 
 
@@ -52,6 +53,7 @@ def parse_heading_level(heading: str) -> tuple[str, int] | None:
     if m is not None:
         return (m.group(2), len(m.group(1)))
     return None
+
 
 RE_HEADING_STARS = re.compile(r'^(\*+)\s+(.*?)\s*$')
 
@@ -87,6 +89,7 @@ def parse_heading_tags(heading: str) -> tuple[str, list[str]]:
         tags = []
     return (heading, tags)
 
+
 # Tags are normal words containing letters, numbers, '_', and '@'. https://orgmode.org/manual/Tags.html
 RE_HEADING_TAGS = re.compile(r'(.*?)\s*:([\w@:]+):\s*$')
 
@@ -106,7 +109,7 @@ def parse_heading_todos(heading: str, todo_candidates: list[str]) -> tuple[str, 
         if heading == todo:
             return ('', todo)
         if heading.startswith(todo + ' '):
-            return (heading[len(todo) + 1:], todo)
+            return (heading[len(todo) + 1 :], todo)
     return (heading, None)
 
 
@@ -130,9 +133,12 @@ def parse_heading_priority(heading):
     else:
         return (heading, None)
 
+
 RE_HEADING_PRIORITY = re.compile(r'^\s*\[#([A-Z0-9])\] ?(.*)$')
 
 PropertyValue = Union[str, int, float]
+
+
 def parse_property(line: str) -> tuple[Optional[str], Optional[PropertyValue]]:
     """
     Get property from given string.
@@ -153,7 +159,9 @@ def parse_property(line: str) -> tuple[Optional[str], Optional[PropertyValue]]:
             prop_val = parse_duration_to_minutes(prop_val)
     return (prop_key, prop_val)
 
+
 RE_PROP = re.compile(r'^\s*:(.*?):\s*(.*?)\s*$')
+
 
 def parse_duration_to_minutes(duration: str) -> Union[float, int]:
     """
@@ -184,6 +192,7 @@ def parse_duration_to_minutes(duration: str) -> Union[float, int]:
 
     minutes = parse_duration_to_minutes_float(duration)
     return int(minutes) if minutes.is_integer() else minutes
+
 
 def parse_duration_to_minutes_float(duration: str) -> float:
     """
@@ -238,6 +247,7 @@ def parse_duration_to_minutes_float(duration: str) -> float:
         return float(duration)
     raise ValueError(f"Invalid duration format {duration}")
 
+
 # Conversion factor to minutes for a duration.
 ORG_DURATION_UNITS = {
     "min": 1,
@@ -272,7 +282,9 @@ RE_ORG_DURATION_MIXED = re.compile(ORG_DURATION_MIXED_RE)
 # Regexp matching float numbers.
 RE_FLOAT = re.compile(r'[0-9]+([.][0-9]*)?')
 
-def parse_comment(line: str): #  -> Optional[Tuple[str, Sequence[str]]]: # todo wtf?? it says 'ABCMeta isn't subscriptable??'
+
+#  -> Optional[Tuple[str, Sequence[str]]]: # todo wtf?? it says 'ABCMeta isn't subscriptable??'
+def parse_comment(line: str):
     """
     Parse special comment such as ``#+SEQ_TODO``
 
@@ -288,7 +300,7 @@ def parse_comment(line: str): #  -> Optional[Tuple[str, Sequence[str]]]: # todo 
         end = match.end(0)
         comment = line[end:].split(':', maxsplit=1)
         if len(comment) >= 2:
-            key   = comment[0]
+            key = comment[0]
             value = comment[1].strip()
             if key.upper() == 'FILETAGS':
                 # just legacy behaviour; it seems like filetags is the only one that separated by ':'
@@ -324,12 +336,13 @@ def parse_seq_todo(line):
     else:
         (todos, dones) = (line, '')
     strip_fast_access_key = lambda x: x.split('(', 1)[0]
-    return (list(map(strip_fast_access_key, todos.split())),
-            list(map(strip_fast_access_key, dones.split())))
+    return (
+        list(map(strip_fast_access_key, todos.split())),
+        list(map(strip_fast_access_key, dones.split())),
+    )
 
 
 class OrgEnv:
-
     """
     Information global to the file (e.g, TODO keywords).
     """
@@ -435,7 +448,6 @@ class OrgEnv:
 
 
 class OrgBaseNode(Sequence):
-
     """
     Base class for :class:`OrgRootNode` and :class:`OrgNode`
 
@@ -495,12 +507,12 @@ class OrgBaseNode(Sequence):
     5
     """
 
-    _body_lines: list[str] # set by the child classes
+    _body_lines: list[str]  # set by the child classes
 
     def __init__(self, env: OrgEnv, index: int | None = None) -> None:
         self.env = env
 
-        self.linenumber = cast(int, None) # set in parse_lines
+        self.linenumber = cast(int, None)  # set in parse_lines
 
         # content
         self._lines: list[str] = []
@@ -527,7 +539,7 @@ class OrgBaseNode(Sequence):
     def __iter__(self):
         yield self
         level = self.level
-        for node in self.env._nodes[self._index + 1:]:
+        for node in self.env._nodes[self._index + 1 :]:
             if node.level > level:
                 yield node
             else:
@@ -547,13 +559,12 @@ class OrgBaseNode(Sequence):
         elif isinstance(key, int):
             if key < 0:
                 key += len(self)
-            for (i, node) in enumerate(self):
+            for i, node in enumerate(self):
                 if i == key:
                     return node
             raise IndexError(f"Out of range {key}")
         else:
-            raise TypeError(f"Inappropriate type {type(key)} for {type(self)}"
-                            )
+            raise TypeError(f"Inappropriate type {type(key)} for {type(self)}")
 
     # tree structure
 
@@ -585,7 +596,7 @@ class OrgBaseNode(Sequence):
         True
 
         """
-        return self._find_same_level(reversed(self.env._nodes[:self._index]))
+        return self._find_same_level(reversed(self.env._nodes[: self._index]))
 
     @property
     def next_same_level(self) -> OrgBaseNode | None:
@@ -607,11 +618,11 @@ class OrgBaseNode(Sequence):
         True
 
         """
-        return self._find_same_level(self.env._nodes[self._index + 1:])
+        return self._find_same_level(self.env._nodes[self._index + 1 :])
 
     # FIXME: cache parent node
     def _find_parent(self):
-        for node in reversed(self.env._nodes[:self._index]):
+        for node in reversed(self.env._nodes[: self._index]):
             if node.level < self.level:
                 return node
         return None
@@ -702,7 +713,7 @@ class OrgBaseNode(Sequence):
 
     # FIXME: cache children nodes
     def _find_children(self):
-        nodeiter = iter(self.env._nodes[self._index + 1:])
+        nodeiter = iter(self.env._nodes[self._index + 1 :])
         try:
             node = next(nodeiter)
         except StopIteration:
@@ -811,7 +822,7 @@ class OrgBaseNode(Sequence):
             parsed = parse_comment(line)
             if parsed:
                 (key, vals) = parsed
-                key = key.upper() # case insensitive, so keep as uppercase
+                key = key.upper()  # case insensitive, so keep as uppercase
                 special_comments.setdefault(key, []).extend(vals)
         self._special_comments = special_comments
         # parse TODO keys and store in OrgEnv
@@ -905,8 +916,7 @@ class OrgBaseNode(Sequence):
         See also: :meth:`get_heading`.
 
         """
-        return self._get_text(
-            '\n'.join(self._body_lines), format) if self._lines else ''
+        return self._get_text('\n'.join(self._body_lines), format) if self._lines else ''
 
     @property
     def body(self) -> str:
@@ -916,7 +926,7 @@ class OrgBaseNode(Sequence):
     @property
     def body_rich(self) -> Iterator[Rich]:
         r = self.get_body(format='rich')
-        return cast(Iterator[Rich], r) # meh..
+        return cast(Iterator[Rich], r)  # meh..
 
     @property
     def heading(self) -> str:
@@ -990,11 +1000,13 @@ class OrgBaseNode(Sequence):
 
         """
         return [
-            ts for ts in self._timestamps if
-            (((active and ts.is_active()) or
-              (inactive and not ts.is_active())) and
-             ((range and ts.has_end()) or
-              (point and not ts.has_end())))]
+            ts
+            for ts in self._timestamps
+            if (
+                ((active and ts.is_active()) or (inactive and not ts.is_active()))
+                and ((range and ts.has_end()) or (point and not ts.has_end()))
+            )
+        ]
 
     @property
     def datelist(self):
@@ -1067,7 +1079,6 @@ class OrgBaseNode(Sequence):
 
 
 class OrgRootNode(OrgBaseNode):
-
     """
     Node to represent a file. Its body contains all lines before the first
     headline
@@ -1110,7 +1121,6 @@ class OrgRootNode(OrgBaseNode):
 
 
 class OrgNode(OrgBaseNode):
-
     """
     Node to represent normal org node
 
@@ -1141,7 +1151,7 @@ class OrgNode(OrgBaseNode):
         # FIXME: make the following parsers "lazy"
         ilines: Iterator[str] = iter(self._lines)
         try:
-            next(ilines)            # skip heading
+            next(ilines)  # skip heading
         except StopIteration:
             return
         ilines = self._iparse_sdc(ilines)
@@ -1180,9 +1190,7 @@ class OrgNode(OrgBaseNode):
             return
         (self._scheduled, self._deadline, self._closed) = parse_sdc(line)
 
-        if not (self._scheduled or
-                self._deadline or
-                self._closed):
+        if not (self._scheduled or self._deadline or self._closed):
             yield line  # when none of them were found
 
         for line in ilines:
@@ -1214,8 +1222,7 @@ class OrgNode(OrgBaseNode):
                 done_state = mdict['done']
                 todo_state = mdict['todo']
                 date = OrgDate.from_str(mdict['date'])
-                self._repeated_tasks.append(
-                    OrgDateRepeatedTask(date.start, todo_state, done_state))
+                self._repeated_tasks.append(OrgDateRepeatedTask(date.start, todo_state, done_state))
             else:
                 yield line
 
@@ -1225,9 +1232,10 @@ class OrgNode(OrgBaseNode):
         State \s+ "(?P<done> [^"]+)" \s+
         from  \s+ "(?P<todo> [^"]+)" \s+
         \[ (?P<date> [^\]]+) \]''',
-        re.VERBOSE)
+        re.VERBOSE,
+    )
 
-    def get_heading(self, format: str ='plain') -> str:  # noqa: A002
+    def get_heading(self, format: str = 'plain') -> str:  # noqa: A002
         """
         Return a string of head text without tags and TODO keywords.
 
@@ -1390,10 +1398,7 @@ class OrgNode(OrgBaseNode):
         """
         Return ``True`` if it has any kind of timestamp
         """
-        return (self.scheduled or
-                self.deadline or
-                self.datelist or
-                self.rangelist)
+        return self.scheduled or self.deadline or self.datelist or self.rangelist
 
     @property
     def repeated_tasks(self):
@@ -1454,14 +1459,14 @@ def parse_lines(lines: Iterable[str], filename, env=None) -> OrgNode:
     nodes = env.from_chunks(ch2)
     nodelist = []
     for lineno, node in zip(linenos, nodes):
-        lineno += 1 # in text editors lines are 1-indexed
+        lineno += 1  # in text editors lines are 1-indexed
         node.linenumber = lineno
         nodelist.append(node)
     # parse headings (level, TODO, TAGs, and heading)
     nodelist[0]._index = 0
     # parse the root node
     nodelist[0]._parse_pre()
-    for (i, node) in enumerate(nodelist[1:], 1):   # nodes except root node
+    for i, node in enumerate(nodelist[1:], 1):  # nodes except root node
         node._index = i
         node._parse_pre()
     env._nodes = nodelist

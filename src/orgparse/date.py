@@ -10,8 +10,7 @@ DateIsh = Union[datetime.date, datetime.datetime]
 
 def total_seconds(td: timedelta) -> float:
     """Equivalent to `datetime.timedelta.total_seconds`."""
-    return float(td.microseconds +
-                 (td.seconds + td.days * 24 * 3600) * 10 ** 6) / 10 ** 6
+    return float(td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6
 
 
 def total_minutes(td: timedelta) -> float:
@@ -126,13 +125,13 @@ def gene_timestamp_regex(brtype: str, prefix: str | None = None, *, nocookie: bo
            (?P<{prefix}warndwmy> [hdwmy])
         )?
         """
-    # http://www.pythonregex.com/
     regex = ''.join([
         bo,
         regex_date_time,
         regex_cookie if nocookie or brtype != 'nobrace' else '',
         '({ignore}*?)',
-        bc])
+        bc,
+    ])  # fmt: skip
     return regex.format(prefix=prefix, ignore=ignore)
 
 
@@ -155,24 +154,27 @@ def is_same_day(date0, date1) -> bool:
     """
     Check if two dates or datetimes are on the same day
     """
-    return (OrgDate._date_to_tuple(date0)[:3] == OrgDate._date_to_tuple(date1)[:3])
+    return OrgDate._date_to_tuple(date0)[:3] == OrgDate._date_to_tuple(date1)[:3]
 
 
 TIMESTAMP_NOBRACE_RE = re.compile(
     gene_timestamp_regex('nobrace', prefix=''),
-    re.VERBOSE)
+    re.VERBOSE,
+)
 
 TIMESTAMP_RE = re.compile(
-    '|'.join((gene_timestamp_regex('active'),
-              gene_timestamp_regex('inactive'))),
-    re.VERBOSE)
+    '|'.join((
+        gene_timestamp_regex('active'),
+        gene_timestamp_regex('inactive'),
+    )),
+    re.VERBOSE,
+)  # fmt: skip
 
 
 _Repeater = tuple[str, int, str]
 
 
 class OrgDate:
-
     _active_default = True
     """
     The default active value.
@@ -194,7 +196,7 @@ class OrgDate:
         self,
         start,
         end=None,
-        active: bool | None = None,
+        active: bool | None = None,  # noqa: FBT001
         repeater: _Repeater | None = None,
         warning: _Repeater | None = None,
     ) -> None:
@@ -255,7 +257,7 @@ class OrgDate:
                     "Automatic conversion to the datetime object "
                     "requires at least 3 elements in the tuple. "
                     f"Only {len(date)} elements are in the given tuple '{date}'."
-                    )
+                )
         elif isinstance(date, (int, float)):
             return datetime.datetime.fromtimestamp(date)
         else:
@@ -268,7 +270,7 @@ class OrgDate:
         elif isinstance(date, datetime.date):
             return tuple(date.timetuple()[:3])
         else:
-            raise RuntimeError(f"can't happen: {date}")
+            raise TypeError(f"can't happen: {date} {type(date)}")
 
     def __repr__(self) -> str:
         args = [
@@ -312,15 +314,18 @@ class OrgDate:
     def __bool__(self) -> bool:
         return bool(self._start)
 
+    def __hash__(self) -> int:
+        return hash((self._start, self._end, self._active, self._repeater, self._warning))
+
     def __eq__(self, other) -> bool:
-        if (isinstance(other, OrgDate) and
-            self._start is None and
-            other._start is None):
+        if isinstance(other, OrgDate) and self._start is None and other._start is None:
             return True
-        return (isinstance(other, self.__class__) and
-                self._start == other._start and
-                self._end == other._end and
-                self._active == other._active)
+        return (
+            isinstance(other, self.__class__)
+            and self._start == other._start
+            and self._end == other._end
+            and self._active == other._active
+        )
 
     @property
     def start(self) -> DateIsh:
@@ -390,11 +395,10 @@ class OrgDate:
         if not isinstance(other, OrgDate):
             other = OrgDate(other)
         if self.has_end():
-            return (self._datetime_in_range(other.start) or
-                    self._datetime_in_range(other.end))
+            return self._datetime_in_range(other.start) or self._datetime_in_range(other.end)
         elif other.has_end():
             return other._datetime_in_range(self.start)
-        elif self.start == other.get_start:
+        elif self.start == other.start:
             return True
         else:
             return False
@@ -419,11 +423,11 @@ class OrgDate:
 
     @staticmethod
     def _daterange_from_groupdict(dct, prefix='') -> tuple[list, Optional[list]]:
-        start_keys = ['year', 'month', 'day', 'hour'    , 'min']
-        end_keys   = ['year', 'month', 'day', 'end_hour', 'end_min']
+        start_keys = ['year', 'month', 'day', 'hour'    , 'min']  # fmt: skip
+        end_keys   = ['year', 'month', 'day', 'end_hour', 'end_min']  # fmt: skip
         start_range = list(map(int, filter(None, (dct[prefix + k] for k in start_keys))))
         end_range: Optional[list]
-        end_range   = list(map(int, filter(None, (dct[prefix + k] for k in end_keys))))
+        end_range = list(map(int, filter(None, (dct[prefix + k] for k in end_keys))))
         if len(end_range) < len(end_keys):
             end_range = None
         return (start_range, end_range)
@@ -451,7 +455,7 @@ class OrgDate:
         cookie_suffix = ['pre', 'num', 'dwmy']
         match = TIMESTAMP_RE.search(string)
         if match:
-            rest = string[match.end():]
+            rest = string[match.end() :]
             mdict = match.groupdict()
             if mdict['active_year']:
                 prefix = 'active_'
@@ -474,17 +478,20 @@ class OrgDate:
             has_rangedash = rest.startswith(rangedash)
             match2 = TIMESTAMP_RE.search(rest) if has_rangedash else None
             if has_rangedash and match2:
-                rest = rest[match2.end():]
+                rest = rest[match2.end() :]
                 # no need for check activeness here because of the rangedash
                 mdict2 = match2.groupdict()
                 odate = cls(
                     cls._datetuple_from_groupdict(mdict, prefix),
                     cls._datetuple_from_groupdict(mdict2, prefix),
-                    active=active, repeater=repeater, warning=warning)
+                    active=active,
+                    repeater=repeater,
+                    warning=warning,
+                )
             else:
                 odate = cls(
-                    *cls._daterange_from_groupdict(mdict, prefix),
-                    active=active, repeater=repeater, warning=warning)
+                    *cls._daterange_from_groupdict(mdict, prefix), active=active, repeater=repeater, warning=warning
+                )
             return [odate, *cls.list_from_str(rest)]
         else:
             return []
@@ -503,8 +510,7 @@ class OrgDate:
         match = cls._from_str_re.match(string)
         if match:
             mdict = match.groupdict()
-            return cls(cls._datetuple_from_groupdict(mdict),
-                       active=cls._active_default)
+            return cls(cls._datetuple_from_groupdict(mdict), active=cls._active_default)
         else:
             return cls(None)
 
@@ -516,12 +522,13 @@ def compile_sdc_re(sdctype):
     return re.compile(
         r'^(?!\#).*{}:\s+{}'.format(
             sdctype,
-            gene_timestamp_regex(brtype, prefix='', nocookie=True)),
-        re.VERBOSE)
+            gene_timestamp_regex(brtype, prefix='', nocookie=True),
+        ),
+        re.VERBOSE,
+    )
 
 
 class OrgDateSDCBase(OrgDate):
-
     _re = None  # override this!
 
     # FIXME: use OrgDate.from_str
@@ -535,7 +542,7 @@ class OrgDateSDCBase(OrgDate):
             start = cls._datetuple_from_groupdict(mdict)
             end = None
             end_hour = mdict['end_hour']
-            end_min  = mdict['end_min']
+            end_min = mdict['end_min']
             if end_hour is not None and end_min is not None:
                 end_dict = {}
                 end_dict.update(mdict)
@@ -553,38 +560,37 @@ class OrgDateSDCBase(OrgDate):
                 keys = [prefix + 'warn' + suffix for suffix in cookie_suffix]
                 values = [mdict[k] for k in keys]
                 warning = (values[0], int(values[1]), values[2])
-            return cls(start, end, active=cls._active_default,
-                       repeater=repeater, warning=warning)
+            return cls(start, end, active=cls._active_default, repeater=repeater, warning=warning)
         else:
             return cls(None)
 
 
 class OrgDateScheduled(OrgDateSDCBase):
     """Date object to represent SCHEDULED attribute."""
+
     _re = compile_sdc_re('SCHEDULED')
     _active_default = True
 
 
 class OrgDateDeadline(OrgDateSDCBase):
     """Date object to represent DEADLINE attribute."""
+
     _re = compile_sdc_re('DEADLINE')
     _active_default = True
 
 
 class OrgDateClosed(OrgDateSDCBase):
     """Date object to represent CLOSED attribute."""
+
     _re = compile_sdc_re('CLOSED')
     _active_default = False
 
 
 def parse_sdc(string):
-    return (OrgDateScheduled.from_str(string),
-            OrgDateDeadline.from_str(string),
-            OrgDateClosed.from_str(string))
+    return (OrgDateScheduled.from_str(string), OrgDateDeadline.from_str(string), OrgDateClosed.from_str(string))
 
 
 class OrgDateClock(OrgDate):
-
     """
     Date object to represent CLOCK attributes.
 
@@ -635,8 +641,7 @@ class OrgDateClock(OrgDate):
         False
 
         """
-        return (self._duration is None or
-                self._duration == total_minutes(self.duration))
+        return self._duration is None or self._duration == total_minutes(self.duration)
 
     @classmethod
     def from_str(cls, line: str) -> OrgDateClock:
@@ -677,11 +682,10 @@ class OrgDateClock(OrgDate):
         r'^(?!#).*CLOCK:\s+'
         r'\[(\d+)\-(\d+)\-(\d+)[^\]\d]*(\d+)\:(\d+)\]'
         r'(--\[(\d+)\-(\d+)\-(\d+)[^\]\d]*(\d+)\:(\d+)\]\s+=>\s+(\d+)\:(\d+))?'
-        )
+    )
 
 
 class OrgDateRepeatedTask(OrgDate):
-
     """
     Date object to represent repeated tasks.
     """
@@ -697,14 +701,18 @@ class OrgDateRepeatedTask(OrgDate):
         args: list = [self._date_to_tuple(self.start), self.before, self.after]
         if self._active is not self._active_default:
             args.append(self._active)
-        return '{}({})'.format(
-            self.__class__.__name__, ', '.join(map(repr, args)))
+        return '{}({})'.format(self.__class__.__name__, ', '.join(map(repr, args)))
+
+    def __hash__(self) -> int:
+        return hash((self._before, self._after))
 
     def __eq__(self, other) -> bool:
-        return super().__eq__(other) and \
-            isinstance(other, self.__class__) and \
-            self._before == other._before and \
-            self._after == other._after
+        return (
+            super().__eq__(other)
+            and isinstance(other, self.__class__)
+            and self._before == other._before
+            and self._after == other._after
+        )
 
     @property
     def before(self) -> str:

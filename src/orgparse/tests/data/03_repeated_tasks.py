@@ -9,4 +9,4 @@ data = [{
         OrgDateRepeatedTask((2005, 8, 1, 19, 44, 0), 'TODO', 'DONE'),
         OrgDateRepeatedTask((2005, 7, 1, 17, 27, 0), 'TODO', 'DONE'),
     ]
-}]
+}]  # fmt: skip

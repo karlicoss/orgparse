@@ -1,4 +1,3 @@
-
 def nodedict(i, tags):
     return {
         "heading": f"Node {i}",
@@ -19,4 +18,4 @@ data = [
         {"heading": 'Heading: :with:colon:', "tags": {"tag"}},
     ] + [
         {"heading": 'unicode', "tags": {'ёж', 'tag', 'háček'}},
-    ]
+    ]  # fmt: skip

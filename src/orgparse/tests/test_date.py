@@ -10,7 +10,6 @@ from orgparse.date import (
 
 
 def test_date_as_string() -> None:
-
     testdate = datetime.date(2021, 9, 3)
     testdate2 = datetime.date(2021, 9, 5)
     testdatetime = datetime.datetime(2021, 9, 3, 16, 19, 13)

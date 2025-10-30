@@ -11,6 +11,7 @@ STRIP_CELL_WHITESPACE = True
 
 Row = Sequence[str]
 
+
 class Table:
     def __init__(self, lines: list[str]) -> None:
         self._lines = lines
@@ -82,6 +83,8 @@ class Gap:
 
 
 Rich = Union[Table, Gap]
+
+
 def to_rich_text(text: str) -> Iterator[Rich]:
     '''
     Convert an org-mode text into a 'rich' text, e.g. tables/lists/etc, interleaved by gaps.
@@ -93,12 +96,13 @@ def to_rich_text(text: str) -> Iterator[Rich]:
     lines = text.splitlines(keepends=True)
     group: list[str] = []
     last: type[Rich] = Gap
+
     def emit() -> Rich:
         nonlocal group, last
-        if   last is Gap:
+        if last is Gap:
             res = Gap()
         elif last is Table:
-            res = Table(group) # type: ignore[assignment]
+            res = Table(group)  # type: ignore[assignment]
         else:
             raise RuntimeError(f'Unexpected type {last}')
         group = []
