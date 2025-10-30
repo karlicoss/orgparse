@@ -96,3 +96,13 @@ True
 'some text'
 >>> node.body
 '  Body texts...'
+
+
+Project status
+--------------
+
+Project is maintained by @karlicoss (myself).
+
+For my personal use, orgparse mostly has all features I need, so there hasn't been much active development lately.
+
+However, contributions are always welcome! Please provide tests along with your contribution if you're fixing bugs or adding new functionality.
