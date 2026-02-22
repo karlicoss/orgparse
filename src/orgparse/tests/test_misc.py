@@ -1,8 +1,9 @@
+import datetime
 import io
 
 import pytest
 
-from orgparse.date import OrgDate
+from orgparse.date import OrgDate, OrgDateClock
 
 from .. import load, loads
 from ..node import OrgEnv
@@ -50,6 +51,153 @@ def test_dynamic_heading_edits() -> None:
     assert str(node).splitlines()[0] == "* [#B] Updated heading"
 
     assert str(node).splitlines()[1:] == ["  Body line", "  Second line"]
+
+
+def test_dynamic_timestamp_edits() -> None:
+    content = """* Node
+  CLOSED: [2012-02-26 Sun 21:15] SCHEDULED: <2012-02-26 Sun>
+  CLOCK: [2012-02-26 Sun 21:10]--[2012-02-26 Sun 21:15] =>  0:05
+  Body"""
+    root = loads(content)
+    node = root.children[0]
+
+    node.deadline = datetime.date(2012, 3, 1)
+    sdc_line = str(node).splitlines()[1]
+    assert "DEADLINE: <2012-03-01 Thu>" in sdc_line
+    assert "SCHEDULED: <2012-02-26 Sun>" in sdc_line
+    assert "CLOSED: [2012-02-26 Sun 21:15]" in sdc_line
+
+    node.closed = None
+    sdc_line = str(node).splitlines()[1]
+    assert "CLOSED:" not in sdc_line
+
+    node.clock = [OrgDateClock((2012, 2, 26, 22, 0, 0), (2012, 2, 26, 22, 30, 0))]
+    clock_line = str(node).splitlines()[2]
+    assert "CLOCK: [2012-02-26 Sun 22:00]--[2012-02-26 Sun 22:30]" in clock_line
+
+
+def test_add_scheduled_timestamp_line() -> None:
+    content = """* Node
+  Body"""
+    root = loads(content)
+    node = root.children[0]
+
+    node.scheduled = datetime.date(2012, 2, 26)
+    assert str(node).splitlines()[:2] == ["* Node", "SCHEDULED: <2012-02-26 Sun>"]
+    assert str(node).splitlines()[2] == "  Body"
+
+
+def test_overwrite_existing_dates() -> None:
+    content = """* Node
+  SCHEDULED: <2012-02-26 Sun> DEADLINE: <2012-02-27 Mon> CLOSED: [2012-02-25 Sat]
+  Body"""
+    node = loads(content).children[0]
+
+    node.scheduled = datetime.date(2012, 3, 1)
+    node.deadline = datetime.date(2012, 3, 2)
+    node.closed = datetime.datetime(2012, 3, 3, 10, 30)
+
+    sdc_line = str(node).splitlines()[1]
+    assert "SCHEDULED: <2012-03-01 Thu>" in sdc_line
+    assert "DEADLINE: <2012-03-02 Fri>" in sdc_line
+    assert "CLOSED: [2012-03-03 Sat 10:30]" in sdc_line
+
+
+def test_add_dates_to_node_without_dates() -> None:
+    content = """* Node
+  Body"""
+    node = loads(content).children[0]
+
+    node.scheduled = datetime.date(2012, 2, 26)
+    node.deadline = datetime.date(2012, 3, 1)
+    node.closed = datetime.datetime(2012, 2, 27, 8, 30)
+
+    lines = str(node).splitlines()
+    assert lines[0] == "* Node"
+    assert lines[1] == "SCHEDULED: <2012-02-26 Sun> DEADLINE: <2012-03-01 Thu> CLOSED: [2012-02-27 Mon 08:30]"
+    assert lines[2] == "  Body"
+
+
+def test_add_dates_to_node_with_existing_dates() -> None:
+    content = """* Node
+  SCHEDULED: <2012-02-26 Sun>
+  Body"""
+    node = loads(content).children[0]
+
+    node.deadline = datetime.date(2012, 3, 1)
+    node.closed = datetime.datetime(2012, 2, 27, 8, 30)
+
+    sdc_line = str(node).splitlines()[1]
+    assert "SCHEDULED: <2012-02-26 Sun>" in sdc_line
+    assert "DEADLINE: <2012-03-01 Thu>" in sdc_line
+    assert "CLOSED: [2012-02-27 Mon 08:30]" in sdc_line
+
+
+def test_remove_dates_from_node_without_dates() -> None:
+    content = """* Node
+  Body"""
+    node = loads(content).children[0]
+
+    node.scheduled = None
+    node.deadline = None
+    node.closed = None
+
+    assert str(node) == content
+
+
+def test_remove_dates_from_node_with_dates() -> None:
+    content = """* Node
+  SCHEDULED: <2012-02-26 Sun> DEADLINE: <2012-03-01 Thu>
+  Body"""
+    node = loads(content).children[0]
+
+    node.scheduled = None
+    assert "SCHEDULED:" not in str(node).splitlines()[1]
+
+    node.deadline = None
+    lines = str(node).splitlines()
+    assert lines == ["* Node", "  Body"]
+
+
+def test_duplicate_scheduled_dates() -> None:
+    content = """* Node
+  SCHEDULED: <2012-02-26 Sun> SCHEDULED: <2012-03-01 Thu>
+  Body"""
+    node = loads(content).children[0]
+    assert node.scheduled.start == datetime.date(2012, 3, 1)
+
+    node.scheduled = datetime.date(2012, 4, 1)
+    sdc_line = str(node).splitlines()[1]
+    assert "SCHEDULED: <2012-02-26 Sun>" in sdc_line
+    assert "SCHEDULED: <2012-04-01 Sun>" in sdc_line
+
+
+def test_multiple_clock_entries() -> None:
+    content = """* Node
+  CLOCK: [2012-02-26 Sun 21:10]--[2012-02-26 Sun 21:15] =>  0:05
+  CLOCK: [2012-02-26 Sun 22:00]--[2012-02-26 Sun 22:30] =>  0:30
+  Body"""
+    node = loads(content).children[0]
+
+    node.clock = [
+        OrgDateClock((2012, 2, 26, 23, 0, 0), (2012, 2, 26, 23, 30, 0)),
+        OrgDateClock((2012, 2, 27, 1, 0, 0), (2012, 2, 27, 1, 15, 0)),
+    ]
+    lines = str(node).splitlines()
+    assert "CLOCK: [2012-02-26 Sun 23:00]--[2012-02-26 Sun 23:30]" in lines[1]
+    assert "CLOCK: [2012-02-27 Mon 01:00]--[2012-02-27 Mon 01:15]" in lines[2]
+
+    node.clock = []
+    assert all("CLOCK:" not in line for line in str(node).splitlines())
+
+
+def test_setting_inactive_scheduled_date() -> None:
+    content = """* Node
+  Body"""
+    node = loads(content).children[0]
+
+    node.scheduled = OrgDate((2012, 2, 26), active=False)
+    assert str(node).splitlines()[1] == "SCHEDULED: [2012-02-26 Sun]"
 
 
 def test_root() -> None:

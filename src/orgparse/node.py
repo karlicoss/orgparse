@@ -6,11 +6,13 @@ from collections.abc import Iterable, Iterator, Sequence
 from typing import (
     Any,
     Optional,
+    TypeVar,
     Union,
     cast,
 )
 
 from .date import (
+    TIMESTAMP_RE,
     OrgDate,
     OrgDateClock,
     OrgDateClosed,
@@ -137,6 +139,7 @@ def parse_heading_priority(heading: str) -> tuple[str, Optional[str]]:
 RE_HEADING_PRIORITY = re.compile(r'^\s*\[#([A-Z0-9])\] ?(.*)$')
 
 PropertyValue = Union[str, int, float]
+TOrgDate = TypeVar("TOrgDate", bound=OrgDate)
 
 
 class LineItem:
@@ -218,6 +221,175 @@ class HeadingLine(LineItem):
                 rendered += " "
             rendered += ":" + ":".join(self.tags) + ":"
 
+        self._raw = rendered
+        self._dirty = False
+        return rendered
+
+
+class SdcEntry(LineItem):
+    def __init__(self, label: str, date: OrgDate, raw: str) -> None:
+        self.label = label
+        self.date = date
+        self._raw = raw
+        self._dirty = False
+
+    def update(self, date: OrgDate) -> None:
+        self.date = date
+        self._dirty = True
+
+    def render(self) -> str:
+        if not self._dirty:
+            return self._raw
+        return f"{self.label}: {self.date}"
+
+
+class SdcLine(LineItem):
+    _label_re = re.compile(r"(SCHEDULED|DEADLINE|CLOSED):\s+")
+
+    def __init__(self, raw: str, parts: list[LineItem | str], entries: dict[str, SdcEntry]) -> None:
+        self._raw = raw
+        self._parts = parts
+        self._entries = entries
+        self._dirty = False
+
+    @classmethod
+    def from_line(cls, line: str) -> SdcLine | None:
+        if line.lstrip().startswith("#"):
+            return None
+        parts: list[LineItem | str] = []
+        entries: dict[str, SdcEntry] = {}
+        pos = 0
+        for match in cls._label_re.finditer(line):
+            ts_match = TIMESTAMP_RE.match(line[match.end() :])
+            if not ts_match:
+                continue
+            entry_start = match.start()
+            entry_end = match.end() + ts_match.end()
+            if entry_start > pos:
+                parts.append(line[pos:entry_start])
+            label = match.group(1)
+            entry_text = line[entry_start:entry_end]
+            if label == "SCHEDULED":
+                date = OrgDateScheduled.from_str(entry_text)
+            elif label == "DEADLINE":
+                date = OrgDateDeadline.from_str(entry_text)
+            else:
+                date = OrgDateClosed.from_str(entry_text)
+            entry = SdcEntry(label, date, entry_text)
+            entries[label] = entry
+            parts.append(entry)
+            pos = entry_end
+        if not entries:
+            return None
+        if pos < len(line):
+            parts.append(line[pos:])
+        return cls(line, parts, entries)
+
+    @classmethod
+    def from_entries(cls, entries: dict[str, OrgDate]) -> SdcLine:
+        order = ["SCHEDULED", "DEADLINE", "CLOSED"]
+        parts: list[LineItem | str] = []
+        raw_parts: list[str] = []
+        entry_map: dict[str, SdcEntry] = {}
+        for label in order:
+            date = entries.get(label)
+            if date is None or not date:
+                continue
+            entry = SdcEntry(label, date, f"{label}: {date}")
+            entry_map[label] = entry
+            if raw_parts:
+                raw_parts.append(" ")
+                parts.append(" ")
+            raw_parts.append(entry.render())
+            parts.append(entry)
+        raw = "".join(raw_parts)
+        return cls(raw, parts, entry_map)
+
+    def update_entry(self, label: str, date: OrgDate | None) -> None:
+        if date is None or not date:
+            entry = self._entries.pop(label, None)
+            if entry is not None:
+                self._parts = [part for part in self._parts if part is not entry]
+                self._dirty = True
+            return
+        entry = self._entries.get(label)
+        if entry is None:
+            new_entry = SdcEntry(label, date, f"{label}: {date}")
+            if self._parts:
+                self._parts.append(" ")
+            self._parts.append(new_entry)
+            self._entries[label] = new_entry
+        else:
+            entry.update(date)
+        self._dirty = True
+
+    def is_empty(self) -> bool:
+        return not self._entries
+
+    def render(self) -> str:
+        if not self._dirty:
+            return self._raw
+        rendered_parts: list[str] = []
+        for part in self._parts:
+            if isinstance(part, LineItem):
+                rendered = part.render()
+                if rendered:
+                    rendered_parts.append(rendered)
+            else:
+                rendered_parts.append(part)
+        rendered = "".join(rendered_parts)
+        self._raw = rendered
+        self._dirty = False
+        return rendered
+
+
+class ClockLine(LineItem):
+    _label_re = re.compile(r"^(?!#)(?P<prefix>\s*CLOCK:\s+)")
+
+    def __init__(self, raw: str, prefix: str, date: OrgDateClock, suffix: str) -> None:
+        self._raw = raw
+        self._prefix = prefix
+        self.date = date
+        self._suffix = suffix
+        self._dirty = False
+
+    @classmethod
+    def _timestamp_span(cls, line: str, start: int) -> tuple[int, int] | None:
+        match = TIMESTAMP_RE.search(line, start)
+        if not match:
+            return None
+        span_start = match.start()
+        span_end = match.end()
+        if line[span_end : span_end + 2] == "--":
+            match2 = TIMESTAMP_RE.match(line[span_end + 2 :])
+            if match2:
+                span_end = span_end + 2 + match2.end()
+        return (span_start, span_end)
+
+    @classmethod
+    def from_line(cls, line: str) -> ClockLine | None:
+        match = cls._label_re.match(line)
+        if not match:
+            return None
+        span = cls._timestamp_span(line, match.end())
+        if not span:
+            return None
+        date = OrgDateClock.from_str(line)
+        if not date:
+            return None
+        (ts_start, ts_end) = span
+        prefix = line[:ts_start]
+        suffix = line[ts_end:]
+        return cls(line, prefix, date, suffix)
+
+    def update(self, date: OrgDateClock) -> None:
+        self.date = date
+        self._dirty = True
+
+    def render(self) -> str:
+        if not self._dirty:
+            return self._raw
+        rendered = f"{self._prefix}{self.date}{self._suffix}"
         self._raw = rendered
         self._dirty = False
         return rendered
@@ -1157,6 +1329,14 @@ class OrgBaseNode(Sequence):
         else:
             self._lines_dirty = True
 
+    def _insert_line_item(self, index: int, item: LineItem) -> None:
+        self._line_items.insert(index, item)
+        self._lines_dirty = True
+
+    def _remove_line_item(self, index: int) -> None:
+        del self._line_items[index]
+        self._lines_dirty = True
+
     # todo hmm, not sure if it really belongs here and not to OrgRootNode?
     def get_file_property_list(self, property: str):  # noqa: A002
         """
@@ -1235,8 +1415,10 @@ class OrgNode(OrgBaseNode):
         self._level: int | None = None
         self._tags = cast(list[str], None)
         self._todo: Optional[str] = None
-        self._priority = None
-        self._heading_line = cast(HeadingLine, None)
+        self._priority: Optional[str] = None
+        self._heading_line: HeadingLine | None = None
+        self._sdc_line: SdcLine | None = None
+        self._clock_lines: list[ClockLine] = []
         self._scheduled = OrgDateScheduled(None)
         self._deadline = OrgDateDeadline(None)
         self._closed = OrgDateClosed(None)
@@ -1255,6 +1437,7 @@ class OrgNode(OrgBaseNode):
             next(ilines)  # skip heading
         except StopIteration:
             return
+        self._clock_line_indices = iter(self._find_clock_line_indices())
         ilines = self._iparse_sdc(ilines)
         ilines = self._iparse_clock(ilines)
         ilines = self._iparse_properties(ilines)
@@ -1263,13 +1446,14 @@ class OrgNode(OrgBaseNode):
         self._body_lines = list(ilines)
 
     def _parse_heading(self) -> None:
-        self._heading_line = HeadingLine.from_line(self._lines[0], self.env.all_todo_keys)
-        self._level = self._heading_line.level
-        self._tags = list(self._heading_line.tags)
-        self._todo = self._heading_line.todo
-        self._priority = self._heading_line.priority
-        self._heading = self._heading_line.heading
-        self._update_line_item(0, self._heading_line)
+        heading_line = HeadingLine.from_line(self._lines[0], self.env.all_todo_keys)
+        self._heading_line = heading_line
+        self._level = heading_line.level
+        self._tags = list(heading_line.tags)
+        self._todo = heading_line.todo
+        self._priority = heading_line.priority
+        self._heading = heading_line.heading
+        self._update_line_item(0, heading_line)
 
     def _normalize_tags(self, tags: Iterable[str] | None) -> list[str]:
         if tags is None:
@@ -1281,7 +1465,7 @@ class OrgNode(OrgBaseNode):
         return list(tags)
 
     def _update_heading_line(self) -> None:
-        if not self._heading_line:
+        if self._heading_line is None:
             return
         self._heading_line.todo = self._todo
         self._heading_line.priority = self._priority
@@ -1289,6 +1473,44 @@ class OrgNode(OrgBaseNode):
         self._heading_line.tags = list(self._tags)
         self._heading_line.mark_dirty()
         self._update_line_item(0, self._heading_line)
+
+    def _find_clock_line_indices(self) -> list[int]:
+        indices: list[int] = []
+        for index, line in enumerate(self._lines):
+            if OrgDateClock.from_str(line):
+                indices.append(index)
+        return indices
+
+    def _coerce_sdc_date(self, value: Any, cls: type[TOrgDate]) -> TOrgDate:
+        if value is None:
+            return cls(None)
+        if isinstance(value, OrgDate):
+            return cls(value.start, value.end, active=value.is_active())
+        return cls(value)
+
+    def _update_sdc_entry(self, label: str, date: OrgDate) -> None:
+        if self._sdc_line is None:
+            if not date:
+                return
+            self._sdc_line = SdcLine.from_entries({label: date})
+            self._insert_line_item(1, self._sdc_line)
+            return
+        self._sdc_line.update_entry(label, date)
+        if self._sdc_line.is_empty():
+            index = self._line_items.index(self._sdc_line)
+            self._remove_line_item(index)
+            self._sdc_line = None
+        else:
+            self._lines_dirty = True
+
+    def _format_clock_line(self, clock: OrgDateClock) -> ClockLine:
+        prefix = "  CLOCK: "
+        suffix = ""
+        if clock.has_end():
+            minutes = int(clock.duration.total_seconds() // 60)
+            hours, mins = divmod(minutes, 60)
+            suffix = f" => {hours}:{mins:02d}"
+        return ClockLine(f"{prefix}{clock}{suffix}", prefix, clock, suffix)
 
     # The following ``_iparse_*`` methods are simple generator based
     # parser.  See ``_parse_pre`` for how it is used.  The principle
@@ -1307,20 +1529,41 @@ class OrgNode(OrgBaseNode):
             line = next(ilines)
         except StopIteration:
             return
-        (self._scheduled, self._deadline, self._closed) = parse_sdc(line)
-
-        if not (self._scheduled or self._deadline or self._closed):
-            yield line  # when none of them were found
+        sdc_line = SdcLine.from_line(line)
+        if sdc_line is not None:
+            self._sdc_line = sdc_line
+            self._update_line_item(1, sdc_line)
+            scheduled_entry = sdc_line._entries.get("SCHEDULED")
+            deadline_entry = sdc_line._entries.get("DEADLINE")
+            closed_entry = sdc_line._entries.get("CLOSED")
+            self._scheduled = (
+                cast(OrgDateScheduled, scheduled_entry.date) if scheduled_entry is not None else OrgDateScheduled(None)
+            )
+            self._deadline = (
+                cast(OrgDateDeadline, deadline_entry.date) if deadline_entry is not None else OrgDateDeadline(None)
+            )
+            self._closed = cast(OrgDateClosed, closed_entry.date) if closed_entry is not None else OrgDateClosed(None)
+        else:
+            (self._scheduled, self._deadline, self._closed) = parse_sdc(line)
+            if not (self._scheduled or self._deadline or self._closed):
+                yield line  # when none of them were found
 
         for line in ilines:
             yield line
 
     def _iparse_clock(self, ilines: Iterator[str]) -> Iterator[str]:
         self._clocklist = []
+        self._clock_lines = []
         for line in ilines:
             cl = OrgDateClock.from_str(line)
             if cl:
                 self._clocklist.append(cl)
+                clock_line = ClockLine.from_line(line)
+                if clock_line is not None:
+                    self._clock_lines.append(clock_line)
+                    index = next(self._clock_line_indices, None)
+                    if index is not None:
+                        self._update_line_item(index, clock_line)
             else:
                 yield line
 
@@ -1487,6 +1730,12 @@ class OrgNode(OrgBaseNode):
         """
         return self._scheduled
 
+    @scheduled.setter
+    def scheduled(self, value: Any) -> None:
+        date = self._coerce_sdc_date(value, OrgDateScheduled)
+        self._scheduled = date
+        self._update_sdc_entry("SCHEDULED", date)
+
     @property
     def deadline(self):
         """
@@ -1504,6 +1753,12 @@ class OrgNode(OrgBaseNode):
 
         """
         return self._deadline
+
+    @deadline.setter
+    def deadline(self, value: Any) -> None:
+        date = self._coerce_sdc_date(value, OrgDateDeadline)
+        self._deadline = date
+        self._update_sdc_entry("DEADLINE", date)
 
     @property
     def closed(self):
@@ -1523,6 +1778,12 @@ class OrgNode(OrgBaseNode):
         """
         return self._closed
 
+    @closed.setter
+    def closed(self, value: Any) -> None:
+        date = self._coerce_sdc_date(value, OrgDateClosed)
+        self._closed = date
+        self._update_sdc_entry("CLOSED", date)
+
     @property
     def clock(self):
         """
@@ -1540,6 +1801,32 @@ class OrgNode(OrgBaseNode):
 
         """
         return self._clocklist
+
+    @clock.setter
+    def clock(self, value: Iterable[OrgDateClock]) -> None:
+        new_clocks = list(value)
+        self._clocklist = new_clocks
+        existing_indices = [i for i, item in enumerate(self._line_items) if isinstance(item, ClockLine)]
+        if existing_indices:
+            for i, clock in enumerate(new_clocks):
+                if i < len(existing_indices):
+                    line_item = self._line_items[existing_indices[i]]
+                    if isinstance(line_item, ClockLine):
+                        line_item.update(clock)
+                    else:
+                        self._update_line_item(existing_indices[i], self._format_clock_line(clock))
+                else:
+                    insert_at = existing_indices[-1] + (i - len(existing_indices) + 1)
+                    self._insert_line_item(insert_at, self._format_clock_line(clock))
+            for i in reversed(existing_indices[len(new_clocks) :]):
+                self._remove_line_item(i)
+        else:
+            insert_at = 1
+            if self._sdc_line is not None:
+                insert_at = self._line_items.index(self._sdc_line) + 1
+            for i, clock in enumerate(new_clocks):
+                self._insert_line_item(insert_at + i, self._format_clock_line(clock))
+        self._lines_dirty = True
 
     def has_date(self):
         """
