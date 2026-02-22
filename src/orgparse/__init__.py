@@ -106,13 +106,16 @@ True
 """
 # [[[end]]]
 
+from __future__ import annotations
+
 from collections.abc import Iterable
+from itertools import chain
 from pathlib import Path
 from typing import Optional, TextIO, Union
 
-from .node import OrgEnv, OrgNode, parse_lines  # todo basenode??
+from .node import OrgBaseNode, OrgEnv, OrgNode, parse_lines  # todo basenode??
 
-__all__ = ["load", "loadi", "loads"]
+__all__ = ["dump", "dumps", "load", "loadi", "loads"]
 
 
 def load(path: Union[str, Path, TextIO], env: Optional[OrgEnv] = None) -> OrgNode:
@@ -143,6 +146,34 @@ def load(path: Union[str, Path, TextIO], env: Optional[OrgEnv] = None) -> OrgNod
     filename = path.name if hasattr(path, 'name') else '<file-like>'
 
     return loadi(all_lines, filename=filename, env=env)
+
+
+def dumps(nodes: OrgBaseNode | Iterable[OrgBaseNode]) -> str:
+    """
+    Dump org-mode nodes to a string.
+
+    :arg nodes: Org root node or iterable of nodes to serialize.
+    :rtype: str
+    """
+    if isinstance(nodes, OrgBaseNode):
+        if nodes.is_root():
+            lines = chain.from_iterable(node._render_lines() for node in nodes.env.nodes)
+            return "\n".join(lines)
+        return str(nodes)
+    return "\n".join(str(node) for node in nodes)
+
+
+def dump(nodes: OrgBaseNode | Iterable[OrgBaseNode], path: Union[str, Path]) -> None:
+    """
+    Dump org-mode nodes to a file.
+
+    :type path: str or Path
+    :arg  path: Path to write org-mode contents.
+    """
+    content = dumps(nodes)
+    if isinstance(path, str):
+        path = Path(path)
+    path.write_text(content, encoding="utf8")
 
 
 def loads(string: str, filename: str = '<string>', env: Optional[OrgEnv] = None) -> OrgNode:
