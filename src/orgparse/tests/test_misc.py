@@ -10,14 +10,46 @@ from ..node import OrgEnv
 
 def test_empty_heading() -> None:
     root = loads('''
-* TODO :sometag:
-  has no heading but still a todo?
-  it's a bit unclear, but seems to be highligted by emacs..
-''')
+ * TODO :sometag:
+   has no heading but still a todo?
+   it's a bit unclear, but seems to be highligted by emacs..
+ ''')
     [h] = root.children
     assert h.todo == 'TODO'
     assert h.heading == ''
     assert h.tags == {'sometag'}
+
+
+def test_dynamic_heading_edits() -> None:
+    content = """* TODO [#A] Heading :tag1:tag2:
+  Body line
+  Second line"""
+    root = loads(content)
+    node = root.children[0]
+    assert str(node) == content
+
+    node.todo = "DONE"
+    assert node.todo == "DONE"
+    assert str(node).splitlines()[0] == "* DONE [#A] Heading :tag1:tag2:"
+
+    node.priority = None
+    assert node.priority is None
+    assert str(node).splitlines()[0] == "* DONE Heading :tag1:tag2:"
+
+    node.heading = "Updated heading"
+    assert node.heading == "Updated heading"
+    assert str(node).splitlines()[0] == "* DONE Updated heading :tag1:tag2:"
+
+    node.tags = ["x", "y"]
+    assert node.shallow_tags == {"x", "y"}
+    assert str(node).splitlines()[0] == "* DONE Updated heading :x:y:"
+
+    node.todo = None
+    node.priority = "B"
+    node.tags = []
+    assert str(node).splitlines()[0] == "* [#B] Updated heading"
+
+    assert str(node).splitlines()[1:] == ["  Body line", "  Second line"]
 
 
 def test_root() -> None:

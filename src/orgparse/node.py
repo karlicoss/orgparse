@@ -33,7 +33,7 @@ def lines_to_chunks(lines: Iterable[str]) -> Iterable[list[str]]:
     yield chunk
 
 
-RE_NODE_HEADER = re.compile(r"^\*+ ")
+RE_NODE_HEADER = re.compile(r"^\s*\*+ ")
 
 
 def parse_heading_level(heading: str) -> tuple[str, int] | None:
@@ -55,7 +55,7 @@ def parse_heading_level(heading: str) -> tuple[str, int] | None:
     return None
 
 
-RE_HEADING_STARS = re.compile(r'^(\*+)\s+(.*?)\s*$')
+RE_HEADING_STARS = re.compile(r'^\s*(\*+)\s+(.*?)\s*$')
 
 
 def parse_heading_tags(heading: str) -> tuple[str, list[str]]:
@@ -113,7 +113,7 @@ def parse_heading_todos(heading: str, todo_candidates: list[str]) -> tuple[str, 
     return (heading, None)
 
 
-def parse_heading_priority(heading):
+def parse_heading_priority(heading: str) -> tuple[str, Optional[str]]:
     """
     Get priority and heading without priority field.
 
@@ -137,6 +137,90 @@ def parse_heading_priority(heading):
 RE_HEADING_PRIORITY = re.compile(r'^\s*\[#([A-Z0-9])\] ?(.*)$')
 
 PropertyValue = Union[str, int, float]
+
+
+class LineItem:
+    def render(self) -> str:
+        raise NotImplementedError
+
+
+class TextLine(LineItem):
+    def __init__(self, raw: str) -> None:
+        self._raw = raw
+
+    def render(self) -> str:
+        return self._raw
+
+
+class HeadingLine(LineItem):
+    def __init__(
+        self,
+        raw: str,
+        level: int,
+        todo: Optional[str],
+        priority: Optional[str],
+        heading: str,
+        tags: Sequence[str],
+    ) -> None:
+        self._raw = raw
+        self.level = level
+        self.todo = todo
+        self.priority = priority
+        self.heading = heading
+        self.tags = list(tags)
+        self._dirty = False
+
+    @classmethod
+    def from_line(cls, line: str, todo_candidates: list[str]) -> HeadingLine:
+        heading_level = parse_heading_level(line)
+        if heading_level is None:
+            raise ValueError(f"Invalid heading line: {line!r}")
+        (heading, level) = heading_level
+        (heading, tags) = parse_heading_tags(heading)
+        (heading, todo) = parse_heading_todos(heading, todo_candidates)
+        (heading, priority) = parse_heading_priority(heading)
+        return cls(
+            raw=line,
+            level=level,
+            todo=todo,
+            priority=priority,
+            heading=heading,
+            tags=tags,
+        )
+
+    def mark_dirty(self) -> None:
+        self._dirty = True
+
+    def render(self) -> str:
+        if not self._dirty:
+            return self._raw
+
+        stars = "*" * self.level
+        tokens: list[str] = []
+        if self.todo:
+            tokens.append(self.todo)
+        if self.priority:
+            tokens.append(f"[#{self.priority}]")
+        if self.heading:
+            tokens.append(self.heading)
+
+        if not tokens and not self.tags:
+            rendered = f"{stars} "
+            self._raw = rendered
+            self._dirty = False
+            return rendered
+
+        rendered = f"{stars} "
+        if tokens:
+            rendered += " ".join(tokens)
+        if self.tags:
+            if tokens:
+                rendered += " "
+            rendered += ":" + ":".join(self.tags) + ":"
+
+        self._raw = rendered
+        self._dirty = False
+        return rendered
 
 
 def parse_property(line: str) -> tuple[Optional[str], Optional[PropertyValue]]:
@@ -515,7 +599,9 @@ class OrgBaseNode(Sequence):
         self.linenumber = cast(int, None)  # set in parse_lines
 
         # content
+        self._line_items: list[LineItem] = []
         self._lines: list[str] = []
+        self._lines_dirty = False
 
         self._properties: dict[str, PropertyValue] = {}
         self._timestamps: list[OrgDate] = []
@@ -812,7 +898,8 @@ class OrgBaseNode(Sequence):
     @classmethod
     def from_chunk(cls, env, lines):
         self = cls(env)
-        self._lines = lines
+        self._lines = list(lines)
+        self._line_items = [TextLine(line) for line in self._lines]
         self._parse_comments()
         return self
 
@@ -1055,7 +1142,20 @@ class OrgBaseNode(Sequence):
         return self.get_timestamps(active=True, inactive=True, range=True)
 
     def __str__(self) -> str:
-        return "\n".join(self._lines)
+        return "\n".join(self._render_lines())
+
+    def _render_lines(self) -> list[str]:
+        if self._lines_dirty:
+            self._lines = [line.render() for line in self._line_items]
+            self._lines_dirty = False
+        return self._lines
+
+    def _update_line_item(self, index: int, item: LineItem) -> None:
+        self._line_items[index] = item
+        if self._lines:
+            self._lines[index] = item.render()
+        else:
+            self._lines_dirty = True
 
     # todo hmm, not sure if it really belongs here and not to OrgRootNode?
     def get_file_property_list(self, property: str):  # noqa: A002
@@ -1136,6 +1236,7 @@ class OrgNode(OrgBaseNode):
         self._tags = cast(list[str], None)
         self._todo: Optional[str] = None
         self._priority = None
+        self._heading_line = cast(HeadingLine, None)
         self._scheduled = OrgDateScheduled(None)
         self._deadline = OrgDateDeadline(None)
         self._closed = OrgDateClosed(None)
@@ -1162,14 +1263,32 @@ class OrgNode(OrgBaseNode):
         self._body_lines = list(ilines)
 
     def _parse_heading(self) -> None:
-        heading = self._lines[0]
-        heading_level = parse_heading_level(heading)
-        if heading_level is not None:
-            (heading, self._level) = heading_level
-        (heading, self._tags) = parse_heading_tags(heading)
-        (heading, self._todo) = parse_heading_todos(heading, self.env.all_todo_keys)
-        (heading, self._priority) = parse_heading_priority(heading)
-        self._heading = heading
+        self._heading_line = HeadingLine.from_line(self._lines[0], self.env.all_todo_keys)
+        self._level = self._heading_line.level
+        self._tags = list(self._heading_line.tags)
+        self._todo = self._heading_line.todo
+        self._priority = self._heading_line.priority
+        self._heading = self._heading_line.heading
+        self._update_line_item(0, self._heading_line)
+
+    def _normalize_tags(self, tags: Iterable[str] | None) -> list[str]:
+        if tags is None:
+            return []
+        if isinstance(tags, str):
+            return [tags]
+        if isinstance(tags, set):
+            return sorted(tags)
+        return list(tags)
+
+    def _update_heading_line(self) -> None:
+        if not self._heading_line:
+            return
+        self._heading_line.todo = self._todo
+        self._heading_line.priority = self._priority
+        self._heading_line.heading = self._heading
+        self._heading_line.tags = list(self._tags)
+        self._heading_line.mark_dirty()
+        self._update_line_item(0, self._heading_line)
 
     # The following ``_iparse_*`` methods are simple generator based
     # parser.  See ``_parse_pre`` for how it is used.  The principle
@@ -1262,6 +1381,11 @@ class OrgNode(OrgBaseNode):
         """Alias of ``.get_heading(format='plain')``."""
         return self.get_heading()
 
+    @heading.setter
+    def heading(self, value: str) -> None:
+        self._heading = value
+        self._update_heading_line()
+
     @property
     def level(self):
         """
@@ -1301,6 +1425,13 @@ class OrgNode(OrgBaseNode):
         """
         return self._priority
 
+    @priority.setter
+    def priority(self, value: str | None) -> None:
+        if value == "":
+            value = None
+        self._priority = value
+        self._update_heading_line()
+
     def _get_tags(self, *, inher: bool = False) -> set[str]:
         tags = set(self._tags)
         if inher:
@@ -1321,6 +1452,22 @@ class OrgNode(OrgBaseNode):
 
         """
         return self._todo
+
+    @todo.setter
+    def todo(self, value: Optional[str]) -> None:
+        if value == "":
+            value = None
+        self._todo = value
+        self._update_heading_line()
+
+    @property
+    def tags(self) -> set[str]:
+        return self._get_tags(inher=True)
+
+    @tags.setter
+    def tags(self, value: Iterable[str] | None) -> None:
+        self._tags = self._normalize_tags(value)
+        self._update_heading_line()
 
     @property
     def scheduled(self):
