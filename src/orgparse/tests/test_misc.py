@@ -200,6 +200,114 @@ def test_setting_inactive_scheduled_date() -> None:
     assert str(node).splitlines()[1] == "SCHEDULED: [2012-02-26 Sun]"
 
 
+def test_overwrite_properties() -> None:
+    content = """* Node
+  :PROPERTIES:
+  :Owner: Jane
+  :Effort: 1:10
+  :END:
+  Body"""
+    node = loads(content).children[0]
+
+    node.properties = {"Owner": "Alex", "Effort": "0:30"}
+    lines = str(node).splitlines()
+    assert lines[1] == "  :PROPERTIES:"
+    assert "  :Owner: Alex" in lines
+    assert "  :Effort: 0:30" in lines
+    assert lines[-1] == "  Body"
+    assert node.properties["Effort"] == 30
+
+
+def test_add_properties_without_drawer() -> None:
+    content = """* Node
+  Body"""
+    node = loads(content).children[0]
+
+    node.properties = {"Owner": "Alex"}
+    lines = str(node).splitlines()
+    assert lines[:3] == ["* Node", "  :PROPERTIES:", "  :Owner: Alex"]
+    assert lines[3] == "  :END:"
+    assert lines[4] == "  Body"
+
+
+def test_add_properties_with_existing_drawer() -> None:
+    content = """* Node
+  :PROPERTIES:
+  :Owner: Jane
+  :END:
+  Body"""
+    node = loads(content).children[0]
+
+    node.properties = {"Owner": "Jane", "Project": "Alpha"}
+    lines = str(node).splitlines()
+    assert "  :Owner: Jane" in lines
+    assert "  :Project: Alpha" in lines
+
+
+def test_remove_properties_without_drawer() -> None:
+    content = """* Node
+  Body"""
+    node = loads(content).children[0]
+
+    node.properties = {}
+    assert str(node) == content
+
+
+def test_remove_properties_with_drawer() -> None:
+    content = """* Node
+  :PROPERTIES:
+  :Owner: Jane
+  :END:
+  Body"""
+    node = loads(content).children[0]
+
+    node.properties = {}
+    assert (
+        str(node)
+        == """* Node
+  Body"""
+    )
+
+
+def test_duplicate_properties_update_last() -> None:
+    content = """* Node
+  :PROPERTIES:
+  :Owner: Jane
+  :Owner: Jill
+  :END:
+  Body"""
+    node = loads(content).children[0]
+    assert node.properties["Owner"] == "Jill"
+
+    node.properties = {"Owner": "Alex"}
+    lines = str(node).splitlines()
+    assert "  :Owner: Jane" in lines
+    assert "  :Owner: Alex" in lines
+
+
+def test_properties_preserve_output_when_unchanged() -> None:
+    content = """* Node
+  :PROPERTIES:
+  :Owner: Jane
+  :END:
+  Body"""
+    node = loads(content).children[0]
+    assert str(node) == content
+
+
+def test_root_node_properties() -> None:
+    content = """Intro
+
+:PROPERTIES:
+:Title: Example
+:END:
+
+* Node"""
+    root = loads(content)
+    root.properties = {"Title": "Updated"}
+    assert "Title: Updated" in str(root)
+
+
 def test_root() -> None:
     root = loads(
         '''

@@ -395,6 +395,85 @@ class ClockLine(LineItem):
         return rendered
 
 
+class PropertyDrawerStartLine(LineItem):
+    def __init__(self, raw: str) -> None:
+        self._raw = raw
+
+    def render(self) -> str:
+        return self._raw
+
+
+class PropertyDrawerEndLine(LineItem):
+    def __init__(self, raw: str) -> None:
+        self._raw = raw
+
+    def render(self) -> str:
+        return self._raw
+
+
+class PropertyEntryLine(LineItem):
+    def __init__(
+        self,
+        raw: str,
+        key: str,
+        value: PropertyValue,
+        render_value: str,
+        prefix: str,
+    ) -> None:
+        self._raw = raw
+        self.key = key
+        self.value = value
+        self._render_value = render_value
+        self._prefix = prefix
+        self._dirty = False
+
+    @classmethod
+    def from_line(cls, line: str) -> PropertyEntryLine | None:
+        match = RE_PROP_LINE.match(line)
+        if not match:
+            return None
+        (key, value) = parse_property(line)
+        if key is None or value is None:
+            return None
+        return cls(
+            raw=line,
+            key=key,
+            value=value,
+            render_value=match.group("value"),
+            prefix=match.group("prefix"),
+        )
+
+    def update_value(self, value: PropertyValue, render_value: str) -> None:
+        self.value = value
+        self._render_value = render_value
+        self._dirty = True
+
+    def render(self) -> str:
+        if not self._dirty:
+            return self._raw
+        if self._render_value == "":
+            rendered = f"{self._prefix}:{self.key}:"
+        else:
+            rendered = f"{self._prefix}:{self.key}: {self._render_value}"
+        self._raw = rendered
+        self._dirty = False
+        return rendered
+
+
+class PropertyDrawer:
+    def __init__(
+        self,
+        start_line: PropertyDrawerStartLine,
+        end_line: PropertyDrawerEndLine,
+        entries: list[PropertyEntryLine],
+        indent: str,
+    ) -> None:
+        self.start_line = start_line
+        self.end_line = end_line
+        self.entries = entries
+        self.indent = indent
+
+
 def parse_property(line: str) -> tuple[Optional[str], Optional[PropertyValue]]:
     """
     Get property from given string.
@@ -417,6 +496,7 @@ def parse_property(line: str) -> tuple[Optional[str], Optional[PropertyValue]]:
 
 
 RE_PROP = re.compile(r'^\s*:(.*?):\s*(.*?)\s*$')
+RE_PROP_LINE = re.compile(r'^(?P<prefix>\s*):(?P<key>[^:]+):\s*(?P<value>.*?)\s*$')
 
 
 def parse_duration_to_minutes(duration: str) -> Union[float, int]:
@@ -776,6 +856,7 @@ class OrgBaseNode(Sequence):
         self._lines_dirty = False
 
         self._properties: dict[str, PropertyValue] = {}
+        self._property_drawer: PropertyDrawer | None = None
         self._timestamps: list[OrgDate] = []
 
         # FIXME: use `index` argument to set index.  (Currently it is
@@ -1052,6 +1133,61 @@ class OrgBaseNode(Sequence):
         """
         return self._properties
 
+    @properties.setter
+    def properties(self, value: dict[str, PropertyValue] | None) -> None:
+        new_props = {} if value is None else dict(value)
+        normalized: dict[str, PropertyValue] = {}
+        render_values: dict[str, str] = {}
+        for key, prop_value in new_props.items():
+            (norm_value, render_value) = self._normalize_property_value(key, prop_value)
+            normalized[key] = norm_value
+            render_values[key] = render_value
+        self._properties = normalized
+
+        if not normalized:
+            if self._property_drawer is not None:
+                start_index = self._line_items.index(self._property_drawer.start_line)
+                end_index = self._line_items.index(self._property_drawer.end_line)
+                for index in range(end_index, start_index - 1, -1):
+                    self._remove_line_item(index)
+                self._property_drawer = None
+                self._lines_dirty = True
+            return
+
+        drawer = self._property_drawer
+        if drawer is None:
+            drawer = self._create_property_drawer()
+
+        entries_by_key: dict[str, list[PropertyEntryLine]] = {}
+        for entry in drawer.entries:
+            entries_by_key.setdefault(entry.key, []).append(entry)
+
+        keys_to_remove = {entry.key for entry in drawer.entries if entry.key not in normalized}
+        if keys_to_remove:
+            for entry in list(drawer.entries):
+                if entry.key in keys_to_remove:
+                    index = self._line_items.index(entry)
+                    self._remove_line_item(index)
+                    drawer.entries.remove(entry)
+
+        for key, prop_value in normalized.items():
+            render_value = render_values[key]
+            entries = entries_by_key.get(key, [])
+            if entries:
+                entries[-1].update_value(prop_value, render_value)
+            else:
+                insert_index = self._line_items.index(drawer.end_line)
+                entry = PropertyEntryLine(
+                    raw=f"{drawer.indent}:{key}: {render_value}" if render_value else f"{drawer.indent}:{key}:",
+                    key=key,
+                    value=prop_value,
+                    render_value=render_value,
+                    prefix=drawer.indent,
+                )
+                self._insert_line_item(insert_index, entry)
+                drawer.entries.append(entry)
+        self._lines_dirty = True
+
     def get_property(self, key, val=None) -> Optional[PropertyValue]:
         """
         Return property named ``key`` if exists or ``val`` otherwise.
@@ -1088,6 +1224,59 @@ class OrgBaseNode(Sequence):
         for todokey in ['TODO', 'SEQ_TODO', 'TYP_TODO']:
             for val in special_comments.get(todokey, []):
                 self.env.add_todo_keys(*parse_seq_todo(val))
+
+    def _normalize_property_value(self, key: str, value: PropertyValue) -> tuple[PropertyValue, str]:
+        if key == "Effort" and isinstance(value, str):
+            return (parse_duration_to_minutes(value), value)
+        return (value, str(value))
+
+    def _create_property_drawer(self) -> PropertyDrawer:
+        insert_at = self._property_drawer_insert_index()
+        indent = self._property_drawer_indent(insert_at)
+        start_line = PropertyDrawerStartLine(f"{indent}:PROPERTIES:")
+        end_line = PropertyDrawerEndLine(f"{indent}:END:")
+        self._insert_line_item(insert_at, start_line)
+        self._insert_line_item(insert_at + 1, end_line)
+        drawer = PropertyDrawer(start_line, end_line, [], indent)
+        self._property_drawer = drawer
+        return drawer
+
+    def _property_drawer_insert_index(self) -> int:
+        return 0
+
+    def _property_drawer_indent(self, insert_at: int) -> str:
+        if insert_at < len(self._line_items):
+            line = self._line_items[insert_at].render()
+            return line[: len(line) - len(line.lstrip(" "))]
+        return ""
+
+    def _sync_property_drawer_from_lines(self) -> None:
+        self._property_drawer = None
+        index = 0
+        while index < len(self._line_items):
+            line_item = self._line_items[index]
+            line = line_item.render()
+            if isinstance(line_item, PropertyDrawerStartLine) or line.strip() == ":PROPERTIES:":
+                start_line = PropertyDrawerStartLine(line)
+                self._update_line_item(index, start_line)
+                indent = line[: len(line) - len(line.lstrip(" "))]
+                entries: list[PropertyEntryLine] = []
+                end_index = index + 1
+                while end_index < len(self._line_items):
+                    end_line_item = self._line_items[end_index]
+                    end_line = end_line_item.render()
+                    if isinstance(end_line_item, PropertyDrawerEndLine) or end_line.strip() == ":END:":
+                        end_line_item = PropertyDrawerEndLine(end_line)
+                        self._update_line_item(end_index, end_line_item)
+                        self._property_drawer = PropertyDrawer(start_line, end_line_item, entries, indent)
+                        return
+                    entry = PropertyEntryLine.from_line(end_line)
+                    if entry is not None:
+                        self._update_line_item(end_index, entry)
+                        entries.append(entry)
+                    end_index += 1
+                return
+            index += 1
 
     def _iparse_properties(self, ilines: Iterator[str]) -> Iterator[str]:
         self._properties = {}
@@ -1392,12 +1581,16 @@ class OrgRootNode(OrgBaseNode):
         ilines = self._iparse_properties(ilines)
         ilines = self._iparse_timestamps(ilines)
         self._body_lines = list(ilines)
+        self._sync_property_drawer_from_lines()
 
     def _iparse_timestamps(self, ilines: Iterator[str]) -> Iterator[str]:
         self._timestamps = []
         for line in ilines:
             self._timestamps.extend(OrgDate.list_from_str(line))
             yield line
+
+    def _property_drawer_indent(self, insert_at: int) -> str:  # noqa: ARG002
+        return ""
 
 
 class OrgNode(OrgBaseNode):
@@ -1444,6 +1637,7 @@ class OrgNode(OrgBaseNode):
         ilines = self._iparse_repeated_tasks(ilines)
         ilines = self._iparse_timestamps(ilines)
         self._body_lines = list(ilines)
+        self._sync_property_drawer_from_lines()
 
     def _parse_heading(self) -> None:
         heading_line = HeadingLine.from_line(self._lines[0], self.env.all_todo_keys)
@@ -1511,6 +1705,22 @@ class OrgNode(OrgBaseNode):
             hours, mins = divmod(minutes, 60)
             suffix = f" => {hours}:{mins:02d}"
         return ClockLine(f"{prefix}{clock}{suffix}", prefix, clock, suffix)
+
+    def _property_drawer_insert_index(self) -> int:
+        index = 1
+        while index < len(self._line_items):
+            item = self._line_items[index]
+            if isinstance(item, (SdcLine, ClockLine)):
+                index += 1
+                continue
+            break
+        return index
+
+    def _property_drawer_indent(self, insert_at: int) -> str:
+        if insert_at > 0:
+            before = self._line_items[insert_at - 1].render()
+            return before[: len(before) - len(before.lstrip(" "))] or "  "
+        return "  "
 
     # The following ``_iparse_*`` methods are simple generator based
     # parser.  See ``_parse_pre`` for how it is used.  The principle
