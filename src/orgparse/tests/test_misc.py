@@ -3,7 +3,7 @@ import io
 
 import pytest
 
-from orgparse.date import OrgDate, OrgDateClock
+from orgparse.date import OrgDate, OrgDateClock, OrgDateRepeatedTask
 
 from .. import load, loads
 from ..node import OrgEnv
@@ -306,6 +306,114 @@ def test_root_node_properties() -> None:
     root = loads(content)
     root.properties = {"Title": "Updated"}
     assert "Title: Updated" in str(root)
+
+
+def test_overwrite_repeated_tasks_in_logbook() -> None:
+    content = """* Node
+  :LOGBOOK:
+  - State "DONE" from "TODO" [2005-09-01 Thu 16:10]
+  - State "DONE" from "TODO" [2005-08-01 Mon 19:44]
+  :END:
+  Body"""
+    node = loads(content).children[0]
+    node.repeated_tasks = [
+        OrgDateRepeatedTask((2005, 7, 1, 17, 27, 0), "TODO", "DONE"),
+        OrgDateRepeatedTask((2005, 6, 1, 10, 0, 0), "TODO", "DONE"),
+    ]
+    lines = str(node).splitlines()
+    assert "[2005-07-01 Fri 17:27]" in lines[2]
+    assert "[2005-06-01 Wed 10:00]" in lines[3]
+
+
+def test_add_repeated_tasks_without_logbook() -> None:
+    content = """* Node
+  Body"""
+    node = loads(content).children[0]
+    node.repeated_tasks = [
+        OrgDateRepeatedTask((2005, 9, 1, 16, 10, 0), "TODO", "DONE"),
+    ]
+    lines = str(node).splitlines()
+    assert lines[:4] == [
+        "* Node",
+        "  :LOGBOOK:",
+        "  - State \"DONE\" from \"TODO\" [2005-09-01 Thu 16:10]",
+        "  :END:",
+    ]
+    assert lines[4] == "  Body"
+
+
+def test_add_repeated_tasks_with_logbook() -> None:
+    content = """* Node
+  :LOGBOOK:
+  CLOCK: [2012-10-26 Fri 16:01]
+  :END:
+  Body"""
+    node = loads(content).children[0]
+    node.repeated_tasks = [
+        OrgDateRepeatedTask((2005, 9, 1, 16, 10, 0), "TODO", "DONE"),
+    ]
+    lines = str(node).splitlines()
+    assert "  CLOCK: [2012-10-26 Fri 16:01]" in lines
+    assert "  - State \"DONE\" from \"TODO\" [2005-09-01 Thu 16:10]" in lines
+
+
+def test_remove_repeated_tasks_without_logbook() -> None:
+    content = """* Node
+  Body"""
+    node = loads(content).children[0]
+    node.repeated_tasks = []
+    assert str(node) == content
+
+
+def test_remove_repeated_tasks_with_logbook() -> None:
+    content = """* Node
+  :LOGBOOK:
+  - State "DONE" from "TODO" [2005-09-01 Thu 16:10]
+  :END:
+  Body"""
+    node = loads(content).children[0]
+    node.repeated_tasks = []
+    lines = str(node).splitlines()
+    assert lines == ["* Node", "  :LOGBOOK:", "  :END:", "  Body"]
+
+
+def test_multiple_logbook_drawers_update_all() -> None:
+    content = """* Node
+  :LOGBOOK:
+  - State "DONE" from "TODO" [2005-09-01 Thu 16:10]
+  :END:
+  :LOGBOOK:
+  - State "DONE" from "TODO" [2005-08-01 Mon 19:44]
+  :END:
+  Body"""
+    node = loads(content).children[0]
+    node.repeated_tasks = [
+        OrgDateRepeatedTask((2005, 7, 1, 17, 27, 0), "TODO", "DONE"),
+        OrgDateRepeatedTask((2005, 6, 1, 10, 0, 0), "TODO", "DONE"),
+    ]
+    rendered = str(node)
+    assert rendered.count("[2005-07-01 Fri 17:27]") == 1
+    assert rendered.count("[2005-06-01 Wed 10:00]") == 1
+
+
+def test_external_repeated_tasks_update() -> None:
+    content = """* Node
+  - State "DONE" from "TODO" [2005-09-01 Thu 16:10]
+  Body"""
+    node = loads(content).children[0]
+    node.repeated_tasks = [OrgDateRepeatedTask((2005, 7, 1, 17, 27, 0), "TODO", "DONE")]
+    lines = str(node).splitlines()
+    assert lines[1] == "  - State \"DONE\" from \"TODO\" [2005-07-01 Fri 17:27]"
+    assert lines[2] == "  Body"
+
+
+def test_remove_generated_logbook_when_cleared() -> None:
+    content = """* Node
+  Body"""
+    node = loads(content).children[0]
+    node.repeated_tasks = [OrgDateRepeatedTask((2005, 9, 1, 16, 10, 0), "TODO", "DONE")]
+    node.repeated_tasks = []
+    assert str(node) == content
 
 
 def test_root() -> None:

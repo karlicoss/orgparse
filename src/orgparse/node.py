@@ -395,6 +395,86 @@ class ClockLine(LineItem):
         return rendered
 
 
+class LogbookStartLine(LineItem):
+    def __init__(self, raw: str) -> None:
+        self._raw = raw
+
+    def render(self) -> str:
+        return self._raw
+
+
+class LogbookEndLine(LineItem):
+    def __init__(self, raw: str) -> None:
+        self._raw = raw
+
+    def render(self) -> str:
+        return self._raw
+
+
+class RepeatTaskLine(LineItem):
+    def __init__(
+        self,
+        raw: str,
+        repeat: OrgDateRepeatedTask,
+        indent: str,
+    ) -> None:
+        self._raw = raw
+        self.repeat = repeat
+        self.indent = indent
+        self._dirty = False
+
+    @classmethod
+    def from_line(cls, line: str) -> RepeatTaskLine | None:
+        if line.lstrip().startswith("#"):
+            return None
+        match = RE_REPEAT_TASK_LINE.match(line)
+        if not match:
+            return None
+        date = OrgDate.from_str(match.group("date"))
+        repeat = OrgDateRepeatedTask(date.start, match.group("todo"), match.group("done"))
+        return cls(
+            raw=line,
+            repeat=repeat,
+            indent=match.group("indent"),
+        )
+
+    @classmethod
+    def from_repeat(cls, repeat: OrgDateRepeatedTask, indent: str) -> RepeatTaskLine:
+        date_str = str(repeat)
+        raw = f"{indent}- State \"{repeat.after}\" from \"{repeat.before}\" {date_str}"
+        return cls(raw=raw, repeat=repeat, indent=indent)
+
+    def update_repeat(self, repeat: OrgDateRepeatedTask) -> None:
+        self.repeat = repeat
+        self._dirty = True
+
+    def render(self) -> str:
+        if not self._dirty:
+            return self._raw
+        date_str = str(self.repeat)
+        rendered = f"{self.indent}- State \"{self.repeat.after}\" from \"{self.repeat.before}\" {date_str}"
+        self._raw = rendered
+        self._dirty = False
+        return rendered
+
+
+class LogbookDrawer:
+    def __init__(
+        self,
+        start_line: LogbookStartLine,
+        end_line: LogbookEndLine,
+        entries: list[RepeatTaskLine],
+        indent: str,
+        *,
+        generated: bool,
+    ) -> None:
+        self.start_line = start_line
+        self.end_line = end_line
+        self.entries = entries
+        self.indent = indent
+        self.generated = generated
+
+
 class PropertyDrawerStartLine(LineItem):
     def __init__(self, raw: str) -> None:
         self._raw = raw
@@ -497,6 +577,9 @@ def parse_property(line: str) -> tuple[Optional[str], Optional[PropertyValue]]:
 
 RE_PROP = re.compile(r'^\s*:(.*?):\s*(.*?)\s*$')
 RE_PROP_LINE = re.compile(r'^(?P<prefix>\s*):(?P<key>[^:]+):\s*(?P<value>.*?)\s*$')
+RE_REPEAT_TASK_LINE = re.compile(
+    r'^(?P<indent>\s*)-\s+State\s+"(?P<done>[^"]+)"\s+from\s+"(?P<todo>[^"]+)"\s+\[(?P<date>[^\]]+)\]\s*$'
+)
 
 
 def parse_duration_to_minutes(duration: str) -> Union[float, int]:
@@ -1618,6 +1701,7 @@ class OrgNode(OrgBaseNode):
         self._clocklist: list[OrgDateClock] = []
         self._body_lines: list[str] = []
         self._repeated_tasks: list[OrgDateRepeatedTask] = []
+        self._logbook_drawers: list[LogbookDrawer] = []
 
     # parser
 
@@ -1638,6 +1722,7 @@ class OrgNode(OrgBaseNode):
         ilines = self._iparse_timestamps(ilines)
         self._body_lines = list(ilines)
         self._sync_property_drawer_from_lines()
+        self._sync_logbook_drawers_from_lines()
 
     def _parse_heading(self) -> None:
         heading_line = HeadingLine.from_line(self._lines[0], self.env.all_todo_keys)
@@ -1705,6 +1790,81 @@ class OrgNode(OrgBaseNode):
             hours, mins = divmod(minutes, 60)
             suffix = f" => {hours}:{mins:02d}"
         return ClockLine(f"{prefix}{clock}{suffix}", prefix, clock, suffix)
+
+    def _sync_logbook_drawers_from_lines(self) -> None:
+        self._logbook_drawers = []
+        in_logbook = False
+        start_line: LogbookStartLine | None = None
+        entries: list[RepeatTaskLine] = []
+        indent = ""
+        index = 0
+        while index < len(self._line_items):
+            line_item = self._line_items[index]
+            line = line_item.render()
+            if line.lstrip().startswith("#"):
+                index += 1
+                continue
+            if line.strip().upper() == ":LOGBOOK:":
+                start_line = LogbookStartLine(line)
+                self._update_line_item(index, start_line)
+                in_logbook = True
+                entries = []
+                indent = line[: len(line) - len(line.lstrip(" "))]
+                index += 1
+                continue
+            if in_logbook and line.strip().upper() == ":END:":
+                end_line = LogbookEndLine(line)
+                self._update_line_item(index, end_line)
+                assert start_line is not None
+                self._logbook_drawers.append(LogbookDrawer(start_line, end_line, entries, indent, generated=False))
+                in_logbook = False
+                index += 1
+                continue
+            if in_logbook:
+                entry = RepeatTaskLine.from_line(line)
+                if entry is not None:
+                    self._update_line_item(index, entry)
+                    entries.append(entry)
+                index += 1
+                continue
+            entry = RepeatTaskLine.from_line(line)
+            if entry is not None:
+                self._update_line_item(index, entry)
+            index += 1
+
+    def _repeat_task_lines_in_order(self) -> list[RepeatTaskLine]:
+        return [item for item in self._line_items if isinstance(item, RepeatTaskLine)]
+
+    def _logbook_drawer_insert_index(self) -> int:
+        index = 1
+        while index < len(self._line_items):
+            item = self._line_items[index]
+            if isinstance(item, (SdcLine, ClockLine)):
+                index += 1
+                continue
+            if isinstance(item, (PropertyDrawerStartLine, PropertyDrawerEndLine, PropertyEntryLine)):
+                index += 1
+                continue
+            break
+        return index
+
+    def _logbook_drawer_indent(self, insert_at: int) -> str:
+        if insert_at > 0:
+            before = self._line_items[insert_at - 1].render()
+            indent = before[: len(before) - len(before.lstrip(" "))]
+            return indent or "  "
+        return "  "
+
+    def _create_logbook_drawer(self) -> LogbookDrawer:
+        insert_at = self._logbook_drawer_insert_index()
+        indent = self._logbook_drawer_indent(insert_at)
+        start_line = LogbookStartLine(f"{indent}:LOGBOOK:")
+        end_line = LogbookEndLine(f"{indent}:END:")
+        self._insert_line_item(insert_at, start_line)
+        self._insert_line_item(insert_at + 1, end_line)
+        drawer = LogbookDrawer(start_line, end_line, [], indent, generated=True)
+        self._logbook_drawers.append(drawer)
+        return drawer
 
     def _property_drawer_insert_index(self) -> int:
         index = 1
@@ -1787,6 +1947,9 @@ class OrgNode(OrgBaseNode):
     def _iparse_repeated_tasks(self, ilines: Iterator[str]) -> Iterator[str]:
         self._repeated_tasks = []
         for line in ilines:
+            if line.lstrip().startswith("#"):
+                yield line
+                continue
             match = self._repeated_tasks_re.search(line)
             if match:
                 # FIXME: move this parsing to OrgDateRepeatedTask.from_str
@@ -2089,6 +2252,61 @@ class OrgNode(OrgBaseNode):
 
         """
         return self._repeated_tasks
+
+    @repeated_tasks.setter
+    def repeated_tasks(self, value: Iterable[OrgDateRepeatedTask]) -> None:
+        new_repeats = list(value)
+        self._repeated_tasks = new_repeats
+        existing_lines = self._repeat_task_lines_in_order()
+
+        for line, repeat in zip(existing_lines, new_repeats):
+            line.update_repeat(repeat)
+
+        for line in reversed(existing_lines[len(new_repeats) :]):
+            index = self._line_items.index(line)
+            self._remove_line_item(index)
+            for drawer in self._logbook_drawers:
+                if line in drawer.entries:
+                    drawer.entries.remove(line)
+
+        for repeat in new_repeats[len(existing_lines) :]:
+            insert_drawer: LogbookDrawer | None
+            insert_index: int
+            indent: str
+            (insert_drawer, insert_index, indent) = self._repeat_task_insert_target(existing_lines)
+            entry = RepeatTaskLine.from_repeat(repeat, indent)
+            self._insert_line_item(insert_index, entry)
+            if insert_drawer is not None:
+                insert_drawer.entries.append(entry)
+            existing_lines.append(entry)
+
+        self._remove_empty_generated_logbooks()
+        self._lines_dirty = True
+
+    def _repeat_task_insert_target(
+        self,
+        existing_lines: list[RepeatTaskLine],
+    ) -> tuple[LogbookDrawer | None, int, str]:
+        if self._logbook_drawers:
+            drawer = self._logbook_drawers[-1]
+            insert_index = self._line_items.index(drawer.end_line)
+            return (drawer, insert_index, drawer.indent)
+        if existing_lines:
+            last_line = existing_lines[-1]
+            insert_index = self._line_items.index(last_line) + 1
+            return (None, insert_index, last_line.indent)
+        drawer = self._create_logbook_drawer()
+        insert_index = self._line_items.index(drawer.end_line)
+        return (drawer, insert_index, drawer.indent)
+
+    def _remove_empty_generated_logbooks(self) -> None:
+        for drawer in list(self._logbook_drawers):
+            if drawer.generated and not drawer.entries:
+                start_index = self._line_items.index(drawer.start_line)
+                end_index = self._line_items.index(drawer.end_line)
+                for index in range(end_index, start_index - 1, -1):
+                    self._remove_line_item(index)
+                self._logbook_drawers.remove(drawer)
 
 
 def parse_lines(lines: Iterable[str], filename, env=None) -> OrgNode:
