@@ -1179,6 +1179,99 @@ class OrgBaseNode(Sequence):
         """
         return list(self._find_children())
 
+    @children.setter
+    def children(self, value: Iterable[OrgNode]) -> None:
+        new_children = list(value)
+        if len(set(new_children)) != len(new_children):
+            raise ValueError("Duplicate children are not allowed")
+        for child in new_children:
+            if not isinstance(child, OrgNode):
+                raise TypeError(f"Child must be OrgNode, got {type(child)}")
+            if child.env is not self.env:
+                raise ValueError("Child must belong to the same OrgEnv")
+            if self._node_contains(child, self):
+                raise ValueError("Cannot reparent an ancestor under its descendant")
+        for child in new_children:
+            for other in new_children:
+                if child is other:
+                    continue
+                if self._node_contains(child, other):
+                    raise ValueError("Cannot reparent a node alongside its descendant")
+
+        subtree_map: dict[OrgNode, list[OrgBaseNode]] = {}
+        for child in new_children:
+            subtree_map[child] = self._collect_subtree_nodes(child)
+
+        for start, end in reversed(self._direct_children_ranges()):
+            del self.env._nodes[start:end]
+
+        for child in new_children:
+            self._remove_subtree_if_present(child)
+
+        for child in new_children:
+            desired_level = self.level + 1
+            delta = desired_level - child.level
+            if delta:
+                for node in subtree_map[child]:
+                    if isinstance(node, OrgNode):
+                        node._shift_level(delta)
+
+        insert_at = self.env._nodes.index(self) + 1
+        for child in new_children:
+            nodes = subtree_map[child]
+            self.env._nodes[insert_at:insert_at] = nodes
+            insert_at += len(nodes)
+
+        for index, node in enumerate(self.env._nodes):
+            node._index = index
+
+    def _subtree_end_index(self, start: int, level: int) -> int:
+        end = start + 1
+        while end < len(self.env._nodes) and self.env._nodes[end].level > level:
+            end += 1
+        return end
+
+    def _collect_subtree_nodes(self, node: OrgBaseNode) -> list[OrgBaseNode]:
+        try:
+            start = self.env._nodes.index(node)
+        except ValueError as exc:
+            raise ValueError("Child must belong to the current OrgEnv node list") from exc
+        end = self._subtree_end_index(start, node.level)
+        return self.env._nodes[start:end]
+
+    def _direct_children_ranges(self) -> list[tuple[int, int]]:
+        ranges: list[tuple[int, int]] = []
+        index = self._index + 1
+        while index < len(self.env._nodes) and self.env._nodes[index].level > self.level:
+            node = self.env._nodes[index]
+            if node.level == self.level + 1:
+                end = self._subtree_end_index(index, node.level)
+                ranges.append((index, end))
+                index = end
+            else:
+                index += 1
+        return ranges
+
+    def _remove_subtree_if_present(self, node: OrgBaseNode) -> None:
+        try:
+            start = self.env._nodes.index(node)
+        except ValueError:
+            return
+        end = self._subtree_end_index(start, node.level)
+        del self.env._nodes[start:end]
+
+    def _node_contains(self, ancestor: OrgBaseNode, node: OrgBaseNode) -> bool:
+        try:
+            start = self.env._nodes.index(ancestor)
+        except ValueError:
+            return False
+        end = self._subtree_end_index(start, ancestor.level)
+        try:
+            target_index = self.env._nodes.index(node)
+        except ValueError:
+            return False
+        return start < target_index < end
+
     @property
     def root(self):
         """
@@ -1782,6 +1875,15 @@ class OrgNode(OrgBaseNode):
         if isinstance(tags, set):
             return sorted(tags)
         return list(tags)
+
+    def _shift_level(self, delta: int) -> None:
+        if self._level is None:
+            return
+        self._level += delta
+        if self._heading_line is not None:
+            self._heading_line.level = self._level
+            self._heading_line.mark_dirty()
+            self._update_line_item(0, self._heading_line)
 
     def _is_body_line_item(self, index: int, item: LineItem) -> bool:  # noqa: ARG002
         return not isinstance(

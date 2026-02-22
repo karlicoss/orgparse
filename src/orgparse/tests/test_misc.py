@@ -53,6 +53,70 @@ def test_dynamic_heading_edits() -> None:
     assert str(node).splitlines()[1:] == ["  Body line", "  Second line"]
 
 
+def test_children_setter_reparents_root() -> None:
+    content = """* A
+** A1
+* B
+** B1"""
+    root = loads(content)
+    (a, b) = root.children
+    b1 = b.children[0]
+
+    root.children = [b]
+
+    assert root.children == [b]
+    assert b.parent is root
+    assert b1.parent is b
+    assert [node.heading for node in root[1:]] == ["B", "B1"]
+    assert a not in list(root)
+
+
+def test_children_setter_reparents_and_adjusts_levels() -> None:
+    content = """* A
+** A1
+*** A1a
+* B
+*** B1"""
+    root = loads(content)
+    a = root.children[0]
+    b = root.children[1]
+    b1 = b.children[0]
+
+    a.children = [b1]
+
+    assert a.children == [b1]
+    assert b.children == []
+    assert b1.parent is a
+    assert b1.level == a.level + 1
+    assert str(b1).splitlines()[0] == "** B1"
+    assert [node.heading for node in root[1:]] == ["A", "B1", "B"]
+
+
+def test_children_setter_reparents_subtree_and_shifts_descendants() -> None:
+    content = """* A
+** A1
+*** A1a
+* B
+** B1
+*** B1a"""
+    root = loads(content)
+    a1 = root.children[0].children[0]
+    b = root.children[1]
+    b1 = b.children[0]
+    b1a = b1.children[0]
+
+    a1.children = [b1]
+
+    assert a1.children == [b1]
+    assert b.children == []
+    assert b1.parent is a1
+    assert b1.level == a1.level + 1
+    assert b1a.level == b1.level + 1
+    assert str(b1).splitlines()[0] == "*** B1"
+    assert str(b1a).splitlines()[0] == "**** B1a"
+    assert "A1a" not in [node.heading for node in root[1:]]
+
+
 def test_dynamic_timestamp_edits() -> None:
     content = """* Node
   CLOSED: [2012-02-26 Sun 21:15] SCHEDULED: <2012-02-26 Sun>
