@@ -416,6 +416,53 @@ def test_remove_generated_logbook_when_cleared() -> None:
     assert str(node) == content
 
 
+def test_body_setter_preserves_structure() -> None:
+    content = """* Node
+  SCHEDULED: <2020-01-01 Wed>
+  :PROPERTIES:
+  :Foo: bar
+  :END:
+  - State "DONE" from "TODO" [2020-01-02 Thu]
+  Body line 1
+  Body line 2
+  CLOCK: [2020-01-03 Fri 10:00]--[2020-01-03 Fri 11:00] =>  1:00"""
+    node = loads(content).children[0]
+    assert str(node) == content
+
+    node.body = "New body\nSecond line"
+
+    expected = """* Node
+  SCHEDULED: <2020-01-01 Wed>
+  :PROPERTIES:
+  :Foo: bar
+  :END:
+  - State "DONE" from "TODO" [2020-01-02 Thu]
+New body
+Second line
+  CLOCK: [2020-01-03 Fri 10:00]--[2020-01-03 Fri 11:00] =>  1:00"""
+    assert str(node) == expected
+
+
+def test_body_setter_clears_body() -> None:
+    content = """* Node
+  Body line 1
+  Body line 2"""
+    node = loads(content).children[0]
+    node.body = ""
+    assert node.body == ""
+    assert str(node) == "* Node"
+
+
+def test_body_setter_updates_timestamps() -> None:
+    content = """* Node
+  Body with <2020-01-01 Wed> and [2020-01-02 Thu]"""
+    node = loads(content).children[0]
+    assert [str(date) for date in node.datelist] == ["<2020-01-01 Wed>", "[2020-01-02 Thu]"]
+
+    node.body = "New <2020-02-03 Mon>"
+    assert [str(date) for date in node.datelist] == ["<2020-02-03 Mon>"]
+
+
 def test_root() -> None:
     root = loads(
         '''

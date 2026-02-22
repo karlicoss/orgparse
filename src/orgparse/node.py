@@ -1454,10 +1454,50 @@ class OrgBaseNode(Sequence):
         """Alias of ``.get_body(format='plain')``."""
         return self.get_body()
 
+    @body.setter
+    def body(self, value: str) -> None:
+        new_lines = value.splitlines()
+        self._replace_body_lines(new_lines)
+
     @property
     def body_rich(self) -> Iterator[Rich]:
         r = self.get_body(format='rich')
         return cast(Iterator[Rich], r)  # meh..
+
+    def _replace_body_lines(self, new_lines: list[str]) -> None:
+        body_indices = self._body_line_indices()
+        if body_indices:
+            insert_at = body_indices[0]
+            for index in reversed(body_indices):
+                self._remove_line_item(index)
+        else:
+            insert_at = self._body_insert_index()
+        for offset, line in enumerate(new_lines):
+            self._insert_line_item(insert_at + offset, TextLine(line))
+        self._body_lines = list(new_lines)
+        self._lines_dirty = True
+        self._refresh_timestamps_after_body_change()
+
+    def _body_line_indices(self) -> list[int]:
+        return [index for index, item in enumerate(self._line_items) if self._is_body_line_item(index, item)]
+
+    def _is_body_line_item(self, index: int, item: LineItem) -> bool:  # noqa: ARG002
+        return not isinstance(
+            item,
+            (
+                PropertyDrawerStartLine,
+                PropertyDrawerEndLine,
+                PropertyEntryLine,
+            ),
+        )
+
+    def _body_insert_index(self) -> int:
+        return len(self._line_items)
+
+    def _refresh_timestamps_after_body_change(self) -> None:
+        self._timestamps = []
+        for line in self._body_lines:
+            self._timestamps.extend(OrgDate.list_from_str(line))
 
     @property
     def heading(self) -> str:
@@ -1742,6 +1782,26 @@ class OrgNode(OrgBaseNode):
         if isinstance(tags, set):
             return sorted(tags)
         return list(tags)
+
+    def _is_body_line_item(self, index: int, item: LineItem) -> bool:  # noqa: ARG002
+        return not isinstance(
+            item,
+            (
+                HeadingLine,
+                SdcLine,
+                ClockLine,
+                PropertyDrawerStartLine,
+                PropertyDrawerEndLine,
+                PropertyEntryLine,
+                RepeatTaskLine,
+            ),
+        )
+
+    def _refresh_timestamps_after_body_change(self) -> None:
+        self._timestamps = []
+        self._timestamps.extend(OrgDate.list_from_str(self._heading))
+        for line in self._body_lines:
+            self._timestamps.extend(OrgDate.list_from_str(line))
 
     def _update_heading_line(self) -> None:
         if self._heading_line is None:
