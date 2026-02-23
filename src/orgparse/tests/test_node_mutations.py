@@ -247,8 +247,8 @@ def test_multiple_clock_entries() -> None:
     assert (
         str(node)
         == """* Node
-  CLOCK: [2012-02-26 Sun 23:00]--[2012-02-26 Sun 23:30] =>  0:30
-  CLOCK: [2012-02-27 Sun 01:00]--[2012-02-27 Sun 01:15] =>  0:15
+  CLOCK: [2012-02-26 Sun 23:00]--[2012-02-26 Sun 23:30] => 0:30
+  CLOCK: [2012-02-27 Mon 01:00]--[2012-02-27 Mon 01:15] => 0:15
   Body"""
     )
 
@@ -257,6 +257,38 @@ def test_multiple_clock_entries() -> None:
     assert (
         str(node)
         == """* Node
+  Body"""
+    )
+
+
+def test_clock_updates_recompute_duration() -> None:
+    content = """* Node
+  CLOCK: [2012-02-26 Sun 21:10]--[2012-02-26 Sun 21:15] =>  0:05
+  Body"""
+    node = loads(content).children[0]
+
+    node.clock = [OrgDateClock((2012, 2, 26, 21, 10, 0), (2012, 2, 26, 21, 40, 0))]
+
+    assert (
+        str(node)
+        == """* Node
+  CLOCK: [2012-02-26 Sun 21:10]--[2012-02-26 Sun 21:40] => 0:30
+  Body"""
+    )
+
+
+def test_clock_updates_drop_duration_when_no_end() -> None:
+    content = """* Node
+  CLOCK: [2012-02-26 Sun 21:10]--[2012-02-26 Sun 21:15] =>  0:05
+  Body"""
+    node = loads(content).children[0]
+
+    node.clock = [OrgDateClock((2012, 2, 26, 21, 10, 0))]
+
+    assert (
+        str(node)
+        == """* Node
+  CLOCK: [2012-02-26 Sun 21:10]
   Body"""
     )
 

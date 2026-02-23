@@ -1330,12 +1330,8 @@ class OrgNode(OrgBaseNode):
 
     def _format_clock_line(self, clock: OrgDateClock) -> ClockLine:
         prefix = "  CLOCK: "
-        suffix = ""
-        if clock.has_end():
-            minutes = int(clock.duration.total_seconds() // 60)
-            hours, mins = divmod(minutes, 60)
-            suffix = f" => {hours}:{mins:02d}"
-        return ClockLine(f"{prefix}{clock}{suffix}", prefix, clock, suffix)
+        suffix = ClockLine._compute_suffix(clock)
+        return ClockLine(f"{prefix}{clock}{suffix}", prefix, clock)
 
     def _sync_logbook_drawers_from_lines(self) -> None:
         self._logbook_drawers = []

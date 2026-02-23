@@ -470,11 +470,10 @@ class SdcLine(LineItem):
 class ClockLine(LineItem):
     _label_re = re.compile(r"^(?!#)(?P<prefix>\s*CLOCK:\s+)")
 
-    def __init__(self, raw: str, prefix: str, date: OrgDateClock, suffix: str) -> None:
+    def __init__(self, raw: str, prefix: str, date: OrgDateClock) -> None:
         self._raw = raw
         self._prefix = prefix
         self.date = date
-        self._suffix = suffix
         self._dirty = False
 
     @classmethod
@@ -501,19 +500,27 @@ class ClockLine(LineItem):
         date = OrgDateClock.from_str(line)
         if not date:
             return None
-        (ts_start, ts_end) = span
+        (ts_start, _ts_end) = span
         prefix = line[:ts_start]
-        suffix = line[ts_end:]
-        return cls(line, prefix, date, suffix)
+        return cls(line, prefix, date)
 
     def update(self, date: OrgDateClock) -> None:
         self.date = date
         self._dirty = True
 
+    @classmethod
+    def _compute_suffix(cls, date: OrgDateClock) -> str:
+        if not date.has_end():
+            return ""
+        minutes = int(date.duration.total_seconds() // 60)
+        hours, mins = divmod(minutes, 60)
+        return f" => {hours}:{mins:02d}"
+
     def render(self) -> str:
         if not self._dirty:
             return self._raw
-        rendered = f"{self._prefix}{self.date}{self._suffix}"
+        suffix = self._compute_suffix(self.date)
+        rendered = f"{self._prefix}{self.date}{suffix}"
         self._raw = rendered
         self._dirty = False
         return rendered
