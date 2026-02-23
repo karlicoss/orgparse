@@ -10,10 +10,10 @@ from ..node import OrgEnv
 
 def test_empty_heading() -> None:
     root = loads('''
- * TODO :sometag:
-   has no heading but still a todo?
-   it's a bit unclear, but seems to be highligted by emacs..
- ''')
+* TODO :sometag:
+  has no heading but still a todo?
+  it's a bit unclear, but seems to be highligted by emacs..
+''')
     [h] = root.children
     assert h.todo == 'TODO'
     assert h.heading == ''
@@ -69,6 +69,38 @@ This subheading is a child of the "anonymous" heading (B), not of heading (A).
     assert h2.heading == ''
 
 
+def test_stars_inside_blocks() -> None:
+    root = loads('''
+* Node 1
+#+begin_src c
+ /*
+  * Comment
+  */
+#+end_src
+#+begin_example
+ * Example line
+#+end_example
+* Node 2
+''')
+    assert len(root.children) == 2
+    body = root.children[0].get_body(format='raw')
+    assert '* Comment' in body
+    assert '* Example line' in body
+
+
+def test_stars_inside_list() -> None:
+    root = loads('''
+* Node 1
+  - List item
+    + Nested List item
+      * Another nested list item
+* Node 2
+''')
+    assert len(root.children) == 2
+    body = root.children[0].get_body(format='raw')
+    assert '* Another nested list item' in body
+
+
 def test_parse_custom_todo_keys():
     todo_keys = ['TODO', 'CUSTOM1', 'ANOTHER_KEYWORD']
     done_keys = ['DONE', 'A']
@@ -117,11 +149,11 @@ def test_add_custom_todo_keys():
 
 def test_get_file_property() -> None:
     content = """#+TITLE:   Test: title
-     * Node 1
-     test 1
-     * Node 2
-     test 2
-     """
+* Node 1
+test 1
+* Node 2
+test 2
+"""
 
     # after parsing, all keys are set
     root = loads(content)
@@ -137,11 +169,11 @@ def test_get_file_property_multivalued() -> None:
      #+OTHER: Test title
      #+title: alternate title
 
-     * Node 1
-     test 1
-     * Node 2
-     test 2
-     """
+* Node 1
+test 1
+* Node 2
+test 2
+"""
 
     # after parsing, all keys are set
     root = loads(content)

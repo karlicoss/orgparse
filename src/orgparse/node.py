@@ -35,7 +35,7 @@ def lines_to_chunks(lines: Iterable[str]) -> Iterable[list[str]]:
     yield chunk
 
 
-RE_NODE_HEADER = re.compile(r"^\s*\*+ ")
+RE_NODE_HEADER = re.compile(r"^\*+ ")
 
 
 TOrgDate = TypeVar("TOrgDate", bound=OrgDate)
