@@ -1293,6 +1293,41 @@ class OrgNode(OrgBaseNode):
         entries: list[RepeatTaskLine] = []
         indent = ""
         index = 0
+
+        def parse_repeat_with_comment(start_index: int) -> tuple[RepeatTaskLine | None, int]:
+            line_item = self._line_items[start_index]
+            line = line_item.render()
+            match = RepeatTaskLine.match(line)
+            if match is None:
+                return (None, start_index + 1)
+            inline_comment = match.group("comment")
+            comment_marker = inline_comment is not None
+            comment_lines: list[str] = []
+            if inline_comment is not None:
+                inline_comment = inline_comment.lstrip()
+                if inline_comment:
+                    comment_lines.append(inline_comment)
+            next_index = start_index + 1
+            if comment_marker:
+                base_indent_len = len(match.group("indent"))
+                while next_index < len(self._line_items):
+                    next_line = self._line_items[next_index].render()
+                    if next_line.strip().upper() in (":END:", ":LOGBOOK:"):
+                        break
+                    if RepeatTaskLine.match(next_line) is not None:
+                        break
+                    next_indent = re.match(r"\s*", next_line)
+                    assert next_indent is not None
+                    if len(next_indent.group(0)) <= base_indent_len:
+                        break
+                    comment_lines.append(next_line.lstrip())
+                    next_index += 1
+            comment: str | None = None
+            if comment_marker:
+                comment = "\n".join(comment_lines)
+            entry = RepeatTaskLine.from_line(line, comment=comment)
+            return (entry, next_index if comment_marker else start_index + 1)
+
         while index < len(self._line_items):
             line_item = self._line_items[index]
             line = line_item.render()
@@ -1316,16 +1351,16 @@ class OrgNode(OrgBaseNode):
                 index += 1
                 continue
             if in_logbook:
-                entry = RepeatTaskLine.from_line(line)
+                entry, next_index = parse_repeat_with_comment(index)
                 if entry is not None:
                     self._update_line_item(index, entry)
                     entries.append(entry)
-                index += 1
+                index = next_index
                 continue
-            entry = RepeatTaskLine.from_line(line)
+            entry, next_index = parse_repeat_with_comment(index)
             if entry is not None:
                 self._update_line_item(index, entry)
-            index += 1
+            index = next_index
 
     def _repeat_task_lines_in_order(self) -> list[RepeatTaskLine]:
         return [item for item in self._line_items if isinstance(item, RepeatTaskLine)]

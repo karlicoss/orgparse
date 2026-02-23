@@ -142,7 +142,7 @@ def parse_property(line: str) -> tuple[Optional[str], Optional[PropertyValue]]:
 RE_PROP = re.compile(r"^\s*:(.*?):\s*(.*?)\s*$")
 RE_PROP_LINE = re.compile(r"^(?P<prefix>\s*):(?P<key>[^:]+):\s*(?P<value>.*?)\s*$")
 RE_REPEAT_TASK_LINE = re.compile(
-    r"^(?P<indent>\s*)-\s+State\s+\"(?P<done>[^\"]+)\"\s+from\s+\"(?P<todo>[^\"]+)\"\s+\[(?P<date>[^\]]+)\]\s*$"
+    r"^(?P<indent>\s*)-\s+State\s+\"(?P<done>[^\"]+)\"\s+from\s+\"(?P<todo>[^\"]+)\"\s+\[(?P<date>[^\]]+)\](?:\s*\\\\(?P<comment>.*))?\s*$"
 )
 
 
@@ -548,35 +548,53 @@ class RepeatTaskLine(LineItem):
         raw: str,
         repeat: OrgDateRepeatedTask,
         indent: str,
+        comment: str | None,
     ) -> None:
         self._raw = raw
         self.repeat = repeat
         self.indent = indent
+        self.comment = comment
         self._dirty = False
 
     @classmethod
-    def from_line(cls, line: str) -> RepeatTaskLine | None:
+    def match(cls, line: str) -> re.Match[str] | None:
+        if line.lstrip().startswith("#"):
+            return None
+        return RE_REPEAT_TASK_LINE.match(line)
+
+    @classmethod
+    def from_line(cls, line: str, comment: str | None = None) -> RepeatTaskLine | None:
         if line.lstrip().startswith("#"):
             return None
         match = RE_REPEAT_TASK_LINE.match(line)
         if not match:
             return None
+        inline_comment = match.group("comment")
+        if comment is None and inline_comment is not None:
+            inline_comment = inline_comment.lstrip()
+            comment = inline_comment
         date = OrgDate.from_str(match.group("date"))
-        repeat = OrgDateRepeatedTask(date.start, match.group("todo"), match.group("done"))
+        repeat = OrgDateRepeatedTask(date.start, match.group("todo"), match.group("done"), comment=comment)
         return cls(
             raw=line,
             repeat=repeat,
             indent=match.group("indent"),
+            comment=comment,
         )
 
     @classmethod
     def from_repeat(cls, repeat: OrgDateRepeatedTask, indent: str) -> RepeatTaskLine:
         date_str = str(repeat)
         raw = f"{indent}- State \"{repeat.after}\" from \"{repeat.before}\" {date_str}"
-        return cls(raw=raw, repeat=repeat, indent=indent)
+        if repeat.comment is not None:
+            raw = f"{raw} \\\\"  # comment lines are handled separately
+            if repeat.comment and "\n" not in repeat.comment:
+                raw = f"{raw} {repeat.comment}"
+        return cls(raw=raw, repeat=repeat, indent=indent, comment=repeat.comment)
 
     def update_repeat(self, repeat: OrgDateRepeatedTask) -> None:
         self.repeat = repeat
+        self.comment = repeat.comment
         self._dirty = True
 
     def render(self) -> str:
@@ -584,6 +602,10 @@ class RepeatTaskLine(LineItem):
             return self._raw
         date_str = str(self.repeat)
         rendered = f"{self.indent}- State \"{self.repeat.after}\" from \"{self.repeat.before}\" {date_str}"
+        if self.comment is not None:
+            rendered = f"{rendered} \\\\"  # comment lines are handled separately
+            if self.comment and "\n" not in self.comment:
+                rendered = f"{rendered} {self.comment}"
         self._raw = rendered
         self._dirty = False
         return rendered

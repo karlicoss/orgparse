@@ -692,19 +692,26 @@ class OrgDateRepeatedTask(OrgDate):
 
     _active_default = False
 
-    def __init__(self, start, before: str, after: str, active=None) -> None:
+    def __init__(self, start, before: str, after: str, active=None, *, comment: str | None = None) -> None:
         super().__init__(start, active=active)
         self._before = before
         self._after = after
+        self._comment = comment
 
     def __repr__(self) -> str:
-        args: list = [self._date_to_tuple(self.start), self.before, self.after]
+        args: list[str] = [
+            repr(self._date_to_tuple(self.start)),
+            repr(self.before),
+            repr(self.after),
+        ]
         if self._active is not self._active_default:
-            args.append(self._active)
-        return '{}({})'.format(self.__class__.__name__, ', '.join(map(repr, args)))
+            args.append(repr(self._active))
+        if self._comment is not None:
+            args.append(f"comment={self._comment!r}")
+        return "{}({})".format(self.__class__.__name__, ", ".join(args))
 
     def __hash__(self) -> int:
-        return hash((self._before, self._after))
+        return hash((self._before, self._after, self._comment))
 
     def __eq__(self, other) -> bool:
         return (
@@ -712,6 +719,7 @@ class OrgDateRepeatedTask(OrgDate):
             and isinstance(other, self.__class__)
             and self._before == other._before
             and self._after == other._after
+            and self._comment == other._comment
         )
 
     @property
@@ -737,3 +745,7 @@ class OrgDateRepeatedTask(OrgDate):
 
         """
         return self._after
+
+    @property
+    def comment(self) -> str | None:
+        return self._comment

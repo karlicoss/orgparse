@@ -101,6 +101,57 @@ def test_stars_inside_list() -> None:
     assert '* Another nested list item' in body
 
 
+def test_repeated_tasks_with_comments() -> None:
+    root = loads('''
+* Node 1
+** TODO Test node
+   SCHEDULED: <2026-01-10 Sat +1m>
+   :LOGBOOK:
+   - State "DONE"       from "TODO"       [2026-01-02 Fri 17:04]
+   - State "CANCELLED"  from "TODO"       [2025-12-07 nie 17:15]
+   - State "CANCELLED"  from "TODO"       [2025-12-07 nie 17:14] \\\\
+     Comment.
+   - State "CANCELLED"  from "TODO"       [2025-09-21 nie 16:09] \\\\
+     Another comment.
+   - State "CANCELLED"  from "TODO"       [2025-09-06 sob 14:10] \\\\
+     One more.
+   - State "CANCELLED"  from "TODO"       [2025-07-28 pon 18:36]
+   - State "CANCELLED"  from "TODO"       [2025-06-28 sob 15:34] \\\\
+     Should be 7 repeats
+   :END:
+''')
+    node = root.children[0].children[0]
+    assert len(node.repeated_tasks) == 7
+    assert [repeat.comment for repeat in node.repeated_tasks] == [
+        None,
+        None,
+        "Comment.",
+        "Another comment.",
+        "One more.",
+        None,
+        "Should be 7 repeats",
+    ]
+
+
+def test_repeated_tasks_mixed_comments() -> None:
+    root = loads('''
+* Node 1
+** TODO Test node
+   :LOGBOOK:
+   - State "DONE"       from "TODO"       [2026-01-02 Fri 17:04] \\\\
+     First line
+     Second line
+   - State "DONE"       from "TODO"       [2026-01-03 Fri 17:04]
+   :END:
+''')
+    node = root.children[0].children[0]
+    assert len(node.repeated_tasks) == 2
+    assert [repeat.comment for repeat in node.repeated_tasks] == [
+        "First line\nSecond line",
+        None,
+    ]
+
+
 def test_parse_custom_todo_keys():
     todo_keys = ['TODO', 'CUSTOM1', 'ANOTHER_KEYWORD']
     done_keys = ['DONE', 'A']
