@@ -32,9 +32,13 @@ def test_dynamic_heading_edits() -> None:
     node.todo = None
     node.priority = "B"
     node.tags = []
-    assert str(node).splitlines()[0] == "* [#B] Updated heading"
 
-    assert str(node).splitlines()[1:] == ["  Body line", "  Second line"]
+    assert (
+        str(node)
+        == """* [#B] Updated heading
+  Body line
+  Second line"""
+    )
 
 
 def test_children_setter_reparents_root() -> None:
@@ -131,8 +135,12 @@ def test_add_scheduled_timestamp_line() -> None:
     node = root.children[0]
 
     node.scheduled = datetime.date(2012, 2, 26)
-    assert str(node).splitlines()[:2] == ["* Node", "SCHEDULED: <2012-02-26 Sun>"]
-    assert str(node).splitlines()[2] == "  Body"
+    assert (
+        str(node)
+        == """* Node
+SCHEDULED: <2012-02-26 Sun>
+  Body"""
+    )
 
 
 def test_overwrite_existing_dates() -> None:
@@ -160,10 +168,12 @@ def test_add_dates_to_node_without_dates() -> None:
     node.deadline = datetime.date(2012, 3, 1)
     node.closed = datetime.datetime(2012, 2, 27, 8, 30)
 
-    lines = str(node).splitlines()
-    assert lines[0] == "* Node"
-    assert lines[1] == "SCHEDULED: <2012-02-26 Sun> DEADLINE: <2012-03-01 Thu> CLOSED: [2012-02-27 Mon 08:30]"
-    assert lines[2] == "  Body"
+    assert (
+        str(node)
+        == """* Node
+SCHEDULED: <2012-02-26 Sun> DEADLINE: <2012-03-01 Thu> CLOSED: [2012-02-27 Mon 08:30]
+  Body"""
+    )
 
 
 def test_add_dates_to_node_with_existing_dates() -> None:
@@ -200,11 +210,13 @@ def test_remove_dates_from_node_with_dates() -> None:
     node = loads(content).children[0]
 
     node.scheduled = None
-    assert "SCHEDULED:" not in str(node).splitlines()[1]
-
     node.deadline = None
-    lines = str(node).splitlines()
-    assert lines == ["* Node", "  Body"]
+
+    assert (
+        str(node)
+        == """* Node
+  Body"""
+    )
 
 
 def test_duplicate_scheduled_dates() -> None:
@@ -231,12 +243,22 @@ def test_multiple_clock_entries() -> None:
         OrgDateClock((2012, 2, 26, 23, 0, 0), (2012, 2, 26, 23, 30, 0)),
         OrgDateClock((2012, 2, 27, 1, 0, 0), (2012, 2, 27, 1, 15, 0)),
     ]
-    lines = str(node).splitlines()
-    assert "CLOCK: [2012-02-26 Sun 23:00]--[2012-02-26 Sun 23:30]" in lines[1]
-    assert "CLOCK: [2012-02-27 Mon 01:00]--[2012-02-27 Mon 01:15]" in lines[2]
+
+    assert (
+        str(node)
+        == """* Node
+  CLOCK: [2012-02-26 Sun 23:00]--[2012-02-26 Sun 23:30] =>  0:30
+  CLOCK: [2012-02-27 Sun 01:00]--[2012-02-27 Sun 01:15] =>  0:15
+  Body"""
+    )
 
     node.clock = []
-    assert all("CLOCK:" not in line for line in str(node).splitlines())
+
+    assert (
+        str(node)
+        == """* Node
+  Body"""
+    )
 
 
 def test_setting_inactive_scheduled_date() -> None:
@@ -245,7 +267,12 @@ def test_setting_inactive_scheduled_date() -> None:
     node = loads(content).children[0]
 
     node.scheduled = OrgDate((2012, 2, 26), active=False)
-    assert str(node).splitlines()[1] == "SCHEDULED: [2012-02-26 Sun]"
+    assert (
+        str(node)
+        == """* Node
+SCHEDULED: [2012-02-26 Sun]
+  Body"""
+    )
 
 
 def test_overwrite_properties() -> None:
@@ -258,12 +285,16 @@ def test_overwrite_properties() -> None:
     node = loads(content).children[0]
 
     node.properties = {"Owner": "Alex", "Effort": "0:30"}
-    lines = str(node).splitlines()
-    assert lines[1] == "  :PROPERTIES:"
-    assert "  :Owner: Alex" in lines
-    assert "  :Effort: 0:30" in lines
-    assert lines[-1] == "  Body"
     assert node.properties["Effort"] == 30
+    assert (
+        str(node)
+        == """* Node
+  :PROPERTIES:
+  :Owner: Alex
+  :Effort: 0:30
+  :END:
+  Body"""
+    )
 
 
 def test_add_properties_without_drawer() -> None:
@@ -272,10 +303,14 @@ def test_add_properties_without_drawer() -> None:
     node = loads(content).children[0]
 
     node.properties = {"Owner": "Alex"}
-    lines = str(node).splitlines()
-    assert lines[:3] == ["* Node", "  :PROPERTIES:", "  :Owner: Alex"]
-    assert lines[3] == "  :END:"
-    assert lines[4] == "  Body"
+    assert (
+        str(node)
+        == """* Node
+  :PROPERTIES:
+  :Owner: Alex
+  :END:
+  Body"""
+    )
 
 
 def test_add_properties_with_existing_drawer() -> None:
@@ -287,9 +322,15 @@ def test_add_properties_with_existing_drawer() -> None:
     node = loads(content).children[0]
 
     node.properties = {"Owner": "Jane", "Project": "Alpha"}
-    lines = str(node).splitlines()
-    assert "  :Owner: Jane" in lines
-    assert "  :Project: Alpha" in lines
+    assert (
+        str(node)
+        == """* Node
+  :PROPERTIES:
+  :Owner: Jane
+  :Project: Alpha
+  :END:
+  Body"""
+    )
 
 
 def test_remove_properties_without_drawer() -> None:
@@ -328,9 +369,15 @@ def test_duplicate_properties_update_last() -> None:
     assert node.properties["Owner"] == "Jill"
 
     node.properties = {"Owner": "Alex"}
-    lines = str(node).splitlines()
-    assert "  :Owner: Jane" in lines
-    assert "  :Owner: Alex" in lines
+    assert (
+        str(node)
+        == """* Node
+  :PROPERTIES:
+  :Owner: Jane
+  :Owner: Alex
+  :END:
+  Body"""
+    )
 
 
 def test_properties_preserve_output_when_unchanged() -> None:
@@ -353,7 +400,15 @@ def test_root_node_properties() -> None:
 * Node"""
     root = loads(content)
     root.properties = {"Title": "Updated"}
-    assert "Title: Updated" in str(root)
+    assert (
+        str(root)
+        == """Intro
+
+:PROPERTIES:
+:Title: Updated
+:END:
+"""
+    )
 
 
 def test_overwrite_repeated_tasks_in_logbook() -> None:
@@ -368,9 +423,15 @@ def test_overwrite_repeated_tasks_in_logbook() -> None:
         OrgDateRepeatedTask((2005, 7, 1, 17, 27, 0), "TODO", "DONE"),
         OrgDateRepeatedTask((2005, 6, 1, 10, 0, 0), "TODO", "DONE"),
     ]
-    lines = str(node).splitlines()
-    assert "[2005-07-01 Fri 17:27]" in lines[2]
-    assert "[2005-06-01 Wed 10:00]" in lines[3]
+    assert (
+        str(node)
+        == """* Node
+  :LOGBOOK:
+  - State "DONE" from "TODO" [2005-07-01 Fri 17:27]
+  - State "DONE" from "TODO" [2005-06-01 Wed 10:00]
+  :END:
+  Body"""
+    )
 
 
 def test_add_repeated_tasks_without_logbook() -> None:
@@ -380,14 +441,14 @@ def test_add_repeated_tasks_without_logbook() -> None:
     node.repeated_tasks = [
         OrgDateRepeatedTask((2005, 9, 1, 16, 10, 0), "TODO", "DONE"),
     ]
-    lines = str(node).splitlines()
-    assert lines[:4] == [
-        "* Node",
-        "  :LOGBOOK:",
-        "  - State \"DONE\" from \"TODO\" [2005-09-01 Thu 16:10]",
-        "  :END:",
-    ]
-    assert lines[4] == "  Body"
+    assert (
+        str(node)
+        == """* Node
+  :LOGBOOK:
+  - State "DONE" from "TODO" [2005-09-01 Thu 16:10]
+  :END:
+  Body"""
+    )
 
 
 def test_add_repeated_tasks_with_logbook() -> None:
@@ -400,9 +461,15 @@ def test_add_repeated_tasks_with_logbook() -> None:
     node.repeated_tasks = [
         OrgDateRepeatedTask((2005, 9, 1, 16, 10, 0), "TODO", "DONE"),
     ]
-    lines = str(node).splitlines()
-    assert "  CLOCK: [2012-10-26 Fri 16:01]" in lines
-    assert "  - State \"DONE\" from \"TODO\" [2005-09-01 Thu 16:10]" in lines
+    assert (
+        str(node)
+        == """* Node
+  :LOGBOOK:
+  CLOCK: [2012-10-26 Fri 16:01]
+  - State "DONE" from "TODO" [2005-09-01 Thu 16:10]
+  :END:
+  Body"""
+    )
 
 
 def test_remove_repeated_tasks_without_logbook() -> None:
@@ -421,8 +488,13 @@ def test_remove_repeated_tasks_with_logbook() -> None:
   Body"""
     node = loads(content).children[0]
     node.repeated_tasks = []
-    lines = str(node).splitlines()
-    assert lines == ["* Node", "  :LOGBOOK:", "  :END:", "  Body"]
+    assert (
+        str(node)
+        == """* Node
+  :LOGBOOK:
+  :END:
+  Body"""
+    )
 
 
 def test_multiple_logbook_drawers_update_all() -> None:
@@ -450,9 +522,12 @@ def test_external_repeated_tasks_update() -> None:
   Body"""
     node = loads(content).children[0]
     node.repeated_tasks = [OrgDateRepeatedTask((2005, 7, 1, 17, 27, 0), "TODO", "DONE")]
-    lines = str(node).splitlines()
-    assert lines[1] == "  - State \"DONE\" from \"TODO\" [2005-07-01 Fri 17:27]"
-    assert lines[2] == "  Body"
+    assert (
+        str(node)
+        == """* Node
+  - State "DONE" from "TODO" [2005-07-01 Fri 17:27]
+  Body"""
+    )
 
 
 def test_remove_generated_logbook_when_cleared() -> None:
@@ -498,7 +573,7 @@ def test_body_setter_clears_body() -> None:
     node = loads(content).children[0]
     node.body = ""
     assert node.body == ""
-    assert str(node) == "* Node"
+    assert str(node) == """* Node"""
 
 
 def test_body_setter_updates_timestamps() -> None:
