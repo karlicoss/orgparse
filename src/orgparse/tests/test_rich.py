@@ -39,9 +39,10 @@ some irrelevant text
 
     [_gap1, t1, _gap2, t2, _gap3, t3, _gap4] = root.body_rich
 
-    t1 = Table(root._lines[1:10])
-    t2 = Table(root._lines[11:19])
-    t3 = Table(root._lines[22:26])
+    rendered = root._render_lines()
+    t1 = Table(rendered[1:10])
+    t2 = Table(rendered[11:19])
+    t3 = Table(rendered[22:26])
 
     assert ilen(t1.blocks) == 4
     assert list(t1.blocks)[2] == []

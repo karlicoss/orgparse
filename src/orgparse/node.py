@@ -5,18 +5,10 @@ import re
 from collections.abc import Iterable, Iterator, Sequence
 from typing import Any, Optional, TypeVar, cast
 
-from .date import (
-    OrgDate,
-    OrgDateClock,
-    OrgDateClosed,
-    OrgDateDeadline,
-    OrgDateRepeatedTask,
-    OrgDateScheduled,
-    parse_sdc,
-)
+from .date import OrgDate, OrgDateClock, OrgDateClosed, OrgDateDeadline, OrgDateRepeatedTask, OrgDateScheduled
 from .extra import Rich, to_rich_text
 from .inline import to_plain_text
-from .lines import (  # noqa: F401
+from .lines import (
     ClockLine,
     HeadingLine,
     LineItem,
@@ -30,12 +22,6 @@ from .lines import (  # noqa: F401
     SdcLine,
     TextLine,
     parse_duration_to_minutes,
-    parse_duration_to_minutes_float,
-    parse_heading_level,
-    parse_heading_priority,
-    parse_heading_tags,
-    parse_heading_todos,
-    parse_property,
 )
 
 
@@ -319,10 +305,6 @@ class OrgBaseNode(Sequence):
 
         # content
         self._line_items: list[LineItem] = []
-        self._lines: list[str] = []
-        self._lines_dirty = False
-
-        self._properties: dict[str, PropertyValue] = {}
         self._property_drawer: PropertyDrawer | None = None
         self._timestamps: list[OrgDate] = []
 
@@ -691,7 +673,13 @@ class OrgBaseNode(Sequence):
         'value'
 
         """
-        return self._properties
+        drawer = self._property_drawer
+        if drawer is None:
+            return {}
+        props: dict[str, PropertyValue] = {}
+        for entry in drawer.entries:
+            props[entry.key] = entry.value
+        return props
 
     @properties.setter
     def properties(self, value: dict[str, PropertyValue] | None) -> None:
@@ -702,8 +690,6 @@ class OrgBaseNode(Sequence):
             (norm_value, render_value) = self._normalize_property_value(key, prop_value)
             normalized[key] = norm_value
             render_values[key] = render_value
-        self._properties = normalized
-
         if not normalized:
             if self._property_drawer is not None:
                 start_index = self._line_items.index(self._property_drawer.start_line)
@@ -711,7 +697,6 @@ class OrgBaseNode(Sequence):
                 for index in range(end_index, start_index - 1, -1):
                     self._remove_line_item(index)
                 self._property_drawer = None
-                self._lines_dirty = True
             return
 
         drawer = self._property_drawer
@@ -746,7 +731,6 @@ class OrgBaseNode(Sequence):
                 )
                 self._insert_line_item(insert_index, entry)
                 drawer.entries.append(entry)
-        self._lines_dirty = True
 
     def get_property(self, key, val=None) -> Optional[PropertyValue]:
         """
@@ -759,22 +743,21 @@ class OrgBaseNode(Sequence):
             Default value to return.
 
         """
-        return self._properties.get(key, val)
+        return self.properties.get(key, val)
 
     # parser
 
     @classmethod
     def from_chunk(cls, env, lines):
         self = cls(env)
-        self._lines = list(lines)
-        self._line_items = [TextLine(line) for line in self._lines]
+        self._line_items = [TextLine(line) for line in lines]
         self._parse_comments()
         return self
 
     def _parse_comments(self):
         special_comments: dict[str, list[str]] = {}
-        for line in self._lines:
-            parsed = parse_comment(line)
+        for line_item in self._line_items:
+            parsed = parse_comment(line_item.render())
             if parsed:
                 (key, vals) = parsed
                 key = key.upper()  # case insensitive, so keep as uppercase
@@ -837,24 +820,6 @@ class OrgBaseNode(Sequence):
                     end_index += 1
                 return
             index += 1
-
-    def _iparse_properties(self, ilines: Iterator[str]) -> Iterator[str]:
-        self._properties = {}
-        in_property_field = False
-        for line in ilines:
-            if in_property_field:
-                if line.find(":END:") >= 0:
-                    break
-                else:
-                    (key, val) = parse_property(line)
-                    if key is not None and val is not None:
-                        self._properties.update({key: val})
-            elif line.find(":PROPERTIES:") >= 0:
-                in_property_field = True
-            else:
-                yield line
-        for line in ilines:
-            yield line
 
     # misc
 
@@ -924,7 +889,7 @@ class OrgBaseNode(Sequence):
         See also: :meth:`get_heading`.
 
         """
-        return self._get_text('\n'.join(self._body_lines), format) if self._lines else ''
+        return self._get_text("\n".join(self._body_lines), format) if self._body_lines else ""
 
     @property
     def body(self) -> str:
@@ -952,7 +917,6 @@ class OrgBaseNode(Sequence):
         for offset, line in enumerate(new_lines):
             self._insert_line_item(insert_at + offset, TextLine(line))
         self._body_lines = list(new_lines)
-        self._lines_dirty = True
         self._refresh_timestamps_after_body_change()
 
     def _body_line_indices(self) -> list[int]:
@@ -1106,25 +1070,16 @@ class OrgBaseNode(Sequence):
         return "\n".join(self._render_lines())
 
     def _render_lines(self) -> list[str]:
-        if self._lines_dirty:
-            self._lines = [line.render() for line in self._line_items]
-            self._lines_dirty = False
-        return self._lines
+        return [line.render() for line in self._line_items]
 
     def _update_line_item(self, index: int, item: LineItem) -> None:
         self._line_items[index] = item
-        if self._lines:
-            self._lines[index] = item.render()
-        else:
-            self._lines_dirty = True
 
     def _insert_line_item(self, index: int, item: LineItem) -> None:
         self._line_items.insert(index, item)
-        self._lines_dirty = True
 
     def _remove_line_item(self, index: int) -> None:
         del self._line_items[index]
-        self._lines_dirty = True
 
     # todo hmm, not sure if it really belongs here and not to OrgRootNode?
     def get_file_property_list(self, property: str):  # noqa: A002
@@ -1177,17 +1132,13 @@ class OrgRootNode(OrgBaseNode):
 
     def _parse_pre(self):
         """Call parsers which must be called before tree structuring"""
-        ilines: Iterator[str] = iter(self._lines)
-        ilines = self._iparse_properties(ilines)
-        ilines = self._iparse_timestamps(ilines)
-        self._body_lines = list(ilines)
         self._sync_property_drawer_from_lines()
-
-    def _iparse_timestamps(self, ilines: Iterator[str]) -> Iterator[str]:
+        self._body_lines = [
+            item.render() for index, item in enumerate(self._line_items) if self._is_body_line_item(index, item)
+        ]
         self._timestamps = []
-        for line in ilines:
+        for line in self._body_lines:
             self._timestamps.extend(OrgDate.list_from_str(line))
-            yield line
 
     def _property_drawer_indent(self, insert_at: int) -> str:  # noqa: ARG002
         return ""
@@ -1204,18 +1155,10 @@ class OrgNode(OrgBaseNode):
     def __init__(self, *args, **kwds) -> None:
         super().__init__(*args, **kwds)
         # fixme instead of casts, should organize code in such a way that they aren't necessary
-        self._heading = cast(str, None)
         self._level: int | None = None
-        self._tags = cast(list[str], None)
-        self._todo: Optional[str] = None
-        self._priority: Optional[str] = None
         self._heading_line: HeadingLine | None = None
         self._sdc_line: SdcLine | None = None
         self._clock_lines: list[ClockLine] = []
-        self._scheduled = OrgDateScheduled(None)
-        self._deadline = OrgDateDeadline(None)
-        self._closed = OrgDateClosed(None)
-        self._clocklist: list[OrgDateClock] = []
         self._body_lines: list[str] = []
         self._repeated_tasks: list[OrgDateRepeatedTask] = []
         self._logbook_drawers: list[LogbookDrawer] = []
@@ -1225,30 +1168,19 @@ class OrgNode(OrgBaseNode):
     def _parse_pre(self):
         """Call parsers which must be called before tree structuring"""
         self._parse_heading()
-        # FIXME: make the following parsers "lazy"
-        ilines: Iterator[str] = iter(self._lines)
-        try:
-            next(ilines)  # skip heading
-        except StopIteration:
-            return
-        self._clock_line_indices = iter(self._find_clock_line_indices())
-        ilines = self._iparse_sdc(ilines)
-        ilines = self._iparse_clock(ilines)
-        ilines = self._iparse_properties(ilines)
-        ilines = self._iparse_repeated_tasks(ilines)
-        ilines = self._iparse_timestamps(ilines)
-        self._body_lines = list(ilines)
+        self._sync_sdc_line_from_items()
+        self._sync_clock_lines_from_items()
         self._sync_property_drawer_from_lines()
         self._sync_logbook_drawers_from_lines()
+        self._sync_repeated_tasks_cache()
+        self._refresh_body_and_timestamps()
 
     def _parse_heading(self) -> None:
-        heading_line = HeadingLine.from_line(self._lines[0], self.env.all_todo_keys)
+        if not self._line_items:
+            raise ValueError("OrgNode has no lines to parse heading")
+        heading_line = HeadingLine.from_line(self._line_items[0].render(), self.env.all_todo_keys)
         self._heading_line = heading_line
         self._level = heading_line.level
-        self._tags = list(heading_line.tags)
-        self._todo = heading_line.todo
-        self._priority = heading_line.priority
-        self._heading = heading_line.heading
         self._update_line_item(0, heading_line)
 
     def _normalize_tags(self, tags: Iterable[str] | None) -> list[str]:
@@ -1285,26 +1217,48 @@ class OrgNode(OrgBaseNode):
 
     def _refresh_timestamps_after_body_change(self) -> None:
         self._timestamps = []
-        self._timestamps.extend(OrgDate.list_from_str(self._heading))
+        if self._heading_line is not None:
+            self._timestamps.extend(OrgDate.list_from_str(self._heading_line.heading))
         for line in self._body_lines:
             self._timestamps.extend(OrgDate.list_from_str(line))
 
     def _update_heading_line(self) -> None:
         if self._heading_line is None:
             return
-        self._heading_line.todo = self._todo
-        self._heading_line.priority = self._priority
-        self._heading_line.heading = self._heading
-        self._heading_line.tags = list(self._tags)
         self._heading_line.mark_dirty()
         self._update_line_item(0, self._heading_line)
 
-    def _find_clock_line_indices(self) -> list[int]:
-        indices: list[int] = []
-        for index, line in enumerate(self._lines):
-            if OrgDateClock.from_str(line):
-                indices.append(index)
-        return indices
+    def _sync_sdc_line_from_items(self) -> None:
+        self._sdc_line = None
+        if len(self._line_items) < 2:
+            return
+        line_item = self._line_items[1]
+        sdc_line = SdcLine.from_line(line_item.render())
+        if sdc_line is not None:
+            self._sdc_line = sdc_line
+            self._update_line_item(1, sdc_line)
+
+    def _sync_clock_lines_from_items(self) -> None:
+        self._clock_lines = []
+        for index, item in enumerate(self._line_items):
+            clock_line = ClockLine.from_line(item.render())
+            if clock_line is None:
+                continue
+            self._clock_lines.append(clock_line)
+            self._update_line_item(index, clock_line)
+
+    def _sync_repeated_tasks_cache(self) -> None:
+        self._repeated_tasks = [line.repeat for line in self._repeat_task_lines_in_order()]
+
+    def _refresh_body_and_timestamps(self) -> None:
+        self._body_lines = [
+            item.render() for index, item in enumerate(self._line_items) if self._is_body_line_item(index, item)
+        ]
+        self._timestamps = []
+        if self._heading_line is not None:
+            self._timestamps.extend(OrgDate.list_from_str(self._heading_line.heading))
+        for line in self._body_lines:
+            self._timestamps.extend(OrgDate.list_from_str(line))
 
     def _coerce_sdc_date(self, value: Any, cls: type[TOrgDate]) -> TOrgDate:
         if value is None:
@@ -1325,8 +1279,7 @@ class OrgNode(OrgBaseNode):
             index = self._line_items.index(self._sdc_line)
             self._remove_line_item(index)
             self._sdc_line = None
-        else:
-            self._lines_dirty = True
+        return
 
     def _format_clock_line(self, clock: OrgDateClock) -> ClockLine:
         prefix = "  CLOCK: "
@@ -1424,94 +1377,6 @@ class OrgNode(OrgBaseNode):
             return before[: len(before) - len(before.lstrip(" "))] or "  "
         return "  "
 
-    # The following ``_iparse_*`` methods are simple generator based
-    # parser.  See ``_parse_pre`` for how it is used.  The principle
-    # is simple: these methods get an iterator and returns an iterator.
-    # If the item returned by the input iterator must be dedicated to
-    # the parser, do not yield the item or yield it as-is otherwise.
-
-    def _iparse_sdc(self, ilines: Iterator[str]) -> Iterator[str]:
-        """
-        Parse SCHEDULED, DEADLINE and CLOSED time tamps.
-
-        They are assumed be in the first line.
-
-        """
-        try:
-            line = next(ilines)
-        except StopIteration:
-            return
-        sdc_line = SdcLine.from_line(line)
-        if sdc_line is not None:
-            self._sdc_line = sdc_line
-            self._update_line_item(1, sdc_line)
-            scheduled_entry = sdc_line._entries.get("SCHEDULED")
-            deadline_entry = sdc_line._entries.get("DEADLINE")
-            closed_entry = sdc_line._entries.get("CLOSED")
-            self._scheduled = (
-                cast(OrgDateScheduled, scheduled_entry.date) if scheduled_entry is not None else OrgDateScheduled(None)
-            )
-            self._deadline = (
-                cast(OrgDateDeadline, deadline_entry.date) if deadline_entry is not None else OrgDateDeadline(None)
-            )
-            self._closed = cast(OrgDateClosed, closed_entry.date) if closed_entry is not None else OrgDateClosed(None)
-        else:
-            (self._scheduled, self._deadline, self._closed) = parse_sdc(line)
-            if not (self._scheduled or self._deadline or self._closed):
-                yield line  # when none of them were found
-
-        for line in ilines:
-            yield line
-
-    def _iparse_clock(self, ilines: Iterator[str]) -> Iterator[str]:
-        self._clocklist = []
-        self._clock_lines = []
-        for line in ilines:
-            cl = OrgDateClock.from_str(line)
-            if cl:
-                self._clocklist.append(cl)
-                clock_line = ClockLine.from_line(line)
-                if clock_line is not None:
-                    self._clock_lines.append(clock_line)
-                    index = next(self._clock_line_indices, None)
-                    if index is not None:
-                        self._update_line_item(index, clock_line)
-            else:
-                yield line
-
-    def _iparse_timestamps(self, ilines: Iterator[str]) -> Iterator[str]:
-        self._timestamps = []
-        self._timestamps.extend(OrgDate.list_from_str(self._heading))
-        for l in ilines:
-            self._timestamps.extend(OrgDate.list_from_str(l))
-            yield l
-
-    def _iparse_repeated_tasks(self, ilines: Iterator[str]) -> Iterator[str]:
-        self._repeated_tasks = []
-        for line in ilines:
-            if line.lstrip().startswith("#"):
-                yield line
-                continue
-            match = self._repeated_tasks_re.search(line)
-            if match:
-                # FIXME: move this parsing to OrgDateRepeatedTask.from_str
-                mdict = match.groupdict()
-                done_state = mdict['done']
-                todo_state = mdict['todo']
-                date = OrgDate.from_str(mdict['date'])
-                self._repeated_tasks.append(OrgDateRepeatedTask(date.start, todo_state, done_state))
-            else:
-                yield line
-
-    _repeated_tasks_re = re.compile(
-        r'''
-        \s*- \s+
-        State \s+ "(?P<done> [^"]+)" \s+
-        from  \s+ "(?P<todo> [^"]+)" \s+
-        \[ (?P<date> [^\]]+) \]''',
-        re.VERBOSE,
-    )
-
     def get_heading(self, format: str = 'plain') -> str:  # noqa: A002
         """
         Return a string of head text without tags and TODO keywords.
@@ -1532,7 +1397,10 @@ class OrgNode(OrgBaseNode):
         '[[link][Node 1]]'
 
         """
-        return self._get_text(self._heading, format)
+        heading = ""
+        if self._heading_line is not None:
+            heading = self._heading_line.heading
+        return self._get_text(heading, format)
 
     @property
     def heading(self) -> str:
@@ -1541,7 +1409,9 @@ class OrgNode(OrgBaseNode):
 
     @heading.setter
     def heading(self, value: str) -> None:
-        self._heading = value
+        if self._heading_line is None:
+            return
+        self._heading_line.heading = value
         self._update_heading_line()
 
     @property
@@ -1581,17 +1451,23 @@ class OrgNode(OrgBaseNode):
         True
 
         """
-        return self._priority
+        if self._heading_line is None:
+            return None
+        return self._heading_line.priority
 
     @priority.setter
     def priority(self, value: str | None) -> None:
         if value == "":
             value = None
-        self._priority = value
+        if self._heading_line is None:
+            return
+        self._heading_line.priority = value
         self._update_heading_line()
 
     def _get_tags(self, *, inher: bool = False) -> set[str]:
-        tags = set(self._tags)
+        tags = set()
+        if self._heading_line is not None:
+            tags = set(self._heading_line.tags)
         if inher:
             parent = self.get_parent()
             if parent:
@@ -1609,13 +1485,17 @@ class OrgNode(OrgBaseNode):
         'TODO'
 
         """
-        return self._todo
+        if self._heading_line is None:
+            return None
+        return self._heading_line.todo
 
     @todo.setter
     def todo(self, value: Optional[str]) -> None:
         if value == "":
             value = None
-        self._todo = value
+        if self._heading_line is None:
+            return
+        self._heading_line.todo = value
         self._update_heading_line()
 
     @property
@@ -1624,7 +1504,9 @@ class OrgNode(OrgBaseNode):
 
     @tags.setter
     def tags(self, value: Iterable[str] | None) -> None:
-        self._tags = self._normalize_tags(value)
+        if self._heading_line is None:
+            return
+        self._heading_line.tags = self._normalize_tags(value)
         self._update_heading_line()
 
     @property
@@ -1643,12 +1525,16 @@ class OrgNode(OrgBaseNode):
         OrgDateScheduled((2012, 2, 26))
 
         """
-        return self._scheduled
+        if self._sdc_line is None:
+            return OrgDateScheduled(None)
+        entry = self._sdc_line._entries.get("SCHEDULED")
+        if entry is None:
+            return OrgDateScheduled(None)
+        return cast(OrgDateScheduled, entry.date)
 
     @scheduled.setter
     def scheduled(self, value: Any) -> None:
         date = self._coerce_sdc_date(value, OrgDateScheduled)
-        self._scheduled = date
         self._update_sdc_entry("SCHEDULED", date)
 
     @property
@@ -1667,12 +1553,16 @@ class OrgNode(OrgBaseNode):
         OrgDateDeadline((2012, 2, 26))
 
         """
-        return self._deadline
+        if self._sdc_line is None:
+            return OrgDateDeadline(None)
+        entry = self._sdc_line._entries.get("DEADLINE")
+        if entry is None:
+            return OrgDateDeadline(None)
+        return cast(OrgDateDeadline, entry.date)
 
     @deadline.setter
     def deadline(self, value: Any) -> None:
         date = self._coerce_sdc_date(value, OrgDateDeadline)
-        self._deadline = date
         self._update_sdc_entry("DEADLINE", date)
 
     @property
@@ -1691,12 +1581,16 @@ class OrgNode(OrgBaseNode):
         OrgDateClosed((2012, 2, 26, 21, 15, 0))
 
         """
-        return self._closed
+        if self._sdc_line is None:
+            return OrgDateClosed(None)
+        entry = self._sdc_line._entries.get("CLOSED")
+        if entry is None:
+            return OrgDateClosed(None)
+        return cast(OrgDateClosed, entry.date)
 
     @closed.setter
     def closed(self, value: Any) -> None:
         date = self._coerce_sdc_date(value, OrgDateClosed)
-        self._closed = date
         self._update_sdc_entry("CLOSED", date)
 
     @property
@@ -1715,12 +1609,11 @@ class OrgNode(OrgBaseNode):
         [OrgDateClock((2012, 2, 26, 21, 10, 0), (2012, 2, 26, 21, 15, 0))]
 
         """
-        return self._clocklist
+        return [line.date for line in self._clock_lines]
 
     @clock.setter
     def clock(self, value: Iterable[OrgDateClock]) -> None:
         new_clocks = list(value)
-        self._clocklist = new_clocks
         existing_indices = [i for i, item in enumerate(self._line_items) if isinstance(item, ClockLine)]
         if existing_indices:
             for i, clock in enumerate(new_clocks):
@@ -1741,7 +1634,7 @@ class OrgNode(OrgBaseNode):
                 insert_at = self._line_items.index(self._sdc_line) + 1
             for i, clock in enumerate(new_clocks):
                 self._insert_line_item(insert_at + i, self._format_clock_line(clock))
-        self._lines_dirty = True
+        self._clock_lines = [item for item in self._line_items if isinstance(item, ClockLine)]
 
     def has_date(self):
         """
@@ -1823,7 +1716,7 @@ class OrgNode(OrgBaseNode):
             existing_lines.append(entry)
 
         self._remove_empty_generated_logbooks()
-        self._lines_dirty = True
+        self._sync_repeated_tasks_cache()
 
     def _repeat_task_insert_target(
         self,
