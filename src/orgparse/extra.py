@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterator, Sequence
-from typing import Optional, Union
 
 RE_TABLE_SEPARATOR = re.compile(r'\s*\|(\-+\+)*\-+\|')
 RE_TABLE_ROW = re.compile(r'\s*\|([^|]+)+\|')
@@ -40,7 +39,7 @@ class Table:
             if r is not None:
                 yield r
 
-    def _pre_rows(self) -> Iterator[Optional[Row]]:
+    def _pre_rows(self) -> Iterator[Row | None]:
         for l in self._lines:
             if RE_TABLE_SEPARATOR.match(l):
                 yield None
@@ -74,7 +73,7 @@ class AsDictHelper:
 
     def __iter__(self) -> Iterator[dict[str, str]]:
         for x in self._rows:
-            yield dict(zip(self.columns, x))
+            yield dict(zip(self.columns, x, strict=True))
 
 
 class Gap:
@@ -82,7 +81,7 @@ class Gap:
     pass
 
 
-Rich = Union[Table, Gap]
+Rich = Table | Gap
 
 
 def to_rich_text(text: str) -> Iterator[Rich]:

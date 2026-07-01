@@ -3,12 +3,7 @@ from __future__ import annotations
 import itertools
 import re
 from collections.abc import Iterable, Iterator, Sequence
-from typing import (
-    Any,
-    Optional,
-    Union,
-    cast,
-)
+from typing import Any, cast
 
 from .date import (
     OrgDate,
@@ -94,7 +89,7 @@ def parse_heading_tags(heading: str) -> tuple[str, list[str]]:
 RE_HEADING_TAGS = re.compile(r'(.*?)\s*:([\w@:]+):\s*$')
 
 
-def parse_heading_todos(heading: str, todo_candidates: list[str]) -> tuple[str, Optional[str]]:
+def parse_heading_todos(heading: str, todo_candidates: list[str]) -> tuple[str, str | None]:
     """
     Get TODO keyword and heading without TODO keyword.
 
@@ -136,10 +131,10 @@ def parse_heading_priority(heading):
 
 RE_HEADING_PRIORITY = re.compile(r'^\s*\[#([A-Z0-9])\] ?(.*)$')
 
-PropertyValue = Union[str, int, float]
+PropertyValue = str | int | float
 
 
-def parse_property(line: str) -> tuple[Optional[str], Optional[PropertyValue]]:
+def parse_property(line: str) -> tuple[str | None, PropertyValue | None]:
     """
     Get property from given string.
 
@@ -150,7 +145,7 @@ def parse_property(line: str) -> tuple[Optional[str], Optional[PropertyValue]]:
 
     """
     prop_key = None
-    prop_val: Optional[Union[str, int, float]] = None
+    prop_val: str | int | float | None = None
     match = RE_PROP.search(line)
     if match:
         prop_key = match.group(1)
@@ -163,7 +158,7 @@ def parse_property(line: str) -> tuple[Optional[str], Optional[PropertyValue]]:
 RE_PROP = re.compile(r'^\s*:(.*?):\s*(.*?)\s*$')
 
 
-def parse_duration_to_minutes(duration: str) -> Union[float, int]:
+def parse_duration_to_minutes(duration: str) -> float | int:
     """
     Parse duration minutes from given string.
     Convert to integer if number has no decimal points
@@ -191,7 +186,9 @@ def parse_duration_to_minutes(duration: str) -> Union[float, int]:
     """
 
     minutes = parse_duration_to_minutes_float(duration)
-    return int(minutes) if minutes.is_integer() else minutes
+    # ugh ty is a bit insane and thinks that float is always int | float?
+    # see https://docs.astral.sh/ty/reference/typing-faq/#why-does-ty-show-int-float-when-i-annotate-something-as-float
+    return int(minutes) if minutes.is_integer() else minutes  # ty: ignore[unresolved-attribute]
 
 
 def parse_duration_to_minutes_float(duration: str) -> float:
@@ -222,7 +219,7 @@ def parse_duration_to_minutes_float(duration: str) -> float:
     0.0
     """
 
-    match: Optional[Any]
+    match: Any | None
     if duration == "":
         return 0.0
     if isinstance(duration, float):
@@ -794,7 +791,7 @@ class OrgBaseNode(Sequence):
         """
         return self._properties
 
-    def get_property(self, key, val=None) -> Optional[PropertyValue]:
+    def get_property(self, key, val=None) -> PropertyValue | None:
         """
         Return property named ``key`` if exists or ``val`` otherwise.
 
@@ -1134,7 +1131,7 @@ class OrgNode(OrgBaseNode):
         self._heading = cast(str, None)
         self._level: int | None = None
         self._tags = cast(list[str], None)
-        self._todo: Optional[str] = None
+        self._todo: str | None = None
         self._priority = None
         self._scheduled = OrgDateScheduled(None)
         self._deadline = OrgDateDeadline(None)
@@ -1310,7 +1307,7 @@ class OrgNode(OrgBaseNode):
         return tags
 
     @property
-    def todo(self) -> Optional[str]:
+    def todo(self) -> str | None:
         """
         A TODO keyword of this node if exists or None otherwise.
 
@@ -1458,7 +1455,7 @@ def parse_lines(lines: Iterable[str], filename, env=None) -> OrgNode:
     linenos = itertools.accumulate(itertools.chain([0], (len(c) for c in ch1)))
     nodes = env.from_chunks(ch2)
     nodelist = []
-    for lineno, node in zip(linenos, nodes):
+    for lineno, node in zip(linenos, nodes, strict=False):
         lineno += 1  # in text editors lines are 1-indexed
         node.linenumber = lineno
         nodelist.append(node)

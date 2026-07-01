@@ -57,7 +57,7 @@ def test_data(dataname):
     data = load_data(data_path(dataname, "py"))
     root = load(oname)
 
-    for i, (node, kwds) in enumerate(zip(root[1:], data)):
+    for i, (node, kwds) in enumerate(zip(root[1:], data, strict=True)):
         for key in kwds:
             val = value_from_data_key(node, key)
             assert kwds[key] == val, (

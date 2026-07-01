@@ -16,7 +16,7 @@ def nodedict(i, level, todo=None, shallow_tags=None, tags=None) -> dict[str, Any
 
 
 def tags(nums) -> set[str]:
-    return set(map('TAG{0}'.format, nums))
+    return set(map('TAG{0}'.format, nums))  # ty: ignore[invalid-return-type]
 
 
 data = [

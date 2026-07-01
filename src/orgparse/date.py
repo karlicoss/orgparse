@@ -3,9 +3,8 @@ from __future__ import annotations
 import datetime
 import re
 from datetime import timedelta
-from typing import Optional, Union
 
-DateIsh = Union[datetime.date, datetime.datetime]
+DateIsh = datetime.date | datetime.datetime
 
 
 def total_seconds(td: timedelta) -> float:
@@ -422,11 +421,11 @@ class OrgDate:
         return date
 
     @staticmethod
-    def _daterange_from_groupdict(dct, prefix='') -> tuple[list, Optional[list]]:
+    def _daterange_from_groupdict(dct, prefix='') -> tuple[list, list | None]:
         start_keys = ['year', 'month', 'day', 'hour'    , 'min']  # fmt: skip
         end_keys   = ['year', 'month', 'day', 'end_hour', 'end_min']  # fmt: skip
         start_range = list(map(int, filter(None, (dct[prefix + k] for k in start_keys))))
-        end_range: Optional[list]
+        end_range: list | None
         end_range = list(map(int, filter(None, (dct[prefix + k] for k in end_keys))))
         if len(end_range) < len(end_keys):
             end_range = None
@@ -465,8 +464,8 @@ class OrgDate:
                 prefix = 'inactive_'
                 active = False
                 rangedash = '--['
-            repeater: Optional[tuple[str, int, str]] = None
-            warning: Optional[tuple[str, int, str]] = None
+            repeater: tuple[str, int, str] | None = None
+            warning: tuple[str, int, str] | None = None
             if mdict[prefix + 'repeatpre'] is not None:
                 keys = [prefix + 'repeat' + suffix for suffix in cookie_suffix]
                 values = [mdict[k] for k in keys]
@@ -549,8 +548,8 @@ class OrgDateSDCBase(OrgDate):
                 end_dict.update({'hour': end_hour, 'min': end_min})
                 end = cls._datetuple_from_groupdict(end_dict)
             cookie_suffix = ['pre', 'num', 'dwmy']
-            repeater: Optional[tuple[str, int, str]] = None
-            warning: Optional[tuple[str, int, str]] = None
+            repeater: tuple[str, int, str] | None = None
+            warning: tuple[str, int, str] | None = None
             prefix = ''
             if mdict[prefix + 'repeatpre'] is not None:
                 keys = [prefix + 'repeat' + suffix for suffix in cookie_suffix]
@@ -644,7 +643,7 @@ class OrgDateClock(OrgDate):
         return self._duration is None or self._duration == total_minutes(self.duration)
 
     @classmethod
-    def from_str(cls, line: str) -> OrgDateClock:
+    def from_str(cls, string: str) -> OrgDateClock:
         """
         Get CLOCK from given string.
 
@@ -652,7 +651,7 @@ class OrgDateClock(OrgDate):
         of start time, datetime object of stop time and length in minute.
 
         """
-        match = cls._re.search(line)
+        match = cls._re.search(string)
         if not match:
             return cls(None, None)
 
@@ -660,20 +659,20 @@ class OrgDateClock(OrgDate):
 
         # second part starting with "--", does not exist for open clock dates
         has_end = bool(match.group(6))
-        ymdhm2_dt: Optional[datetime.datetime]
-        len_min: Optional[int]
+        ymdhm2_dt: datetime.datetime | None
+        len_min: int | None
         if has_end:
             ymdhm2 = [int(d) for d in match.groups()[6:11]]
             hm3 = [int(d) for d in match.groups()[11:]]
 
-            ymdhm2_dt = datetime.datetime(*ymdhm2)  # type: ignore[arg-type]
+            ymdhm2_dt = datetime.datetime(*ymdhm2)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
             len_min = hm3[0] * 60 + hm3[1]
         else:
             ymdhm2_dt = None
             len_min = None
 
         return cls(
-            datetime.datetime(*ymdhm1),  # type: ignore[arg-type]
+            datetime.datetime(*ymdhm1),  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
             ymdhm2_dt,
             len_min,
         )
