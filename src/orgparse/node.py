@@ -3,6 +3,7 @@ from __future__ import annotations
 import itertools
 import re
 from collections.abc import Iterable, Iterator, Sequence
+from pathlib import Path
 from typing import Any, cast
 
 from .date import (
@@ -348,7 +349,7 @@ class OrgEnv:
         self,
         todos: Sequence[str] | None = None,
         dones: Sequence[str] | None = None,
-        filename: str = '<undefined>',
+        filename: str | Path = '<undefined>',
     ) -> None:
         if dones is None:
             dones = ['DONE']
@@ -357,7 +358,7 @@ class OrgEnv:
         self._todos = list(todos)
         self._dones = list(dones)
         self._todo_not_specified_in_comment = True
-        self._filename = filename
+        self._filename = str(filename)
         self._nodes: list[OrgBaseNode] = []
 
     @property
@@ -429,10 +430,10 @@ class OrgEnv:
     @property
     def filename(self) -> str:
         """
-        Return a path to the source file or similar information.
+        Return the source filename as a string.
 
-        If the org objects are not loaded from a file, this value
-        will be a string of the form ``<SOME_TEXT>``.
+        A :class:`pathlib.Path` passed to ``OrgEnv`` is converted to a string.
+        Documents loaded without a filename use a placeholder such as ``<string>``.
         """
         return self._filename
 
