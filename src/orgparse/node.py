@@ -534,6 +534,30 @@ class OrgBaseNode(Sequence):
 
             """
 
+    @property
+    def end_linenumber(self) -> int:
+        """One-based, inclusive end line of this node's own source text.
+
+        Includes the heading, metadata, and trailing blank lines, excluding descendants.
+        For :class:`OrgRootNode`, this covers the preamble before the first heading and returns 0 when it is empty.
+        Use ``node[-1].end_linenumber`` for the end of the entire subtree.
+
+        >>> from orgparse import loads
+        >>> root = loads('''Preamble
+        ... * Parent
+        ... body
+        ... ** Child
+        ... child body
+        ... * Last''')
+        >>> [(node.linenumber, node.end_linenumber) for node in root]
+        [(1, 1), (2, 3), (4, 5), (6, 6)]
+        >>> root[1][-1].end_linenumber
+        5
+        >>> loads('* Heading').end_linenumber
+        0
+        """
+        return self.linenumber + len(self._lines) - 1
+
     def __iter__(self):
         yield self
         level = self.level

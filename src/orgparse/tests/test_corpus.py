@@ -25,6 +25,7 @@ def test_corpus(path: Path) -> None:
         and formatting of populated timestamps.
     Check tag inclusion, parent/child links, a shared root, increasing heading line numbers,
         and heading levels against the source text.
+    Check that entry line ranges cover the source without gaps or overlaps.
     These are smoke and consistency checks; exact parsed values require separate expected-output tests.
     """
     root = load(path)
@@ -33,7 +34,10 @@ def test_corpus(path: Path) -> None:
     assert root.parent is None
 
     previous_line = 0
+    previous_end = 0
     for node in root:
+        assert node.linenumber == previous_end + 1
+        previous_end = node.end_linenumber
         # Access lazy formatting as well as the eagerly parsed attributes.
         assert isinstance(node.heading, str)
         assert isinstance(node.body, str)
@@ -68,3 +72,5 @@ def test_corpus(path: Path) -> None:
         assert parent is not None
         assert parent.level < node.level
         assert any(child is node for child in parent.children)
+
+    assert previous_end == len(lines)
