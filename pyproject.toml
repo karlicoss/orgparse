@@ -8,7 +8,7 @@ requires-python = ">=3.10"
 
 ## these are only useful for pypi
 description = "orgparse - Emacs org-mode parser in Python"  # shows on project page/in search
-readme      = "README.rst"
+readme      = "README.md"
 license     = {file = "LICENSE"}
 authors = [
     {name = "Takafumi Arakaki (@tkf)", email = "aka.tkf@gmail.com"},
@@ -24,8 +24,6 @@ classifiers = [
     "License :: OSI Approved :: BSD License",
     "Topic :: Text Processing :: Markup",
 ]
-# TODO add it back later, perhaps via ast?
-# long_description=orgparse.__doc__,
 
 [project.urls]  # pypi will fetch some github stats/link, so somewhat useful
 Homepage = "https://github.com/karlicoss/orgparse"
@@ -50,6 +48,17 @@ typecheck = [
     "ty",
 
     { include-group = "testing" },
+]
+docs = [
+    "sphinx",
+    "myst-parser",
+]
+quarto = [
+    "quarto-cli",
+    "ipykernel",
+    "nbformat",
+    "nbclient",
+    "pyyaml",
 ]
 
 
@@ -332,6 +341,7 @@ commands = [
     [
         "{env_python}", "-m", "pytest",
         "--pyargs", "{[project]name}",
+        "--doctest-glob=README.qmd", "README.qmd",
         { replace = "posargs", default = [], extend = true },
     ],
 ]
@@ -357,6 +367,39 @@ commands = [
     [
         "{env_python}", "-m", "ty",
         "check",
+        { replace = "posargs", default = [], extend = true },
+    ],
+]
+
+
+[tool.tox.env.quarto]
+package = "skip"
+dependency_groups = ["quarto"]
+set_env = [
+    { replace = "ref", of = ["tool", "tox", "env_run_base", "set_env"] },
+    { QUARTO_PYTHON = "{env_python}" },
+    # Quarto's bundled Jupyter scripts import helpers from their own directory.
+    { PYTHONSAFEPATH = "" },
+]
+commands = [
+    ["quarto", "render", "README.qmd", { replace = "posargs", default = [], extend = true }],
+]
+
+
+[tool.tox.env.docs]
+dependency_groups = ["docs"]
+pass_env = [
+    { replace = "ref", of = ["tool", "tox", "env_run_base", "pass_env"], extend = true },
+    "READTHEDOCS_CANONICAL_URL",
+]
+set_env = [
+    { replace = "ref", of = ["tool", "tox", "env_run_base", "set_env"] },
+    { ORGPARSE_DOCS_REF = "{env:READTHEDOCS_GIT_COMMIT_HASH:{env:GITHUB_SHA:master}}" },
+]
+commands = [
+    [
+        "{env_python}", "-m", "sphinx", "-b", "html", "-W", "--keep-going",
+        "doc/source", "{env:READTHEDOCS_OUTPUT:doc/_build}{/}html",
         { replace = "posargs", default = [], extend = true },
     ],
 ]

@@ -135,6 +135,10 @@ target/
 # Jupyter Notebook
 .ipynb_checkpoints
 
+# Quarto
+/.quarto/
+/README_files/
+
 # IPython
 profile_default/
 ipython_config.py
