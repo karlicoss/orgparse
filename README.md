@@ -106,13 +106,31 @@ True
 '  Body texts...'
 ```
 
+### Read named tables
+
+Tables in `node.body_rich` expose their `#+NAME:` through `Table.name`.
+The name is `None` for unnamed tables.
+
+``` pycon
+>>> from orgparse.extra import Table
+>>> root = loads('''
+... #+NAME: measurements
+... | x | y |
+... |---+---|
+... | 1 | 2 |
+... ''')
+>>> [table] = [part for part in root.body_rich if isinstance(part, Table) and part.name == 'measurements']
+>>> list(table.as_dicts)
+[{'x': '1', 'y': '2'}]
+```
+
 ### More examples
 
 The tests show additional supported features:
 
 - [Custom TODO keywords](https://github.com/karlicoss/orgparse/blob/master/src/orgparse/tests/test_misc.py#L72-L97)
 - [File-level tags](https://github.com/karlicoss/orgparse/blob/master/src/orgparse/tests/test_misc.py#L155-L166)
-- [Reading tables](https://github.com/karlicoss/orgparse/blob/master/src/orgparse/tests/test_rich.py#L11-L60)
+- [Reading tables](https://github.com/karlicoss/orgparse/blob/master/src/orgparse/tests/test_rich.py#L11-L61)
 
 ## Development and documentation
 
