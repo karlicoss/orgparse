@@ -43,6 +43,7 @@ some irrelevant text
     t2 = Table(root._lines[11:19])
     t3 = Table(root._lines[22:26])
 
+    assert t1.name is None
     assert ilen(t1.blocks) == 4
     assert list(t1.blocks)[2] == []
     assert ilen(t1.rows) == 6
@@ -82,7 +83,73 @@ return fname
 [[file:plot.png]]
 ''')
     [_, t, _] = root.children[0].body_rich
+    assert isinstance(t, Table)
+    assert t.name == 'something'
     assert ilen(t.as_dicts) == 3
+
+
+def test_named_table() -> None:
+    """Expose the table name requested in https://github.com/karlicoss/orgparse/issues/34."""
+    root = loads('''
+#+caption: Some caption for a table
+#+name: tabname
+| x | y |
+|---+---|
+| 1 | 2 |
+''')
+    [table] = [part for part in root.body_rich if isinstance(part, Table)]
+    assert table.name == 'tabname'
+    assert list(table.rows) == [['x', 'y'], ['1', '2']]
+    assert list(table.as_dicts) == [{'x': '1', 'y': '2'}]
+    assert '#+name: tabname' in root.get_body(format='raw')
+
+
+@pytest.mark.parametrize(
+    ('metadata', 'expected_name'),
+    [
+        ('', None),
+        ('  #+NaMe:\t Mixed.Name \t\n', 'Mixed.Name'),
+        ('#+NAME:\n', ''),
+        ('#+NAME: first\n#+NAME: last\n', 'last'),
+        (
+            '#+NAME: data\n#+CAPTION[short]: A longer caption\n#+ATTR_HTML: :border 2\n#+PLOT: title:"Data"\n',
+            'data',
+        ),
+        ('#+NAME: data\n#+HEADER: :results table\n#+RESULTS[hash]: source\n', 'data'),
+        ('#+NAME: data\n\n', None),
+        ('#+NAME: data\n \t\n', None),
+        ('#+NAME: data\nSome intervening text\n', None),
+        ('#+NAME: data\n# A comment\n', None),
+        ('#+NAME: data\n#+TITLE: A different keyword\n', None),
+        ('#+NAME: data\n#+NAME[invalid]: other\n', None),
+        ('#+NAME: data\n#+BEGIN_SRC python\nprint(1)\n#+END_SRC\n', None),
+    ],
+)
+def test_table_name_affiliation(metadata: str, expected_name: str | None) -> None:
+    root = loads(metadata + '  | value |\n')
+    [table] = [part for part in root.body_rich if isinstance(part, Table)]
+    assert table.name == expected_name
+    assert list(table.rows) == [['value']]
+
+
+def test_table_names_are_local() -> None:
+    """Keep each name on its own table, without leaking across tables or headings."""
+    root = loads('''
+#+NAME: first
+| 1 |
+
+| 2 |
+#+NAME: third
+| 3 |
+* Heading
+| 4 |
+#+NAME: fifth
+| 5 |
+''')
+    tables = [part for part in root.body_rich if isinstance(part, Table)]
+    assert [table.name for table in tables] == ['first', None, 'third']
+    child_tables = [part for part in root.children[0].body_rich if isinstance(part, Table)]
+    assert [table.name for table in child_tables] == [None, 'fifth']
 
 
 def ilen(x) -> int:

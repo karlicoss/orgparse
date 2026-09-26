@@ -5,6 +5,14 @@ from collections.abc import Iterator, Sequence
 
 RE_TABLE_SEPARATOR = re.compile(r'\s*\|(\-+\+)*\-+\|')
 RE_TABLE_ROW = re.compile(r'\s*\|([^|]+)+\|')
+# Org's affiliated keywords, including legacy spellings of NAME.
+RE_AFFILIATED_KEYWORD = re.compile(
+    r'[ \t]*#\+'
+    r'(?:(?P<name>NAME|TBLNAME|DATA|LABEL|RESNAME|SOURCE|SRCNAME)'
+    r'|(?:CAPTION|RESULTS)(?:\[.*\])?|HEADERS?|PLOT|RESULT|ATTR_[-_A-Za-z0-9]+)'
+    r':[ \t]*(?P<value>.*)',
+    re.IGNORECASE,
+)
 STRIP_CELL_WHITESPACE = True
 
 
@@ -12,8 +20,17 @@ Row = Sequence[str]
 
 
 class Table:
-    def __init__(self, lines: list[str]) -> None:
+    def __init__(self, lines: list[str], *, name: str | None = None) -> None:
         self._lines = lines
+        self._name = name
+
+    @property
+    def name(self) -> str | None:
+        """The affiliated ``#+NAME:`` value, or ``None`` for an unnamed table.
+
+        Legacy spellings such as ``#+TBLNAME:`` are also recognized.
+        """
+        return self._name
 
     @property
     def blocks(self) -> Iterator[Sequence[Row]]:
@@ -84,6 +101,18 @@ class Gap:
 Rich = Table | Gap
 
 
+def _table_name(lines: Sequence[str]) -> str | None:
+    # Only consecutive affiliated keywords immediately before the table apply.
+    # Searching backwards gives the last NAME precedence, as in Org.
+    for line in reversed(lines):
+        match = RE_AFFILIATED_KEYWORD.match(line)
+        if match is None:
+            break
+        if match['name'] is not None:
+            return match['value'].strip()
+    return None
+
+
 def to_rich_text(text: str) -> Iterator[Rich]:
     '''
     Convert an org-mode text into a 'rich' text, e.g. tables/lists/etc, interleaved by gaps.
@@ -95,13 +124,14 @@ def to_rich_text(text: str) -> Iterator[Rich]:
     lines = text.splitlines(keepends=True)
     group: list[str] = []
     last: type[Rich] = Gap
+    table_name: str | None = None
 
     def emit() -> Rich:
         nonlocal group, last
         if last is Gap:
             res = Gap()
         elif last is Table:
-            res = Table(group)  # type: ignore[assignment]
+            res = Table(group, name=table_name)  # type: ignore[assignment]
         else:
             raise RuntimeError(f'Unexpected type {last}')
         group = []
@@ -113,6 +143,8 @@ def to_rich_text(text: str) -> Iterator[Rich]:
         else:
             cur = Gap  # type: ignore[assignment]
         if cur is not last:
+            if cur is Table:
+                table_name = _table_name(group)
             if len(group) > 0:
                 yield emit()
             last = cur

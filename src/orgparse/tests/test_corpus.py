@@ -318,6 +318,7 @@ def test_sachac_config() -> None:
     abbreviations = by_custom_id('completion-define-abbreviations')
     assert abbreviations.heading == 'Define abbreviations'
     [table] = [part for part in abbreviations.body_rich if isinstance(part, Table)]
+    assert table.name == 'global-abbrev'
     expected_rows = [
         ['meweb', 'https://sachachua.com'],
         ['mehub', 'https://github.com/sachac'],
