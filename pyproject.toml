@@ -66,6 +66,10 @@ quarto = [
 requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build]
+# Upstream test corpora are development inputs and retain their own licenses.
+exclude = ["/testdata/external"]
+
 # unfortunately have to duplicate project name here atm, see https://github.com/pypa/hatch/issues/1894
 [tool.hatch.build.targets.wheel]
 packages = ["src/orgparse"]
@@ -111,7 +115,7 @@ enable_error_code = [
 # suppressing rules/changing error level goes here
 
 [tool.ty.src]
-# exclude = [...]
+exclude = ["testdata/external"]
 
 
 [tool.ruff]
@@ -231,6 +235,7 @@ lint.ignore = [
 #       "scratch/**",
 #   ]
 extend-exclude = [
+    "testdata/external",
 ]
 
 [tool.ruff.format]
@@ -238,6 +243,8 @@ quote-style = "preserve"
 
 
 [tool.pytest.ini_options]
+testpaths = ["src/orgparse"]
+
 # discover files that don't follow test_ naming. Useful to keep tests along with the source code
 python_files = ["*.py"]
 

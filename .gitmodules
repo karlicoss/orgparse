@@ -1,0 +1,4 @@
+[submodule "external/org-mode"]
+	path = testdata/external/org-mode
+	url = https://github.com/bzg/org-mode.git
+	shallow = true
