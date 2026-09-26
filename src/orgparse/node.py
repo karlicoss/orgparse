@@ -449,6 +449,7 @@ class OrgBaseNode(Sequence):
     Base class for :class:`OrgRootNode` and :class:`OrgNode`
 
     .. attribute:: env
+       :no-index:
 
        An instance of :class:`OrgEnv`.
        All nodes in a same file shares same instance.

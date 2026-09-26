@@ -99,6 +99,25 @@ jobs:
     - run: bash .ci/run
 
 
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        persist-credentials: false
+        fetch-depth: 0
+    - uses: astral-sh/setup-uv@v10.0.1
+      with:
+        python-version: '3.12'
+        enable-cache: false
+    - name: Regenerate README
+      run: uv tool run --with tox-uv tox -e quarto
+    - name: Check generated README is current
+      run: git diff --exit-code -- README.md
+    - name: Build documentation
+      run: uv tool run --with tox-uv tox -e docs
+
+
   pypi:
     # Do not run it for PRs/cron schedule etc.
     # NOTE: release tags are guarded by on: push: tags on the top.
@@ -106,7 +125,7 @@ jobs:
     # Ugh, I tried using matrix or something to explicitly generate only test pypi or prod pypi pipelines.
     # But github actions is so shit, it's impossible to do any logic at all, e.g. doesn't support conditional matrix, if/else statements for variables etc.
 
-    needs: [build] # add all other jobs here
+    needs: [build, docs] # add all other jobs here
 
     runs-on: ubuntu-latest
 

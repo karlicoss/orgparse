@@ -1,97 +1,55 @@
+import inspect
+import os
 import sys
+from importlib.metadata import version as package_version
 from pathlib import Path
+from urllib.parse import quote
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+project = 'orgparse'
+copyright = '2012, Takafumi Arakaki; orgparse contributors'  # noqa: A001
+release = package_version(project)
+version = release
 
-# -- General configuration ------------------------------------------------
 extensions = [
-    'sphinx.ext.todo',
+    'myst_parser',
     'sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',
-    'sphinx.ext.inheritance_diagram',
+    'sphinx.ext.linkcode',
 ]
-templates_path = []  # ['_templates']
-source_suffix = '.rst'
-master_doc = 'index'
-
-# TODO not sure I'm doing that right..
-import orgparse
-
-# General information about the project.
-project = 'orgparse'
-copyright = '2012, Takafumi Arakaki'  # noqa: A001
-
-# The short X.Y version.
-# TODO use setup.py for version
-version = orgparse.__version__  # ty: ignore[unresolved-attribute]
-# The full version, including alpha/beta/rc tags.
-release = orgparse.__version__  # ty: ignore[unresolved-attribute]
-
-exclude_patterns = []
-
-pygments_style = 'sphinx'
-
-
-# -- Options for HTML output ----------------------------------------------
-html_theme = 'default'
-html_static_path = []  # ['_static']
-
-# Output file base name for HTML help builder.
-htmlhelp_basename = 'orgparsedoc'
-
-
-# -- Options for LaTeX output ---------------------------------------------
-latex_elements = {
-    # The paper size ('letterpaper' or 'a4paper').
-    #'papersize': 'letterpaper',
-    # The font size ('10pt', '11pt' or '12pt').
-    #'pointsize': '10pt',
-    # Additional stuff for the LaTeX preamble.
-    #'preamble': '',
-}
-
-# Grouping the document tree into LaTeX files. List of tuples
-# (source start file, target name, title,
-#  author, documentclass [howto/manual]).
-latex_documents = [
-    ('index', 'orgparse.tex', 'orgparse Documentation', 'Takafumi Arakaki', 'manual'),
-]
-
-
-# -- Options for manual page output ---------------------------------------
-# One entry per manual page. List of tuples
-# (source start file, name, description, authors, manual section).
-man_pages = [
-    ('index', 'orgparse', 'orgparse Documentation', ['Takafumi Arakaki'], 1),
-]
-
-# If true, show URL addresses after external links.
-# man_show_urls = False
-
-
-# -- Options for Texinfo output -------------------------------------------
-# Grouping the document tree into Texinfo files. List of tuples
-# (source start file, target name, title, author,
-#  dir menu entry, description, category)
-texinfo_documents = [
-    (
-        'index',
-        'orgparse',
-        'orgparse Documentation',
-        'Takafumi Arakaki',
-        'orgparse',
-        'One line description of project.',
-        'Miscellaneous',
-    ),
-]
-
-
-# -- Options for extensions -----------------------------------------------
-
-# Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'http://docs.python.org/': None}
-
+root_doc = 'index'
+html_theme = 'alabaster'
+html_baseurl = os.environ.get('READTHEDOCS_CANONICAL_URL', '')
+intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
 autodoc_member_order = 'bysource'
-autodoc_default_flags = ['members']
+autodoc_default_options = {'members': True}
 
-inheritance_graph_attrs = {'rankdir': "TB"}
+repo_root = Path(__file__).resolve().parents[2]
+source_ref = quote(os.environ.get('ORGPARSE_DOCS_REF', 'master'), safe='')
+
+
+def linkcode_resolve(domain: str, info: dict[str, str]) -> str | None:
+    if domain != 'py' or not info['module'].startswith('orgparse'):
+        return None
+
+    obj = sys.modules[info['module']]
+    for part in info['fullname'].split('.'):
+        obj = inspect.getattr_static(obj, part, None)
+        # Instance attributes can be documented without existing on the class.
+        if obj is None:
+            return None
+    if isinstance(obj, property):
+        obj = obj.fget
+    if isinstance(obj, (classmethod, staticmethod)):
+        obj = obj.__func__
+    if not (inspect.isfunction(obj) or inspect.isclass(obj)):
+        return None
+    obj = inspect.unwrap(obj)
+
+    filename = inspect.getsourcefile(obj)
+    assert filename is not None, obj
+    path = Path(filename).resolve()
+    if not path.is_relative_to(repo_root):
+        return None
+    lines, start = inspect.getsourcelines(obj)
+    relative_path = path.relative_to(repo_root).as_posix()
+    return f'https://github.com/karlicoss/orgparse/blob/{source_ref}/{relative_path}#L{start}-L{start + len(lines) - 1}'
