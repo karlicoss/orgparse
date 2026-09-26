@@ -2,3 +2,15 @@
 	path = testdata/external/org-mode
 	url = https://github.com/bzg/org-mode.git
 	shallow = true
+[submodule "external/sachac"]
+	path = testdata/external/sachac
+	url = https://github.com/sachac/.emacs.d.git
+	shallow = true
+[submodule "external/exobrain"]
+	path = testdata/external/exobrain
+	url = https://github.com/karlicoss/exobrain.git
+	shallow = true
+[submodule "external/nvim-orgmode"]
+	path = testdata/external/nvim-orgmode
+	url = https://github.com/nvim-orgmode/orgmode.git
+	shallow = true

@@ -122,7 +122,8 @@ For an existing checkout, run `git submodule update --init --recursive`.
 Run the tests with `uv tool run --with tox-uv tox -e tests`.
 This also checks the examples in this README.
 
-The normal test suite parses the `.org` files in `testdata/external/org-mode/testing/examples` and checks tree structure and attribute access.
+Corpus tests parse upstream Org examples, Sacha Chua’s Emacs configuration, exobrain notes, and nvim-orgmode documents from `testdata/external`.
+They check tree structure, source line ranges, and attribute access.
 
 Edit `README.qmd`, then regenerate `README.md` with `uv tool run --with tox-uv tox -e quarto`.
 Quarto computes links to source code and tests from their definitions, so line numbers are refreshed when rendering.

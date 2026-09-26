@@ -1,4 +1,4 @@
-"""Exercise the public parser API on Org mode's upstream example files."""
+"""Exercise the public parser API on upstream examples and real-world Org documents."""
 
 from pathlib import Path
 
@@ -8,18 +8,27 @@ from .. import load
 from ..extra import Table
 from ..node import OrgNode
 
-CORPUS = Path(__file__).resolve().parents[3] / 'testdata' / 'external' / 'org-mode' / 'testing' / 'examples'
+CORPUS = Path(__file__).resolve().parents[3] / 'testdata' / 'external'
+CORPUS_DIRS = (
+    'org-mode/testing/examples',
+    'sachac',
+    'exobrain',
+    'nvim-orgmode',
+)
 
 
 def corpus_files() -> list[Path]:
-    paths = sorted(CORPUS.rglob('*.org'))
-    assert len(paths) > 0, 'Missing Org corpus: run git submodule update --init --recursive'
+    paths = []
+    for directory in CORPUS_DIRS:
+        files = sorted((CORPUS / directory).rglob('*.org'))
+        assert len(files) > 0, f'Missing Org corpus {directory}: run git submodule update --init --recursive'
+        paths.extend(files)
     return paths
 
 
 @pytest.mark.parametrize('path', corpus_files(), ids=lambda path: path.relative_to(CORPUS).as_posix())
 def test_corpus(path: Path) -> None:
-    """Check parser robustness and tree consistency across upstream Org examples.
+    """Check parser robustness and tree consistency across examples, configurations, notes, and documentation.
 
     Exercise heading/body formatting, property lookups, table row/block iteration,
         and formatting of populated timestamps.
@@ -49,7 +58,7 @@ def test_corpus(path: Path) -> None:
                 list(part.rows)
                 list(part.blocks)
 
-        dates = node.get_timestamps(active=True, inactive=True)
+        dates = node.get_timestamps(active=True, inactive=True, point=True, range=True)
         if isinstance(node, OrgNode):
             dates = [*dates, node.scheduled, node.deadline, node.closed, *node.clock, *node.repeated_tasks]
         for date in dates:
