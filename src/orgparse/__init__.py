@@ -4,12 +4,12 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import TextIO
 
-from .node import OrgEnv, OrgNode, parse_lines  # todo basenode??
+from .node import OrgBaseNode, OrgEnv, OrgNode, OrgRootNode, parse_lines
 
-__all__ = ["load", "loadi", "loads"]
+__all__ = ["OrgBaseNode", "OrgEnv", "OrgNode", "OrgRootNode", "load", "loadi", "loads"]
 
 
-def load(path: str | Path | TextIO, env: OrgEnv | None = None) -> OrgNode:
+def load(path: str | Path | TextIO, env: OrgEnv | None = None) -> OrgRootNode:
     """
     Load org-mode document from a file.
 
@@ -39,7 +39,7 @@ def load(path: str | Path | TextIO, env: OrgEnv | None = None) -> OrgNode:
     return loadi(all_lines, filename=filename, env=env)
 
 
-def loads(string: str, filename: str = '<string>', env: OrgEnv | None = None) -> OrgNode:
+def loads(string: str, filename: str = '<string>', env: OrgEnv | None = None) -> OrgRootNode:
     """
     Load org-mode document from a string.
 
@@ -49,7 +49,7 @@ def loads(string: str, filename: str = '<string>', env: OrgEnv | None = None) ->
     return loadi(string.splitlines(), filename=filename, env=env)
 
 
-def loadi(lines: Iterable[str], filename: str = '<lines>', env: OrgEnv | None = None) -> OrgNode:
+def loadi(lines: Iterable[str], filename: str = '<lines>', env: OrgEnv | None = None) -> OrgRootNode:
     """
     Load org-mode document from an iterative object.
 

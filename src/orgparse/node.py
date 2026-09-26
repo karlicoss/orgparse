@@ -1445,7 +1445,7 @@ class OrgNode(OrgBaseNode):
         return self._repeated_tasks
 
 
-def parse_lines(lines: Iterable[str], filename, env=None) -> OrgNode:
+def parse_lines(lines: Iterable[str], filename, env=None) -> OrgRootNode:
     if not env:
         env = OrgEnv(filename=filename)
     elif env.filename != filename:
