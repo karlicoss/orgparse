@@ -66,11 +66,13 @@ jobs:
           - '3.12'
           - '3.13'
           - '3.14'
+          - '3.15'
         # Windows runners are scarce, so only run the lowest and highest Python versions when enabled.
         # exclude: [
         #     {platform: windows-latest, python-version: '3.11'},
         #     {platform: windows-latest, python-version: '3.12'},
         #     {platform: windows-latest, python-version: '3.13'},
+        #     {platform: windows-latest, python-version: '3.14'},
         # ]
 
     runs-on: ${{ matrix.platform }}
@@ -86,7 +88,7 @@ jobs:
         fetch-depth: 0  # nicer to have all git history when debugging/for tests
 
     # setup-uv doesn't publish floating major/minor tags, so use an exact full tag.
-    - uses: astral-sh/setup-uv@v10.0.1
+    - uses: astral-sh/setup-uv@v10.3.0
       with:
         python-version: ${{ matrix.python-version }}
         enable-cache: false  # we don't have lock files during initial CI checkout, so can't use them as cache key
@@ -96,8 +98,10 @@ jobs:
         limit-access-to-actor: true  # restrict to the user who kicked off pipeline
       if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
 
-    # explicit bash command is necessary for Windows CI runner, otherwise it thinks it's cmd...
+    # Invoke Bash explicitly because Windows runners default to PowerShell.
     - run: bash .ci/run
+      env:
+        RUFF_OUTPUT_FORMAT: github
 
 
   docs:
@@ -107,7 +111,7 @@ jobs:
       with:
         persist-credentials: false
         fetch-depth: 0
-    - uses: astral-sh/setup-uv@v10.0.1
+    - uses: astral-sh/setup-uv@v10.3.0
       with:
         python-version: '3.12'
         enable-cache: false
@@ -150,7 +154,7 @@ jobs:
         fetch-depth: 0  # pull all commits to correctly infer vcs version
 
     # setup-uv doesn't publish floating major/minor tags, so use an exact full tag.
-    - uses: astral-sh/setup-uv@v10.0.1
+    - uses: astral-sh/setup-uv@v10.3.0
       with:
         python-version: '3.12'
         enable-cache: false  # we don't have lock files during initial CI checkout, so can't use them as cache key
