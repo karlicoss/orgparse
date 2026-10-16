@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import datetime
+import datetime as dt
 import re
 from datetime import timedelta
 
-DateIsh = datetime.date | datetime.datetime
+DateIsh = dt.date | dt.datetime
 
 
 def total_seconds(td: timedelta) -> float:
@@ -144,7 +144,7 @@ def date_time_format(date: DateIsh) -> str:
     """
     default_format_date = "%Y-%m-%d %a"
     default_format_datetime = "%Y-%m-%d %a %H:%M"
-    is_datetime = isinstance(date, datetime.datetime)
+    is_datetime = isinstance(date, dt.datetime)
 
     return date.strftime(default_format_datetime if is_datetime else default_format_date)
 
@@ -216,7 +216,7 @@ class OrgDate:
         :type warning: tuple or None
         :arg  warning: Deadline warning interval.
 
-        >>> OrgDate(datetime.date(2012, 2, 10))
+        >>> OrgDate(dt.date(2012, 2, 10))
         OrgDate((2012, 2, 10))
         >>> OrgDate((2012, 2, 10))
         OrgDate((2012, 2, 10))
@@ -233,7 +233,7 @@ class OrgDate:
 
         OrgDate can be created using unix timestamp:
 
-        >>> OrgDate(datetime.datetime.fromtimestamp(0)) == OrgDate(0)
+        >>> OrgDate(dt.datetime.fromtimestamp(0)) == OrgDate(0)
         True
 
         """
@@ -248,9 +248,9 @@ class OrgDate:
     def _to_date(date) -> DateIsh:
         if isinstance(date, (tuple, list)):
             if len(date) == 3:
-                return datetime.date(*date)
+                return dt.date(*date)
             elif len(date) > 3:
-                return datetime.datetime(*date)
+                return dt.datetime(*date)
             else:
                 raise ValueError(
                     "Automatic conversion to the datetime object "
@@ -258,15 +258,15 @@ class OrgDate:
                     f"Only {len(date)} elements are in the given tuple '{date}'."
                 )
         elif isinstance(date, (int, float)):
-            return datetime.datetime.fromtimestamp(date)
+            return dt.datetime.fromtimestamp(date)
         else:
             return date
 
     @staticmethod
     def _date_to_tuple(date: DateIsh) -> tuple[int, ...]:
-        if isinstance(date, datetime.datetime):
+        if isinstance(date, dt.datetime):
             return tuple(date.timetuple()[:6])
-        elif isinstance(date, datetime.date):
+        elif isinstance(date, dt.date):
             return tuple(date.timetuple()[:3])
         else:
             raise TypeError(f"can't happen: {date} {type(date)}")
@@ -305,7 +305,7 @@ class OrgDate:
             (x, y, z) = self._warning
             start += f" {x}{y}{z}"
         ret = f"{fence[0]}{start}{fence[1]}"
-        if end:
+        if end is not None:
             ret += f"--{fence[0]}{end}{fence[1]}"
 
         return ret
@@ -370,7 +370,7 @@ class OrgDate:
         True
 
         """
-        return isinstance(self._start, datetime.datetime)
+        return isinstance(self._start, dt.datetime)
 
     def has_overlap(self, other) -> bool:
         """
@@ -403,7 +403,7 @@ class OrgDate:
             return False
 
     def _datetime_in_range(self, date):
-        if not isinstance(date, (datetime.datetime, datetime.date)):
+        if not isinstance(date, (dt.datetime, dt.date)):
             return False
         asdt = self._as_datetime
         if asdt(self.start) <= asdt(date) <= asdt(self.end):
@@ -411,13 +411,13 @@ class OrgDate:
         return False
 
     @staticmethod
-    def _as_datetime(date) -> datetime.datetime:
+    def _as_datetime(date) -> dt.datetime:
         """
         Convert the given date into datetime (if it already is, return it
         unmodified
         """
-        if not isinstance(date, datetime.datetime):
-            return datetime.datetime(*date.timetuple()[:3])
+        if not isinstance(date, dt.datetime):
+            return dt.datetime(*date.timetuple()[:3])
         return date
 
     @staticmethod
@@ -659,20 +659,20 @@ class OrgDateClock(OrgDate):
 
         # second part starting with "--", does not exist for open clock dates
         has_end = bool(match.group(6))
-        ymdhm2_dt: datetime.datetime | None
+        ymdhm2_dt: dt.datetime | None
         len_min: int | None
         if has_end:
             ymdhm2 = [int(d) for d in match.groups()[6:11]]
             hm3 = [int(d) for d in match.groups()[11:]]
 
-            ymdhm2_dt = datetime.datetime(*ymdhm2)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
+            ymdhm2_dt = dt.datetime(*ymdhm2)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
             len_min = hm3[0] * 60 + hm3[1]
         else:
             ymdhm2_dt = None
             len_min = None
 
         return cls(
-            datetime.datetime(*ymdhm1),  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
+            dt.datetime(*ymdhm1),  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
             ymdhm2_dt,
             len_min,
         )

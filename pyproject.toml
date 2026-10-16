@@ -83,6 +83,9 @@ local_scheme = "dirty-tag"
 
 
 [tool.mypy]
+# default targets when mypy is run without explicit ones
+packages = ["orgparse"]
+
 pretty = true
 show_error_context = true
 show_error_end = true
@@ -105,14 +108,12 @@ enable_error_code = [
     "unused-awaitable",
 ]
 
-# an example of suppressing
-# [[tool.mypy.overrides]]
-# module = "my.config.repos.pdfannots.pdfannots"
-# ignore_errors = true
 
-
-[tool.ty.analysis]
+[tool.ty.rules]
 # suppressing rules/changing error level goes here
+# Catch checks like `if value` on `int | None`, where 0 and None are both falsy.
+truthiness-test-of-none-union = "error"
+
 
 [tool.ty.src]
 exclude = ["testdata/external"]
@@ -129,7 +130,7 @@ lint.ignore = [
     "CPY",   # copyright headers
     "D",     # annoying nags about docstrings
     "N",     # pep naming
-    "TCH",   # type checking rules, mostly just suggests moving imports under TYPE_CHECKING
+    "TC",    # type checking rules, mostly just suggests moving imports under TYPE_CHECKING
     "S",     # bandit (security checks) -- tends to be not very useful, lots of nitpicks
     "DTZ",   # datetimes checks -- complaining about missing tz and mostly false positives
     "FIX",   # complains about fixmes/todos -- annoying
@@ -243,10 +244,12 @@ quote-style = "preserve"
 
 
 [tool.pytest.ini_options]
-testpaths = ["src/orgparse"]
-
 # discover files that don't follow test_ naming. Useful to keep tests along with the source code
 python_files = ["*.py"]
+
+# default targets when pytest is run without explicit ones (package names because of --pyargs below)
+# Also collect the README examples.
+testpaths = ["orgparse", "README.qmd"]
 
 # this is necessary for --pyargs to discover implicit namespace packages correctly
 consider_namespace_packages = true
@@ -255,6 +258,11 @@ consider_namespace_packages = true
 strict = true
 
 addopts = [
+  # resolve targets as importable packages, so tests are collected from the installed package
+  "--pyargs",
+
+  "--doctest-glob=README.qmd",
+
   # prevent pytest cache from being created... it craps into project dir and I never use it anyway
   "-p", "no:cacheprovider",
 
@@ -275,7 +283,13 @@ min_version = "4"
 
 # Relies on the correct version of Python installed.
 # We rely on CI for the test matrix.
-env_list = ["ruff", "format", "tests", "mypy", "ty"]
+env_list = [
+    "ruff",
+    "format",
+    "tests",
+    "mypy",
+    "ty",
+]
 
 # https://github.com/tox-dev/tox/issues/20#issuecomment-247788333
 # Hack to prevent .tox from crapping into the project directory.
@@ -286,6 +300,9 @@ pass_env = [
     # Useful for tests to know they are running under CI.
     "CI",
     "CI_*",
+
+    # Let CI use GitHub annotations for Ruff lint and formatting diagnostics.
+    "RUFF_OUTPUT_FORMAT",
 
     # Respect user's cache dirs to prevent tox from crapping into project dir.
     "PYTHONPYCACHEPREFIX",
@@ -347,8 +364,6 @@ dependency_groups = ["testing"]
 commands = [
     [
         "{env_python}", "-m", "pytest",
-        "--pyargs", "{[project]name}",
-        "--doctest-glob=README.qmd", "README.qmd",
         { replace = "posargs", default = [], extend = true },
     ],
 ]
@@ -359,7 +374,6 @@ dependency_groups = ["typecheck"]
 commands = [
     [
         "{env_python}", "-m", "mypy",
-        "-p", "{[project]name}",
         # uncomment if you need coverage
         # "--txt-report" , ".coverage.mypy",
         # "--html-report", ".coverage.mypy",
