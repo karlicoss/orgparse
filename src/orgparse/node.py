@@ -189,7 +189,7 @@ def parse_duration_to_minutes(duration: str) -> float | int:
     minutes = parse_duration_to_minutes_float(duration)
     # ugh ty is a bit insane and thinks that float is always int | float?
     # see https://docs.astral.sh/ty/reference/typing-faq/#why-does-ty-show-int-float-when-i-annotate-something-as-float
-    return int(minutes) if minutes.is_integer() else minutes  # ty: ignore[unresolved-attribute]
+    return int(minutes) if minutes.is_integer() else minutes  # ty: ignore[missing-union-attribute]
 
 
 def parse_duration_to_minutes_float(duration: str) -> float:
