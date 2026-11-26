@@ -2,6 +2,7 @@ from orgparse.date import OrgDateClock
 
 data = [{
     'heading': 'LOGBOOK drawer test',
+    'body': '',
     'clock': [
         OrgDateClock((2012, 10, 26, 16, 1)),
         OrgDateClock((2012, 10, 26, 14, 50), (2012, 10, 26, 15, 00)),

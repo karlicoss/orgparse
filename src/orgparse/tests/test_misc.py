@@ -20,6 +20,39 @@ def test_empty_heading() -> None:
     assert h.tags == {'sometag'}
 
 
+def test_logbook_markers_in_body() -> None:
+    [node] = loads('''* Task
+Before
+  :logbook:
+  - State "DONE" from "TODO" [2005-09-01 Thu 16:10]
+  A note from the log
+  :end:
+:LOGBOOK:
+CLOCK: [2022-01-01 Sat 00:00]--[2022-01-01 Sat 01:11] =>  1:11
+:END:
+:OTHER:
+Other drawer text
+:END:
+After''').children
+    assert node.get_body(format='raw') == 'Before\n  A note from the log\n:OTHER:\nOther drawer text\n:END:\nAfter'
+    assert len(node.clock) == 1
+    [task] = node.repeated_tasks
+    assert (task.before, task.after) == ('TODO', 'DONE')
+
+
+def test_logbook_markers_as_text() -> None:
+    text = '''#+BEGIN_EXAMPLE
+:LOGBOOK:
+:END:
+#+END_EXAMPLE
+A literal :LOGBOOK: in a sentence
+:END:
+:LOGBOOK:
+Unclosed drawer'''
+    [node] = loads('* Examples\n' + text).children
+    assert node.get_body(format='raw') == text
+
+
 def test_root() -> None:
     root = loads(
         '''

@@ -1182,7 +1182,31 @@ class OrgNode(OrgBaseNode):
         ilines = self._iparse_properties(ilines)
         ilines = self._iparse_repeated_tasks(ilines)
         ilines = self._iparse_timestamps(ilines)
-        self._body_lines = list(ilines)
+        self._body_lines = self._get_body_lines(ilines)
+
+    @staticmethod
+    def _get_body_lines(ilines: Iterator[str]) -> list[str]:
+        body: list[str] = []
+        logbook_start = None
+        block_end = None
+        for line in ilines:
+            marker = line.strip().upper()
+            if block_end is not None:
+                if marker == block_end:
+                    block_end = None
+            elif marker.startswith('#+BEGIN_'):
+                block_end = marker.split(maxsplit=1)[0].replace('#+BEGIN_', '#+END_', 1)
+            elif marker == ':END:' and logbook_start is not None:
+                # Only discard the opening line once its closing line is found.
+                del body[logbook_start]
+                logbook_start = None
+                continue
+            elif marker == ':LOGBOOK:':
+                logbook_start = len(body)
+            elif logbook_start is not None and re.fullmatch(r':[\w-]+:', marker):
+                logbook_start = None  # drawers cannot nest
+            body.append(line)
+        return body
 
     def _parse_heading(self) -> None:
         heading = self._lines[0]
