@@ -115,6 +115,35 @@ def test_add_custom_todo_keys():
     assert root.env.all_todo_keys == ['CUSTOM_TODO', 'COMMENT_TODO', 'CUSTOM_DONE', 'COMMENT_DONE']
 
 
+def test_appended_drawer_properties() -> None:
+    root = loads("""* Music
+:PROPERTIES:
+:genre+: Baroque
+:Genre: Classical
+:Other: A separate property
+:GENRE+: Keyboard music
+:Name+: Goldberg
+:Name+: Variations
+:header-args:python: :results output
+:header-args:python+: :var n=1
+:END:
+Body""")
+    [node] = root.children
+    assert node.properties == {
+        'Genre': 'Classical Baroque Keyboard music',
+        'Other': 'A separate property',
+        'Name': 'Goldberg Variations',
+        'header-args:python': ':results output :var n=1',
+    }
+    assert node.get_property('Genre') == 'Classical Baroque Keyboard music'
+    assert node.body == 'Body'
+
+
+def test_appended_effort() -> None:
+    [node] = loads('* Task\n:PROPERTIES:\n:Effort: 1h\n:Effort+: 15min\n:END:').children
+    assert node.get_property('Effort') == 75
+
+
 def test_get_file_property() -> None:
     content = """#+TITLE:   Test: title
      * Node 1

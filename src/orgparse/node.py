@@ -145,18 +145,18 @@ def parse_property(line: str) -> tuple[str | None, PropertyValue | None]:
     ('Effort', 70)
 
     """
-    prop_key = None
-    prop_val: str | int | float | None = None
     match = RE_PROP.search(line)
-    if match:
-        prop_key = match.group(1)
-        prop_val = match.group(2)
-        if prop_key == 'Effort':
-            prop_val = parse_duration_to_minutes(prop_val)
-    return (prop_key, prop_val)
+    if match is None:
+        return (None, None)
+    key, value = match.groups()
+    return (key, _property_value(key, value))
 
 
-RE_PROP = re.compile(r'^\s*:(.*?):\s*(.*?)\s*$')
+def _property_value(key: str, value: str) -> PropertyValue:
+    return parse_duration_to_minutes(value) if key == 'Effort' else value
+
+
+RE_PROP = re.compile(r'^\s*:(\S+(?=:(?:\s|$))|.*?):\s*(.*?)\s*$')
 
 
 def parse_duration_to_minutes(duration: str) -> float | int:
@@ -854,22 +854,32 @@ class OrgBaseNode(Sequence):
                 self.env.add_todo_keys(*parse_seq_todo(val))
 
     def _iparse_properties(self, ilines: Iterator[str]) -> Iterator[str]:
-        self._properties = {}
+        values: dict[str, list[str]] = {}
+        extensions: list[tuple[str, str]] = []
         in_property_field = False
         for line in ilines:
             if in_property_field:
                 if line.find(":END:") >= 0:
                     break
-                else:
-                    (key, val) = parse_property(line)
-                    if key is not None and val is not None:
-                        self._properties.update({key: val})
+                match = RE_PROP.search(line)
+                if match:
+                    key, value = match.groups()
+                    if key.endswith('+'):
+                        extensions.append((key[:-1], value))
+                    else:
+                        values[key] = [value]
             elif line.find(":PROPERTIES:") >= 0:
                 in_property_field = True
             else:
                 yield line
-        for line in ilines:
-            yield line
+        # The base value can occur after an extension in the drawer.
+        if extensions:
+            names = {key.casefold(): key for key in values}
+            for key, value in extensions:
+                name = names.setdefault(key.casefold(), key)
+                values.setdefault(name, []).append(value)
+        self._properties = {key: _property_value(key, ' '.join(parts)) for key, parts in values.items()}
+        yield from ilines
 
     # misc
 
